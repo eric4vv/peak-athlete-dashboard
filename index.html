@@ -2446,7 +2446,7 @@
         </div>
     </div>
 
-    <!-- Password Reset Modal (v02.02) -->
+    <!-- Password Reset Modal (v02.03) -->
     <div class="modal-overlay" id="passwordResetModal">
         <div class="modal-box" style="max-width: 400px;">
             <div class="modal-header">
@@ -2489,7 +2489,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.02</span></span>
+                    <span>Analytics <span class="version-tag">v02.03</span></span>
                 </div>
             </div>
 
@@ -4033,7 +4033,7 @@
             }
         });
 
-        // Handle password reset callback (v02.02 — uses onAuthStateChange instead of hash parsing)
+        // Handle password reset callback (v02.03 — uses onAuthStateChange instead of hash parsing)
         // Supabase v2 fires PASSWORD_RECOVERY event when user clicks the email reset link.
         // This works regardless of whether the user lands on GitHub Pages directly or inside Wix iframe.
         let _passwordRecoverySession = null;
@@ -9296,7 +9296,7 @@
                         <div class="kpi-header"><div class="kpi-icon cyan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></div></div>
                         <div class="kpi-value">${cTime ? formatTime(cTime) : '--'}</div>
                         <div class="kpi-label">Compare Time</div>
-                        <span class="kpi-context-badge single" style="background:rgba(0,194,255,0.15);color:var(--accent-blue);">Compare</span>
+                        <span class="kpi-context-badge single" style="background:rgba(167,139,250,0.15);color:var(--accent-purple);">Compare</span>
                     </div>
                     <div class="kpi-card">
                         <div class="kpi-header"><div class="kpi-icon orange"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></div></div>
@@ -9380,7 +9380,7 @@
                     const flightPhase = parseFloat(mj['Flight phase'])||null;
                     const isPri = raceModuleState.primaryIdx === idx;
                     const isCmp = raceModuleState.compareIdx === idx;
-                    const rowStyle = isPri ? 'background:rgba(0,194,255,0.06);' : isCmp ? 'background:rgba(0,194,255,0.06);' : '';
+                    const rowStyle = isPri ? 'background:rgba(0,194,255,0.06);' : isCmp ? 'background:rgba(167,139,250,0.06);' : '';
 
                     return `<tr class="race-row-expandable" style="${rowStyle}" onclick="toggleRaceDetail(${idx})">
                         ${multi ? `<td style="font-size:12px;font-weight:500;color:var(--accent-blue);">${nameMap[race.athlete_uuid]||'--'}</td>` : ''}
@@ -9428,7 +9428,7 @@
             const primary = getPrimaryRace();
             const compare = getCompareRace();
             const toChart = primary ? (compare ? [primary, compare] : [primary]) : races.slice(0, Math.min(3, races.length));
-            const colors = primary ? [getThemeColors().accent, getThemeColors().accent] : [getThemeColors().accent, getThemeColors().accent, getThemeColors().purple];
+            const colors = primary ? [getThemeColors().accent, getThemeColors().purple] : [getThemeColors().accent, getThemeColors().purple, getThemeColors().orange];
 
             const allDists = new Set();
             toChart.forEach(r => extractSplits(r.mj).forEach(s => allDists.add(s.distance)));
@@ -9548,7 +9548,7 @@
                 if (cSegs.length) {
                     datasets.push({
                         label: `Velocity - ${raceFullLabel(compare)}`, data: cSegs.map(s=>s.velocity),
-                        backgroundColor: 'rgba(0,194,255,0.65)', borderRadius: 4
+                        backgroundColor: 'rgba(167,139,250,0.65)', borderRadius: 4
                     });
                 }
             }
@@ -9620,8 +9620,8 @@
 
             const datasets = [{
                 label: `Stroke Rate - ${raceFullLabel(race)}`, data: rates.map(r=>r.rate),
-                borderColor:getThemeColors().purple, backgroundColor:'rgba(167,139,250,0.12)', fill:true, tension:0.3,
-                pointRadius:4, pointBackgroundColor:getThemeColors().purple, borderWidth: 2
+                borderColor:getThemeColors().accent, backgroundColor:'rgba(0,194,255,0.12)', fill:true, tension:0.3,
+                pointRadius:4, pointBackgroundColor:getThemeColors().accent, borderWidth: 2
             }];
 
             if (compare) {
@@ -9629,8 +9629,8 @@
                 if (cRates.length) {
                     datasets.push({
                         label: `Stroke Rate - ${raceFullLabel(compare)}`, data: cRates.map(r=>r.rate),
-                        borderColor:getThemeColors().accent, backgroundColor:'rgba(0,194,255,0.08)', fill:false, tension:0.3,
-                        pointRadius:4, pointBackgroundColor:getThemeColors().accent, borderWidth:2, borderDash:[4,4]
+                        borderColor:getThemeColors().purple, backgroundColor:'rgba(167,139,250,0.08)', fill:false, tension:0.3,
+                        pointRadius:4, pointBackgroundColor:getThemeColors().purple, borderWidth:2, borderDash:[4,4]
                     });
                 }
             }

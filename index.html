@@ -2536,6 +2536,720 @@
             .login-card { padding: 24px 16px; }
             .login-card h1 { font-size: 22px; }
         }
+        /* ============================================
+           LEADERBOARDS MODULE (v02.07)
+           ============================================ */
+
+        /* Category Tabs */
+        .lb-category-bar {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        .lb-cat-tab {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            flex: 1;
+            justify-content: center;
+        }
+        .lb-cat-tab:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+        .lb-cat-tab.active {
+            background: rgba(0, 194, 255, 0.12);
+            color: var(--accent-blue);
+        }
+        .lb-cat-tab svg { opacity: 0.6; }
+        .lb-cat-tab.active svg { opacity: 1; }
+
+        /* Filter Bar */
+        .lb-filter-bar {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .lb-filter-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .lb-filter-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 120px;
+        }
+        .lb-filter-field label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .lb-filter-field select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .lb-filter-field select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        .lb-filter-info {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        /* Podium */
+        .lb-podium-wrap {
+            margin-bottom: 24px;
+        }
+        .lb-podium {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 12px;
+            padding: 24px 16px 0;
+        }
+        .lb-podium-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 0 1 200px;
+            max-width: 220px;
+        }
+        .lb-podium-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 10px;
+            position: relative;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+        }
+        .lb-podium-item.rank-1 .lb-podium-avatar {
+            width: 68px;
+            height: 68px;
+            font-size: 22px;
+            background: linear-gradient(135deg, #FFD700, #FFA000);
+            box-shadow: 0 4px 24px rgba(255, 215, 0, 0.35);
+        }
+        .lb-podium-item.rank-2 .lb-podium-avatar {
+            background: linear-gradient(135deg, #C0C0C0, #8E8E8E);
+        }
+        .lb-podium-item.rank-3 .lb-podium-avatar {
+            background: linear-gradient(135deg, #CD7F32, #A0522D);
+        }
+        .lb-podium-medal {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 800;
+            color: #fff;
+            border: 2px solid var(--bg-card);
+        }
+        .lb-podium-item.rank-1 .lb-podium-medal { background: #FFD700; color: #7B5E00; }
+        .lb-podium-item.rank-2 .lb-podium-medal { background: #C0C0C0; color: #4A4A4A; }
+        .lb-podium-item.rank-3 .lb-podium-medal { background: #CD7F32; color: #5C3310; }
+        .lb-podium-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-align: center;
+            margin-bottom: 2px;
+            max-width: 160px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .lb-podium-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 4px;
+        }
+        .lb-podium-item.rank-1 .lb-podium-value { color: #FFD700; font-size: 22px; }
+        .lb-podium-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+        .lb-podium-bar {
+            width: 100%;
+            border-radius: 10px 10px 0 0;
+            margin-top: 10px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            transition: height 0.4s ease;
+        }
+        .lb-podium-item.rank-1 .lb-podium-bar {
+            height: 100px;
+            background: linear-gradient(180deg, rgba(255,215,0,0.18) 0%, rgba(255,215,0,0.06) 100%);
+            border: 1px solid rgba(255,215,0,0.25);
+            border-bottom: none;
+        }
+        .lb-podium-item.rank-2 .lb-podium-bar {
+            height: 72px;
+            background: linear-gradient(180deg, rgba(192,192,192,0.14) 0%, rgba(192,192,192,0.04) 100%);
+            border: 1px solid rgba(192,192,192,0.2);
+            border-bottom: none;
+        }
+        .lb-podium-item.rank-3 .lb-podium-bar {
+            height: 52px;
+            background: linear-gradient(180deg, rgba(205,127,50,0.14) 0%, rgba(205,127,50,0.04) 100%);
+            border: 1px solid rgba(205,127,50,0.2);
+            border-bottom: none;
+        }
+        .lb-podium-rank-num {
+            font-size: 28px;
+            font-weight: 800;
+            opacity: 0.15;
+            margin-bottom: 8px;
+        }
+
+        /* Table Card */
+        .lb-table-card { margin-bottom: 32px; }
+        .lb-record-count {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Rankings Table */
+        .lb-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .lb-table th, .lb-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .lb-table th {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        .lb-table tr:hover td {
+            background: var(--bg-card-hover);
+        }
+        .lb-table td {
+            font-size: 13px;
+        }
+        .lb-rank-cell {
+            width: 48px;
+            text-align: center;
+        }
+        .lb-rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .lb-rank-badge.gold {
+            background: rgba(255,215,0,0.15);
+            color: #FFD700;
+            border: 1px solid rgba(255,215,0,0.3);
+        }
+        .lb-rank-badge.silver {
+            background: rgba(192,192,192,0.12);
+            color: #C0C0C0;
+            border: 1px solid rgba(192,192,192,0.25);
+        }
+        .lb-rank-badge.bronze {
+            background: rgba(205,127,50,0.12);
+            color: #CD7F32;
+            border: 1px solid rgba(205,127,50,0.25);
+        }
+        .lb-rank-badge.normal {
+            background: transparent;
+            color: var(--text-muted);
+        }
+        .lb-athlete-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .lb-athlete-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+        .lb-athlete-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .lb-value-cell {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .lb-date-cell {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .lb-style-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .lb-style-pill.freestyle { background: rgba(0,194,255,0.10); color: var(--color-freestyle); }
+        .lb-style-pill.backstroke { background: rgba(167,139,250,0.10); color: var(--color-backstroke); }
+        .lb-style-pill.breaststroke { background: rgba(6,214,160,0.10); color: var(--color-breaststroke); }
+        .lb-style-pill.butterfly { background: rgba(245,166,35,0.10); color: var(--color-butterfly); }
+        .lb-style-pill.im { background: rgba(255,107,157,0.10); color: var(--color-im); }
+
+        .lb-self-row td {
+            background: rgba(0, 194, 255, 0.04);
+        }
+        .lb-self-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--accent-blue);
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: rgba(0,194,255,0.10);
+            margin-left: 6px;
+        }
+
+        .lb-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+        .lb-empty svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            opacity: 0.4;
+        }
+        .lb-empty h3 {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .lb-empty p { font-size: 13px; }
+
+        /* Leaderboard responsive */
+        @media (max-width: 768px) {
+            .lb-podium { gap: 6px; padding: 16px 8px 0; }
+            .lb-podium-item { flex: 0 1 120px; }
+            .lb-podium-avatar { width: 42px; height: 42px; font-size: 14px; }
+            .lb-podium-item.rank-1 .lb-podium-avatar { width: 52px; height: 52px; font-size: 17px; }
+            .lb-podium-name { font-size: 12px; max-width: 100px; }
+            .lb-podium-value { font-size: 14px; }
+            .lb-podium-item.rank-1 .lb-podium-value { font-size: 17px; }
+            .lb-podium-item.rank-1 .lb-podium-bar { height: 72px; }
+            .lb-podium-item.rank-2 .lb-podium-bar { height: 52px; }
+            .lb-podium-item.rank-3 .lb-podium-bar { height: 36px; }
+            .lb-filter-group { flex-direction: column; width: 100%; }
+            .lb-filter-field { width: 100%; }
+            .lb-filter-field select { width: 100%; }
+            .lb-table th, .lb-table td { padding: 10px 8px; }
+            .lb-athlete-avatar { display: none; }
+        }
+
+        /* ============================================
+           v02.08 — MODE TABS, COMPETITION, BADGES
+           ============================================ */
+
+        /* Mode Bar (Team vs Competition top tabs) */
+        .lb-mode-bar {
+            display: flex;
+            gap: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+        .lb-mode-tab {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .lb-mode-tab:hover { color: var(--text-primary); background: var(--bg-card-hover); }
+        .lb-mode-tab.active {
+            background: rgba(0,194,255,0.12);
+            color: var(--accent-blue);
+        }
+        .lb-mode-tab svg { opacity: 0.6; }
+        .lb-mode-tab.active svg { opacity: 1; }
+
+        /* Panels */
+        .lb-panel { display: none; }
+        .lb-panel.active { display: block; }
+
+        /* Competition Opt-in Card */
+        .comp-optin-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-card);
+        }
+        .comp-optin-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .comp-optin-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,215,0,0.04));
+            border: 1px solid rgba(255,215,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #FFD700;
+        }
+        .comp-optin-text { flex: 1; min-width: 0; }
+        .comp-optin-text h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .comp-optin-text p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        .comp-optin-toggle-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .comp-optin-toggle {
+            width: 52px;
+            height: 28px;
+            border-radius: 14px;
+            background: var(--border-color);
+            border: 1px solid var(--border-hover);
+            cursor: pointer;
+            position: relative;
+            padding: 0;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .comp-optin-toggle.active {
+            background: #FFD700;
+            border-color: #FFD700;
+        }
+        .comp-toggle-knob {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #fff;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: left 0.3s cubic-bezier(0.68,-0.55,0.27,1.55);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .comp-optin-toggle.active .comp-toggle-knob { left: 26px; }
+        .comp-optin-status {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .comp-optin-toggle.active + .comp-optin-status { color: #FFD700; }
+
+        /* Competition Events Grid */
+        .comp-events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .comp-event-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+        .comp-event-item:hover { border-color: var(--border-hover); }
+        .comp-event-check {
+            position: relative;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .comp-event-check input {
+            opacity: 0;
+            position: absolute;
+            width: 0;
+            height: 0;
+        }
+        .comp-checkmark {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            border: 2px solid var(--border-hover);
+            background: var(--bg-input);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .comp-event-check input:checked + .comp-checkmark {
+            background: #FFD700;
+            border-color: #FFD700;
+        }
+        .comp-event-check input:checked + .comp-checkmark::after {
+            content: '';
+            display: block;
+            width: 5px;
+            height: 9px;
+            border: solid #000;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            margin-top: -2px;
+        }
+        .comp-event-info { flex: 1; min-width: 0; }
+        .comp-event-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .comp-event-desc { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+        .comp-event-icon { flex-shrink: 0; opacity: 0.7; }
+
+        /* Competition Board Tabs */
+        .comp-board-bar {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+        }
+        .comp-board-tab {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            flex: 1;
+            text-align: center;
+        }
+        .comp-board-tab:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+        .comp-board-tab.active { background: rgba(255,215,0,0.12); color: #FFD700; }
+
+        /* Competition filter row */
+        .comp-filter-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .comp-participant-count {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-left: auto;
+            white-space: nowrap;
+        }
+
+        /* Team name in competition table */
+        .lb-team-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            background: var(--tag-bg);
+            color: var(--tag-text);
+            border: 1px solid var(--tag-border);
+            margin-left: 6px;
+        }
+
+        /* ===== HOME PAGE BADGES ===== */
+        .comp-badges-grid {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+        .comp-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            min-width: 200px;
+            flex: 1;
+            max-width: 300px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .comp-badge:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-card);
+        }
+        .comp-badge-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+        .comp-badge-icon.elite {
+            background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,215,0,0.08));
+            border: 2px solid rgba(255,215,0,0.4);
+            color: #FFD700;
+            box-shadow: 0 0 16px rgba(255,215,0,0.15);
+        }
+        .comp-badge-icon.contender {
+            background: linear-gradient(135deg, rgba(192,192,192,0.15), rgba(192,192,192,0.05));
+            border: 2px solid rgba(192,192,192,0.3);
+            color: #C0C0C0;
+        }
+        .comp-badge-icon.ranked {
+            background: linear-gradient(135deg, rgba(205,127,50,0.15), rgba(205,127,50,0.05));
+            border: 2px solid rgba(205,127,50,0.3);
+            color: #CD7F32;
+        }
+        .comp-badge-text { flex: 1; min-width: 0; }
+        .comp-badge-tier {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .comp-badge-tier.elite { color: #FFD700; }
+        .comp-badge-tier.contender { color: #C0C0C0; }
+        .comp-badge-tier.ranked { color: #CD7F32; }
+        .comp-badge-comp {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .comp-badge-rank {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .comp-badge-detail {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+        .comp-badge-right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            .comp-optin-header { flex-direction: column; text-align: center; }
+            .comp-optin-toggle-wrap { flex-direction: row; }
+            .comp-events-grid { grid-template-columns: 1fr; }
+            .comp-badges-grid { flex-direction: column; }
+            .comp-badge { max-width: 100%; }
+            .comp-filter-row { flex-direction: column; align-items: stretch; }
+            .comp-participant-count { margin-left: 0; }
+        }
+
     </style>
 </head>
 <body>
@@ -2740,7 +3454,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.06</span></span>
+                    <span>Analytics <span class="version-tag">v02.08</span></span>
                 </div>
             </div>
 
@@ -2765,6 +3479,14 @@
                 <div class="nav-item" data-page="races">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
                     Races
+                </div>
+            </div>
+
+            <div class="nav-section" id="leaderboardSection">
+                <div class="nav-section-title">Rankings</div>
+                <div class="nav-item" data-page="leaderboards">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="2" width="4" height="19" rx="1"/></svg>
+                    Leaderboards
                 </div>
             </div>
 
@@ -2941,6 +3663,17 @@
 
                 <!-- Alerts Section -->
                 <div class="alerts-section" id="alertsSection"></div>
+
+                <!-- Competition Badges (v02.08) -->
+                <div id="compBadgesSection" style="display:none;">
+                    <div class="section-header">
+                        <h2>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+                            Competition Badges
+                        </h2>
+                    </div>
+                    <div class="comp-badges-grid" id="compBadgesGrid"></div>
+                </div>
 
                 <!-- Performance Pulse - 4 trend KPI cards -->
                 <div class="section-header">
@@ -3730,6 +4463,212 @@
                                 <div class="loading-spinner"></div>
                                 Loading races...
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Leaderboards Page (v02.08) -->
+            <section class="page-section" id="page-leaderboards">
+                <div class="page-header">
+                    <h1>Leaderboards</h1>
+                    <p>Team rankings and universal competition boards</p>
+                </div>
+
+                <!-- Top-level mode tabs: Team vs Competition -->
+                <div class="lb-mode-bar" id="lbModeBar">
+                    <div class="lb-mode-tab active" data-lbmode="team">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Team Rankings
+                    </div>
+                    <div class="lb-mode-tab" data-lbmode="competition">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+                        Competition
+                    </div>
+                </div>
+
+                <!-- ======== TEAM RANKINGS PANEL ======== -->
+                <div class="lb-panel active" id="lbPanelTeam">
+                    <!-- Category Tabs -->
+                    <div class="lb-category-bar" id="lbCategoryBar">
+                        <div class="lb-cat-tab active" data-lbcat="race">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                            Race Times
+                        </div>
+                        <div class="lb-cat-tab" data-lbcat="start">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                            Starts
+                        </div>
+                        <div class="lb-cat-tab" data-lbcat="turn">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                            Turns
+                        </div>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="lb-filter-bar" id="lbFilterBar">
+                        <div class="lb-filter-group">
+                            <div class="lb-filter-field" id="lbEventFilterWrap">
+                                <label>Event</label>
+                                <select id="lbEventFilter" onchange="applyLbFilters()"><option value="">All Events</option></select>
+                            </div>
+                            <div class="lb-filter-field" id="lbStyleFilterWrap">
+                                <label>Style</label>
+                                <select id="lbStyleFilter" onchange="applyLbFilters()"><option value="">All Styles</option></select>
+                            </div>
+                            <div class="lb-filter-field" id="lbCourseFilterWrap">
+                                <label>Course</label>
+                                <select id="lbCourseFilter" onchange="applyLbFilters()">
+                                    <option value="">All Courses</option><option value="SCY">SCY</option><option value="SCM">SCM</option><option value="LCM">LCM</option>
+                                </select>
+                            </div>
+                            <div class="lb-filter-field">
+                                <label>Gender</label>
+                                <select id="lbGenderFilter" onchange="applyLbFilters()">
+                                    <option value="">All</option><option value="male">Male</option><option value="female">Female</option>
+                                </select>
+                            </div>
+                            <div class="lb-filter-field" id="lbMetricFilterWrap">
+                                <label>Metric</label>
+                                <select id="lbMetricFilter" onchange="applyLbFilters()"></select>
+                            </div>
+                        </div>
+                        <div class="lb-filter-info" id="lbFilterInfo"></div>
+                    </div>
+
+                    <!-- Podium -->
+                    <div class="lb-podium-wrap"><div class="lb-podium" id="lbPodium"></div></div>
+
+                    <!-- Rankings Table -->
+                    <div class="card lb-table-card" id="lbTableCard">
+                        <div class="card-header">
+                            <h3 class="card-title" id="lbTableTitle">Full Rankings</h3>
+                            <span class="lb-record-count" id="lbRecordCount"></span>
+                        </div>
+                        <div class="card-body" style="padding:0; overflow-x:auto;">
+                            <div id="lbTableBody"><div class="loading"><div class="loading-spinner"></div>Loading leaderboard...</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ======== COMPETITION PANEL ======== -->
+                <div class="lb-panel" id="lbPanelCompetition">
+
+                    <!-- Opt-in Settings Card -->
+                    <div class="comp-optin-card" id="compOptinCard">
+                        <div class="comp-optin-header">
+                            <div class="comp-optin-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+                            </div>
+                            <div class="comp-optin-text">
+                                <h3>Universal Competition</h3>
+                                <p>Compete against athletes across all teams. Your name, team, and best performances will be visible to all participants.</p>
+                            </div>
+                            <div class="comp-optin-toggle-wrap">
+                                <button class="comp-optin-toggle" id="compMasterToggle" onclick="toggleCompetitionOptIn()">
+                                    <div class="comp-toggle-knob"></div>
+                                </button>
+                                <span class="comp-optin-status" id="compOptinStatus">Not Enrolled</span>
+                            </div>
+                        </div>
+
+                        <!-- Per-competition checkboxes (shown when opted in) -->
+                        <div class="comp-events-grid" id="compEventsGrid" style="display:none;">
+                            <div class="comp-event-item" data-comp="fastest_start_15m">
+                                <label class="comp-event-check">
+                                    <input type="checkbox" id="compCheck_fastest_start_15m" onchange="toggleCompetitionEntry('fastest_start_15m', this.checked)">
+                                    <span class="comp-checkmark"></span>
+                                </label>
+                                <div class="comp-event-info">
+                                    <div class="comp-event-name">Fastest Start</div>
+                                    <div class="comp-event-desc">0m to 15m split time</div>
+                                </div>
+                                <div class="comp-event-icon" style="color:var(--accent-orange);">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                                </div>
+                            </div>
+                            <div class="comp-event-item" data-comp="best_reaction">
+                                <label class="comp-event-check">
+                                    <input type="checkbox" id="compCheck_best_reaction" onchange="toggleCompetitionEntry('best_reaction', this.checked)">
+                                    <span class="comp-checkmark"></span>
+                                </label>
+                                <div class="comp-event-info">
+                                    <div class="comp-event-name">Best Reaction Time</div>
+                                    <div class="comp-event-desc">Start signal to first movement</div>
+                                </div>
+                                <div class="comp-event-icon" style="color:var(--accent-cyan);">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                </div>
+                            </div>
+                            <div class="comp-event-item" data-comp="fastest_turn_15_15">
+                                <label class="comp-event-check">
+                                    <input type="checkbox" id="compCheck_fastest_turn_15_15" onchange="toggleCompetitionEntry('fastest_turn_15_15', this.checked)">
+                                    <span class="comp-checkmark"></span>
+                                </label>
+                                <div class="comp-event-info">
+                                    <div class="comp-event-name">Fastest Turn</div>
+                                    <div class="comp-event-desc">15m in to 15m out</div>
+                                </div>
+                                <div class="comp-event-icon" style="color:var(--accent-purple);">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                                </div>
+                            </div>
+                            <div class="comp-event-item" data-comp="best_race_pb">
+                                <label class="comp-event-check">
+                                    <input type="checkbox" id="compCheck_best_race_pb" onchange="toggleCompetitionEntry('best_race_pb', this.checked)">
+                                    <span class="comp-checkmark"></span>
+                                </label>
+                                <div class="comp-event-info">
+                                    <div class="comp-event-name">Best Race PB</div>
+                                    <div class="comp-event-desc">Personal best times by event</div>
+                                </div>
+                                <div class="comp-event-icon" style="color:var(--accent-green);">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Competition Board Selector -->
+                    <div class="comp-board-bar" id="compBoardBar" style="display:none;">
+                        <div class="comp-board-tab active" data-compboard="fastest_start_15m">Fastest Start</div>
+                        <div class="comp-board-tab" data-compboard="best_reaction">Reaction Time</div>
+                        <div class="comp-board-tab" data-compboard="fastest_turn_15_15">Fastest Turn</div>
+                        <div class="comp-board-tab" data-compboard="best_race_pb">Race PB</div>
+                    </div>
+
+                    <!-- Competition Gender Filter -->
+                    <div class="comp-filter-row" id="compFilterRow" style="display:none;">
+                        <div class="lb-filter-field">
+                            <label>Gender</label>
+                            <select id="compGenderFilter" onchange="loadCompetitionBoard()">
+                                <option value="">All</option><option value="male">Male</option><option value="female">Female</option>
+                            </select>
+                        </div>
+                        <div class="lb-filter-field" id="compEventFilterWrap" style="display:none;">
+                            <label>Event</label>
+                            <select id="compEventFilter" onchange="loadCompetitionBoard()"><option value="">All Events</option></select>
+                        </div>
+                        <div class="lb-filter-field" id="compStyleFilterWrap" style="display:none;">
+                            <label>Style</label>
+                            <select id="compStyleFilter" onchange="loadCompetitionBoard()"><option value="">All Styles</option></select>
+                        </div>
+                        <div class="comp-participant-count" id="compParticipantCount"></div>
+                    </div>
+
+                    <!-- Competition Podium -->
+                    <div class="lb-podium-wrap" id="compPodiumWrap" style="display:none;">
+                        <div class="lb-podium" id="compPodium"></div>
+                    </div>
+
+                    <!-- Competition Table -->
+                    <div class="card lb-table-card" id="compTableCard" style="display:none;">
+                        <div class="card-header">
+                            <h3 class="card-title" id="compTableTitle">Competition Rankings</h3>
+                            <span class="lb-record-count" id="compRecordCount"></span>
+                        </div>
+                        <div class="card-body" style="padding:0; overflow-x:auto;">
+                            <div id="compTableBody"><div class="lb-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg><h3>Opt in above to see competition rankings</h3><p>Compete against athletes from all teams</p></div></div>
                         </div>
                     </div>
                 </div>
@@ -4758,6 +5697,10 @@
                 document.getElementById('athleteSelector').style.display = 'flex';
                 loadTeamAthletes();
             }
+
+            // Show leaderboard section if user has a team
+            const lbSec = document.getElementById('leaderboardSection');
+            if (lbSec) lbSec.style.display = appState.teamUuid ? 'block' : 'none';
         }
 
         // ============================================
@@ -4817,6 +5760,9 @@
                 case 'team':
                     loadTeamData();
                     break;
+                case 'leaderboards':
+                    loadLeaderboardData();
+                    break;
             }
         }
 
@@ -4864,7 +5810,8 @@
                     loadGoals(),
                     loadPersonalBests(),
                     loadRecentSessions(),
-                    checkPendingApprovals()
+                    checkPendingApprovals(),
+                    loadCompBadges()
                 ]);
             }
         }
@@ -10592,6 +11539,17 @@
                 // Hide coach-only UI elements
                 document.getElementById('coachSection').style.display = 'none';
                 document.getElementById('athleteSelector').style.display = 'none';
+                const lbSecLogout = document.getElementById('leaderboardSection');
+                if (lbSecLogout) lbSecLogout.style.display = 'none';
+                lbState._loaded = false;
+                lbState.athletes = [];
+                lbState.rankings = [];
+                compState.optedIn = false;
+                compState.entries = {};
+                compState.athletes = [];
+                compState.rankings = {};
+                compState.myRanks = {};
+                compState._loaded = false;
                 const dropdown = document.getElementById('athleteDropdown');
                 if (dropdown) dropdown.innerHTML = '<option value="">All Athletes</option>';
 
@@ -10799,6 +11757,674 @@
             appState.isTeamOwner = true; // Creator is always the team admin
             showDashboard();
             showToast('Team "' + name + '" created! Share code "' + code + '" with your athletes.', 'success', 8000);
+        }
+
+        // ============================================
+        // LEADERBOARD MODULE (v02.08)
+        // ============================================
+        const lbState = {
+            mode: 'team',       // 'team' | 'competition'
+            category: 'race',   // team mode: 'race' | 'start' | 'turn'
+            metric: '',
+            athletes: [],       // team athletes cache
+            rankings: [],
+            _loaded: false
+        };
+
+        const compState = {
+            optedIn: false,
+            entries: {},        // { fastest_start_15m: true, ... }
+            board: 'fastest_start_15m',
+            athletes: [],       // competition athletes cache (cross-team)
+            rankings: [],
+            myRanks: {},        // { comp_key: { rank, total, percentile } }
+            _loaded: false
+        };
+
+        const LB_METRICS = {
+            race: [
+                { key: 'race_time_s', label: 'Race Time', unit: 's', lower: true, format: 'time' }
+            ],
+            start: [
+                { key: 'reaction_time_s', label: 'Reaction Time', unit: 's', lower: true, format: 'fixed3' },
+                { key: 'split_15m_s', label: 'Split 15m', unit: 's', lower: true, format: 'fixed2' },
+                { key: 'avg_vel_0_5', label: 'Velocity 0-5m', unit: 'm/s', lower: false, format: 'fixed2' },
+                { key: 'flight_phase_s', label: 'Flight Phase', unit: 's', lower: true, format: 'fixed2' }
+            ],
+            turn: [
+                { key: 'time_15in_15out_s', label: '15m In/Out', unit: 's', lower: true, format: 'fixed2' },
+                { key: 'time_5in_5out_s', label: '5m In/Out', unit: 's', lower: true, format: 'fixed2' },
+                { key: 'push_off_velocity', label: 'Push-off Velocity', unit: 'm/s', lower: false, format: 'fixed2' },
+                { key: 'kick_rate', label: 'Kick Rate', unit: 'k/min', lower: false, format: 'fixed1' }
+            ]
+        };
+
+        const COMP_BOARDS = {
+            fastest_start_15m:  { label: 'Fastest Start', key: 'split_15m_s', view: 'v_competition_start_kpis', lower: true, format: 'fixed2', unit: 's', cols: 'athlete_uuid, split_15m_s, style, source_date' },
+            best_reaction:      { label: 'Best Reaction', key: 'reaction_time_s', view: 'v_competition_start_kpis', lower: true, format: 'fixed3', unit: 's', cols: 'athlete_uuid, reaction_time_s, style, source_date' },
+            fastest_turn_15_15: { label: 'Fastest Turn', key: 'time_15in_15out_s', view: 'v_competition_turn_kpis', lower: true, format: 'fixed2', unit: 's', cols: 'athlete_uuid, time_15in_15out_s, style, source_date' },
+            best_race_pb:       { label: 'Best Race PB', key: 'race_time_s', view: 'v_competition_race_kpis', lower: true, format: 'time', unit: 's', cols: 'athlete_uuid, race_time_s, style, distance_m, source_date, course' }
+        };
+
+        function lbFormatValue(val, fmt) {
+            if (val === null || val === undefined || val === '') return '--';
+            const v = parseFloat(val);
+            if (isNaN(v)) return '--';
+            if (fmt === 'time') return formatTime(v);
+            if (fmt === 'fixed3') return v.toFixed(3);
+            if (fmt === 'fixed2') return v.toFixed(2);
+            if (fmt === 'fixed1') return v.toFixed(1);
+            return v.toFixed(2);
+        }
+
+        // ---- MODE TABS ----
+        document.getElementById('lbModeBar')?.addEventListener('click', (e) => {
+            const tab = e.target.closest('.lb-mode-tab');
+            if (!tab) return;
+            const mode = tab.dataset.lbmode;
+            if (mode === lbState.mode) return;
+            document.querySelectorAll('.lb-mode-tab').forEach(t => t.classList.toggle('active', t === tab));
+            lbState.mode = mode;
+            document.getElementById('lbPanelTeam').classList.toggle('active', mode === 'team');
+            document.getElementById('lbPanelCompetition').classList.toggle('active', mode === 'competition');
+            if (mode === 'team') loadTeamLeaderboard();
+            else loadCompetitionPanel();
+        });
+
+        // ---- TEAM LEADERBOARD (CATEGORY TABS) ----
+        document.getElementById('lbCategoryBar')?.addEventListener('click', (e) => {
+            const tab = e.target.closest('.lb-cat-tab');
+            if (!tab) return;
+            const cat = tab.dataset.lbcat;
+            if (cat === lbState.category) return;
+            document.querySelectorAll('.lb-cat-tab').forEach(t => t.classList.toggle('active', t === tab));
+            lbState.category = cat;
+            populateLbMetricFilter();
+            updateLbFilterVisibility();
+            loadTeamLeaderboard();
+        });
+
+        function populateLbMetricFilter() {
+            const sel = document.getElementById('lbMetricFilter');
+            if (!sel) return;
+            const metrics = LB_METRICS[lbState.category] || [];
+            sel.innerHTML = metrics.map((m, i) =>
+                '<option value="' + m.key + '"' + (i === 0 ? ' selected' : '') + '>' + m.label + '</option>'
+            ).join('');
+            lbState.metric = metrics.length ? metrics[0].key : '';
+        }
+
+        function updateLbFilterVisibility() {
+            const cat = lbState.category;
+            const eventWrap = document.getElementById('lbEventFilterWrap');
+            const courseWrap = document.getElementById('lbCourseFilterWrap');
+            if (eventWrap) eventWrap.style.display = cat === 'race' ? '' : 'none';
+            if (courseWrap) courseWrap.style.display = cat === 'race' ? '' : 'none';
+        }
+
+        // ---- MAIN ENTRY POINT ----
+        async function loadLeaderboardData() {
+            if (lbState.mode === 'competition') {
+                await loadCompetitionPanel();
+            } else {
+                await loadTeamLeaderboard();
+            }
+        }
+
+        // ---- TEAM LEADERBOARD (FIXED — uses getTeamAthleteList) ----
+        async function loadTeamLeaderboard() {
+            if (!appState.teamUuid) {
+                renderLbEmpty('No team assigned', 'Join or create a team to see team rankings.');
+                return;
+            }
+
+            try {
+                // Use the established, working athlete list loader
+                const athletes = await getTeamAthleteList(false);
+                lbState.athletes = athletes;
+            } catch (e) {
+                console.error('[LB-Team] athlete load error', e);
+                lbState.athletes = [];
+            }
+
+            if (!lbState.metric) populateLbMetricFilter();
+            updateLbFilterVisibility();
+
+            const cat = lbState.category;
+            const metric = document.getElementById('lbMetricFilter')?.value || lbState.metric;
+            lbState.metric = metric;
+            const metricDef = (LB_METRICS[cat] || []).find(m => m.key === metric) || (LB_METRICS[cat] || [])[0];
+            if (!metricDef) { renderLbEmpty('No metrics available', ''); return; }
+
+            const genderFilter = document.getElementById('lbGenderFilter')?.value || '';
+            let athleteList = lbState.athletes;
+            if (genderFilter) athleteList = athleteList.filter(a => a.gender === genderFilter);
+            let athleteUuids = athleteList.map(a => a.athlete_uuid);
+            if (!athleteUuids.length) {
+                renderLbEmpty('No athletes found', 'No active athletes match the current filters.');
+                return;
+            }
+
+            try {
+                let rankings = [];
+                if (cat === 'race') rankings = await loadLbRaceRankings(metricDef, athleteUuids);
+                else if (cat === 'start') rankings = await loadLbStartRankings(metricDef, athleteUuids);
+                else if (cat === 'turn') rankings = await loadLbTurnRankings(metricDef, athleteUuids);
+                lbState.rankings = rankings;
+                renderLbPodium(rankings, metricDef, 'lbPodium', lbState.athletes, false);
+                renderLbTable(rankings, metricDef, 'lbTableBody', 'lbRecordCount', 'lbTableTitle', lbState.athletes, false);
+                document.getElementById('lbFilterInfo').textContent = rankings.length + ' ranked';
+            } catch (e) {
+                console.error('[LB-Team] load error', e);
+                renderLbEmpty('Error loading leaderboard', e.message || 'Please try again.');
+            }
+        }
+
+        async function loadLbRaceRankings(metricDef, athleteUuids) {
+            const styleFilter = document.getElementById('lbStyleFilter')?.value || '';
+            const courseFilter = document.getElementById('lbCourseFilter')?.value || '';
+            const eventFilter = document.getElementById('lbEventFilter')?.value || '';
+            let query = supabaseClient.from('v_race_kpis').select('athlete_uuid, race_time_s, style, distance_m, source_date, course');
+            const { query: q1, clientFilter: cf1 } = safeInFilter(query, 'athlete_uuid', athleteUuids);
+            query = q1;
+            if (styleFilter) query = query.eq('style', styleFilter);
+            if (courseFilter) query = query.eq('course', courseFilter);
+            if (eventFilter) {
+                const parts = eventFilter.split('_');
+                if (parts.length === 2) query = query.eq('distance_m', parseInt(parts[0])).eq('style', parts[1]);
+            }
+            query = query.not('race_time_s', 'is', null);
+            const { data, error } = await query;
+            if (error) throw error;
+            let rows = cf1(data || []);
+            populateLbEventOptions(rows);
+            populateLbStyleOptions(rows);
+            const bestMap = {};
+            rows.forEach(r => {
+                const ek = r.distance_m + '_' + (r.style || 'unknown');
+                const uk = r.athlete_uuid + '__' + (eventFilter ? '' : ek);
+                if (!bestMap[uk] || r.race_time_s < bestMap[uk].race_time_s) bestMap[uk] = r;
+            });
+            let best = Object.values(bestMap);
+            best.sort((a, b) => a.race_time_s - b.race_time_s);
+            return best.map((r, i) => ({ rank: i + 1, athlete_uuid: r.athlete_uuid, value: r.race_time_s, style: r.style, distance: r.distance_m, course: r.course, date: r.source_date, raw: r }));
+        }
+
+        async function loadLbStartRankings(metricDef, athleteUuids) {
+            const styleFilter = document.getElementById('lbStyleFilter')?.value || '';
+            const key = metricDef.key;
+            let query = supabaseClient.from('v_start_kpis').select('athlete_uuid, ' + key + ', style, source_date').not(key, 'is', null);
+            const { query: q1, clientFilter: cf1 } = safeInFilter(query, 'athlete_uuid', athleteUuids);
+            query = q1;
+            if (styleFilter) query = query.eq('style', styleFilter);
+            const { data, error } = await query;
+            if (error) throw error;
+            let rows = cf1(data || []);
+            populateLbStyleOptions(rows);
+            const bestMap = {};
+            rows.forEach(r => {
+                const val = parseFloat(r[key]); if (isNaN(val)) return;
+                const prev = bestMap[r.athlete_uuid];
+                if (!prev || (metricDef.lower ? val < prev.value : val > prev.value)) bestMap[r.athlete_uuid] = { ...r, value: val };
+            });
+            let best = Object.values(bestMap);
+            best.sort((a, b) => metricDef.lower ? a.value - b.value : b.value - a.value);
+            return best.map((r, i) => ({ rank: i + 1, athlete_uuid: r.athlete_uuid, value: r.value, style: r.style, date: r.source_date, raw: r }));
+        }
+
+        async function loadLbTurnRankings(metricDef, athleteUuids) {
+            const styleFilter = document.getElementById('lbStyleFilter')?.value || '';
+            const key = metricDef.key;
+            let query = supabaseClient.from('v_turn_kpis').select('athlete_uuid, ' + key + ', style, source_date').not(key, 'is', null);
+            const { query: q1, clientFilter: cf1 } = safeInFilter(query, 'athlete_uuid', athleteUuids);
+            query = q1;
+            if (styleFilter) query = query.eq('style', styleFilter);
+            const { data, error } = await query;
+            if (error) throw error;
+            let rows = cf1(data || []);
+            populateLbStyleOptions(rows);
+            const bestMap = {};
+            rows.forEach(r => {
+                const val = parseFloat(r[key]); if (isNaN(val)) return;
+                const prev = bestMap[r.athlete_uuid];
+                if (!prev || (metricDef.lower ? val < prev.value : val > prev.value)) bestMap[r.athlete_uuid] = { ...r, value: val };
+            });
+            let best = Object.values(bestMap);
+            best.sort((a, b) => metricDef.lower ? a.value - b.value : b.value - a.value);
+            return best.map((r, i) => ({ rank: i + 1, athlete_uuid: r.athlete_uuid, value: r.value, style: r.style, date: r.source_date, raw: r }));
+        }
+
+        function populateLbEventOptions(rows) {
+            const sel = document.getElementById('lbEventFilter'); if (!sel) return;
+            const prev = sel.value;
+            const events = new Map();
+            (rows || []).forEach(r => { if (r.distance_m && r.style) { const k = r.distance_m + '_' + r.style; const c = (r.course || 'SCY').toUpperCase(); const u = c === 'SCY' ? 'Yds' : 'm'; events.set(k, r.distance_m + ' ' + u + ' ' + r.style); }});
+            const sorted = [...events.entries()].sort((a, b) => parseInt(a[0]) - parseInt(b[0]) || a[1].localeCompare(b[1]));
+            sel.innerHTML = '<option value="">All Events</option>' + sorted.map(([k, v]) => '<option value="' + k + '"' + (k === prev ? ' selected' : '') + '>' + v + '</option>').join('');
+        }
+
+        function populateLbStyleOptions(rows) {
+            const sel = document.getElementById('lbStyleFilter'); if (!sel) return;
+            const prev = sel.value;
+            const styles = new Set(); (rows || []).forEach(r => { if (r.style) styles.add(r.style); });
+            sel.innerHTML = '<option value="">All Styles</option>' + [...styles].sort().map(s => '<option value="' + s + '"' + (s === prev ? ' selected' : '') + '>' + s.charAt(0).toUpperCase() + s.slice(1) + '</option>').join('');
+        }
+
+        function applyLbFilters() {
+            lbState.metric = document.getElementById('lbMetricFilter')?.value || lbState.metric;
+            loadTeamLeaderboard();
+        }
+
+        // ---- SHARED RENDER FUNCTIONS ----
+        function getAthleteFromList(uuid, list) {
+            return list.find(x => x.athlete_uuid === uuid);
+        }
+        function renderLbPodium(rankings, metricDef, containerId, athleteList, showTeam) {
+            const wrap = document.getElementById(containerId); if (!wrap) return;
+            if (rankings.length < 1) { wrap.innerHTML = ''; return; }
+            const top = rankings.slice(0, 3);
+            const order = top.length >= 3 ? [top[1], top[0], top[2]] : top.length === 2 ? [top[1], top[0]] : [top[0]];
+            wrap.innerHTML = order.map(r => {
+                const a = getAthleteFromList(r.athlete_uuid, athleteList);
+                const name = a ? ((a.first_name || '') + ' ' + (a.last_name || '')).trim() : 'Unknown';
+                const initials = a ? ((a.first_name || '')[0] + (a.last_name || '')[0]).toUpperCase() : '??';
+                const isSelf = r.athlete_uuid === appState.athleteUuid;
+                const teamLabel = showTeam && a?.team_name ? '<div class="lb-podium-meta" style="margin-top:2px;">' + sanitizeForDisplay(a.team_name) + '</div>' : '';
+                const metaInfo = r.distance ? ((r.distance || '') + (r.course === 'SCY' ? ' Yds ' : 'm ') + (r.style || '')).trim() : (r.style || '');
+                const dateStr = r.date ? formatDate(r.date) : '';
+                return '<div class="lb-podium-item rank-' + r.rank + '"><div class="lb-podium-avatar">' + initials + '<div class="lb-podium-medal">' + r.rank + '</div></div><div class="lb-podium-name">' + sanitizeForDisplay(name) + (isSelf ? '<span class="lb-self-indicator">YOU</span>' : '') + '</div><div class="lb-podium-value">' + lbFormatValue(r.value, metricDef.format) + '</div><div class="lb-podium-meta">' + metaInfo + (dateStr ? ' &middot; ' + dateStr : '') + '</div>' + teamLabel + '<div class="lb-podium-bar"><span class="lb-podium-rank-num">' + r.rank + '</span></div></div>';
+            }).join('');
+        }
+
+        function renderLbTable(rankings, metricDef, containerId, countElId, titleElId, athleteList, showTeam) {
+            const container = document.getElementById(containerId);
+            const countEl = document.getElementById(countElId);
+            const titleEl = document.getElementById(titleElId);
+            if (!container) return;
+            if (!rankings.length) {
+                container.innerHTML = '<div class="lb-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="2" width="4" height="19" rx="1"/></svg><h3>No data found</h3><p>Adjust filters or wait for data to be uploaded.</p></div>';
+                if (countEl) countEl.textContent = '';
+                return;
+            }
+            if (titleEl) titleEl.textContent = (showTeam ? 'Competition: ' : '') + metricDef.label;
+            if (countEl) countEl.textContent = rankings.length + ' athlete' + (rankings.length !== 1 ? 's' : '');
+            const isRace = !!rankings[0]?.distance;
+            const teamCol = showTeam ? '<th>Team</th>' : '';
+            const extraHeaders = isRace ? '<th>Event</th><th>Course</th>' : '<th>Style</th>';
+            let html = '<table class="lb-table"><thead><tr><th class="lb-rank-cell">Rank</th><th>Athlete</th>' + teamCol + '<th>' + metricDef.label + '</th>' + extraHeaders + '<th>Date</th></tr></thead><tbody>';
+            rankings.forEach(r => {
+                const a = getAthleteFromList(r.athlete_uuid, athleteList);
+                const name = a ? ((a.first_name || '') + ' ' + (a.last_name || '')).trim() : 'Unknown';
+                const initials = a ? ((a.first_name || '')[0] + (a.last_name || '')[0]).toUpperCase() : '??';
+                const isSelf = r.athlete_uuid === appState.athleteUuid;
+                const rankClass = r.rank === 1 ? 'gold' : r.rank === 2 ? 'silver' : r.rank === 3 ? 'bronze' : 'normal';
+                const styleLower = (r.style || '').toLowerCase();
+                const pillClass = ['freestyle','backstroke','breaststroke','butterfly','im'].includes(styleLower) ? styleLower : '';
+                const teamCell = showTeam ? '<td><span class="lb-team-pill">' + sanitizeForDisplay(a?.team_name || '--') + '</span></td>' : '';
+                let extraCells = '';
+                if (isRace) { const c = (r.course || 'SCY').toUpperCase(); const u = c === 'SCY' ? 'Yds' : 'm'; extraCells = '<td>' + (r.distance || '') + ' ' + u + ' <span class="lb-style-pill ' + pillClass + '">' + (r.style || '') + '</span></td><td>' + c + '</td>'; }
+                else { extraCells = '<td><span class="lb-style-pill ' + pillClass + '">' + (r.style || '--') + '</span></td>'; }
+                html += '<tr class="' + (isSelf ? 'lb-self-row' : '') + '"><td class="lb-rank-cell"><span class="lb-rank-badge ' + rankClass + '">' + r.rank + '</span></td><td><div class="lb-athlete-cell"><div class="lb-athlete-avatar">' + initials + '</div><span class="lb-athlete-name">' + sanitizeForDisplay(name) + (isSelf ? '<span class="lb-self-indicator">YOU</span>' : '') + '</span></div></td>' + teamCell + '<td class="lb-value-cell">' + lbFormatValue(r.value, metricDef.format) + '</td>' + extraCells + '<td class="lb-date-cell">' + (r.date ? formatDate(r.date) : '--') + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function renderLbEmpty(title, msg) {
+            const container = document.getElementById('lbTableBody');
+            const podium = document.getElementById('lbPodium');
+            const countEl = document.getElementById('lbRecordCount');
+            if (podium) podium.innerHTML = '';
+            if (countEl) countEl.textContent = '';
+            if (container) container.innerHTML = '<div class="lb-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="2" width="4" height="19" rx="1"/></svg><h3>' + sanitizeForDisplay(title) + '</h3><p>' + sanitizeForDisplay(msg) + '</p></div>';
+        }
+
+        // ============================================
+        // COMPETITION LEADERBOARD (v02.08)
+        // ============================================
+
+        // ---- Load competition panel state ----
+        async function loadCompetitionPanel() {
+            // Only athletes can opt in (coaches see read-only)
+            const isAthlete = appState.role === 'athlete';
+
+            // Load opt-in status
+            if (isAthlete && appState.athleteUuid) {
+                try {
+                    const { data } = await supabaseClient
+                        .from('competition_opt_ins')
+                        .select('opted_in')
+                        .eq('athlete_uuid', appState.athleteUuid)
+                        .maybeSingle();
+                    compState.optedIn = data?.opted_in === true;
+                } catch (e) {
+                    console.warn('[Comp] opt-in check failed (table may not exist yet):', e.message);
+                    compState.optedIn = false;
+                }
+
+                // Load per-comp entries
+                try {
+                    const { data } = await supabaseClient
+                        .from('competition_entries')
+                        .select('competition_key, enrolled')
+                        .eq('athlete_uuid', appState.athleteUuid);
+                    compState.entries = {};
+                    (data || []).forEach(d => { compState.entries[d.competition_key] = d.enrolled; });
+                } catch (e) {
+                    console.warn('[Comp] entries check failed:', e.message);
+                    compState.entries = {};
+                }
+            }
+
+            updateCompOptinUI();
+
+            if (compState.optedIn || appState.role === 'coach') {
+                await loadCompetitionBoard();
+            }
+        }
+
+        function updateCompOptinUI() {
+            const toggle = document.getElementById('compMasterToggle');
+            const statusEl = document.getElementById('compOptinStatus');
+            const eventsGrid = document.getElementById('compEventsGrid');
+            const boardBar = document.getElementById('compBoardBar');
+            const filterRow = document.getElementById('compFilterRow');
+            const podiumWrap = document.getElementById('compPodiumWrap');
+            const tableCard = document.getElementById('compTableCard');
+            const isAthlete = appState.role === 'athlete';
+
+            if (toggle) toggle.classList.toggle('active', compState.optedIn);
+            if (statusEl) statusEl.textContent = compState.optedIn ? 'Enrolled' : 'Not Enrolled';
+
+            // Coaches see boards but not opt-in controls
+            if (!isAthlete) {
+                const optinCard = document.getElementById('compOptinCard');
+                if (optinCard) optinCard.style.display = 'none';
+                if (boardBar) boardBar.style.display = '';
+                if (filterRow) filterRow.style.display = '';
+                if (podiumWrap) podiumWrap.style.display = '';
+                if (tableCard) tableCard.style.display = '';
+                return;
+            }
+
+            if (eventsGrid) eventsGrid.style.display = compState.optedIn ? '' : 'none';
+            const showBoards = compState.optedIn;
+            if (boardBar) boardBar.style.display = showBoards ? '' : 'none';
+            if (filterRow) filterRow.style.display = showBoards ? '' : 'none';
+            if (podiumWrap) podiumWrap.style.display = showBoards ? '' : 'none';
+            if (tableCard) tableCard.style.display = showBoards ? '' : 'none';
+
+            // Update checkboxes
+            Object.keys(COMP_BOARDS).forEach(key => {
+                const cb = document.getElementById('compCheck_' + key);
+                if (cb) cb.checked = compState.entries[key] === true;
+            });
+        }
+
+        async function toggleCompetitionOptIn() {
+            if (appState.role !== 'athlete' || !appState.athleteUuid) return;
+            const newVal = !compState.optedIn;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('competition_opt_ins')
+                    .upsert({
+                        athlete_uuid: appState.athleteUuid,
+                        auth_user_id: appState.user.id,
+                        opted_in: newVal,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'athlete_uuid' });
+
+                if (error) throw error;
+                compState.optedIn = newVal;
+
+                // If opting in for first time, auto-enroll in all competitions
+                if (newVal && Object.keys(compState.entries).length === 0) {
+                    const keys = Object.keys(COMP_BOARDS);
+                    const rows = keys.map(k => ({
+                        athlete_uuid: appState.athleteUuid,
+                        auth_user_id: appState.user.id,
+                        competition_key: k,
+                        enrolled: true
+                    }));
+                    await supabaseClient.from('competition_entries').upsert(rows, { onConflict: 'athlete_uuid,competition_key' });
+                    keys.forEach(k => { compState.entries[k] = true; });
+                }
+
+                updateCompOptinUI();
+                if (newVal) {
+                    showToast('You are now competing in the Universal Leaderboard!', 'success');
+                    await loadCompetitionBoard();
+                } else {
+                    showToast('You have been removed from the competition.', 'info');
+                }
+            } catch (e) {
+                console.error('[Comp] opt-in toggle error:', e);
+                showToast('Could not update competition status. The database table may not exist yet — please run the SQL migration first.', 'error', 8000);
+            }
+        }
+
+        async function toggleCompetitionEntry(compKey, enrolled) {
+            if (appState.role !== 'athlete' || !appState.athleteUuid) return;
+            try {
+                await supabaseClient.from('competition_entries').upsert({
+                    athlete_uuid: appState.athleteUuid,
+                    auth_user_id: appState.user.id,
+                    competition_key: compKey,
+                    enrolled: enrolled,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'athlete_uuid,competition_key' });
+                compState.entries[compKey] = enrolled;
+            } catch (e) {
+                console.error('[Comp] entry toggle error:', e);
+                showToast('Could not update competition entry.', 'error');
+            }
+        }
+
+        // ---- Competition board tabs ----
+        document.getElementById('compBoardBar')?.addEventListener('click', (e) => {
+            const tab = e.target.closest('.comp-board-tab');
+            if (!tab) return;
+            const board = tab.dataset.compboard;
+            if (board === compState.board) return;
+            document.querySelectorAll('.comp-board-tab').forEach(t => t.classList.toggle('active', t === tab));
+            compState.board = board;
+            updateCompFilterVisibility();
+            loadCompetitionBoard();
+        });
+
+        function updateCompFilterVisibility() {
+            const isRace = compState.board === 'best_race_pb';
+            const ew = document.getElementById('compEventFilterWrap');
+            const sw = document.getElementById('compStyleFilterWrap');
+            if (ew) ew.style.display = isRace ? '' : 'none';
+            if (sw) sw.style.display = isRace ? '' : 'none';
+        }
+
+        // ---- Load competition board data ----
+        async function loadCompetitionBoard() {
+            const boardDef = COMP_BOARDS[compState.board];
+            if (!boardDef) return;
+
+            updateCompFilterVisibility();
+
+            // Load competition athletes
+            try {
+                const { data } = await supabaseClient
+                    .from('v_competition_athletes')
+                    .select('athlete_uuid, first_name, last_name, gender, team_name');
+
+                const genderFilter = document.getElementById('compGenderFilter')?.value || '';
+                let athletes = data || [];
+                if (genderFilter) athletes = athletes.filter(a => a.gender === genderFilter);
+                compState.athletes = athletes;
+            } catch (e) {
+                console.warn('[Comp] athlete load failed (view may not exist yet):', e.message);
+                compState.athletes = [];
+                document.getElementById('compTableBody').innerHTML = '<div class="lb-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg><h3>Competition not available yet</h3><p>The database tables for competition may not be set up yet. Please run the SQL migration in Supabase.</p></div>';
+                return;
+            }
+
+            if (!compState.athletes.length) {
+                document.getElementById('compPodium').innerHTML = '';
+                document.getElementById('compTableBody').innerHTML = '<div class="lb-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg><h3>No participants yet</h3><p>Be the first to opt in and compete!</p></div>';
+                document.getElementById('compParticipantCount').textContent = '0 participants';
+                return;
+            }
+
+            const athleteUuids = compState.athletes.map(a => a.athlete_uuid);
+
+            try {
+                let query = supabaseClient.from(boardDef.view).select(boardDef.cols).not(boardDef.key, 'is', null);
+                const { query: q1, clientFilter: cf1 } = safeInFilter(query, 'athlete_uuid', athleteUuids);
+                query = q1;
+
+                // Extra filters for race PB
+                if (compState.board === 'best_race_pb') {
+                    const ef = document.getElementById('compEventFilter')?.value || '';
+                    const sf = document.getElementById('compStyleFilter')?.value || '';
+                    if (ef) { const p = ef.split('_'); if (p.length === 2) query = query.eq('distance_m', parseInt(p[0])).eq('style', p[1]); }
+                    if (sf) query = query.eq('style', sf);
+                }
+
+                const { data, error } = await query;
+                if (error) throw error;
+                let rows = cf1(data || []);
+
+                // Populate race-specific filters
+                if (compState.board === 'best_race_pb') {
+                    const evSel = document.getElementById('compEventFilter');
+                    if (evSel) {
+                        const prev = evSel.value;
+                        const evs = new Map();
+                        rows.forEach(r => { if (r.distance_m && r.style) { const k = r.distance_m + '_' + r.style; const c = (r.course || 'SCY').toUpperCase(); evs.set(k, r.distance_m + (c === 'SCY' ? ' Yds ' : 'm ') + r.style); }});
+                        evSel.innerHTML = '<option value="">All Events</option>' + [...evs.entries()].sort((a,b) => parseInt(a[0]) - parseInt(b[0])).map(([k,v]) => '<option value="' + k + '"' + (k === prev ? ' selected' : '') + '>' + v + '</option>').join('');
+                    }
+                }
+
+                // Best per athlete
+                const bestMap = {};
+                rows.forEach(r => {
+                    const val = parseFloat(r[boardDef.key]); if (isNaN(val)) return;
+                    const ek = r.distance_m ? r.athlete_uuid + '__' + r.distance_m + '_' + r.style : r.athlete_uuid;
+                    const prev = bestMap[ek];
+                    if (!prev || (boardDef.lower ? val < prev.value : val > prev.value)) {
+                        bestMap[ek] = { ...r, value: val };
+                    }
+                });
+
+                let best = Object.values(bestMap);
+                best.sort((a, b) => boardDef.lower ? a.value - b.value : b.value - a.value);
+                const rankings = best.map((r, i) => ({
+                    rank: i + 1,
+                    athlete_uuid: r.athlete_uuid,
+                    value: r.value,
+                    style: r.style,
+                    distance: r.distance_m,
+                    course: r.course,
+                    date: r.source_date,
+                    raw: r
+                }));
+
+                compState.rankings = rankings;
+                renderLbPodium(rankings, boardDef, 'compPodium', compState.athletes, true);
+                renderLbTable(rankings, boardDef, 'compTableBody', 'compRecordCount', 'compTableTitle', compState.athletes, true);
+                document.getElementById('compParticipantCount').textContent = compState.athletes.length + ' participant' + (compState.athletes.length !== 1 ? 's' : '');
+
+                // Cache rank for badges
+                if (appState.athleteUuid) {
+                    const myEntry = rankings.find(r => r.athlete_uuid === appState.athleteUuid);
+                    if (myEntry) {
+                        compState.myRanks[compState.board] = {
+                            rank: myEntry.rank,
+                            total: rankings.length,
+                            percentile: (myEntry.rank / rankings.length) * 100,
+                            value: myEntry.value
+                        };
+                    }
+                }
+            } catch (e) {
+                console.error('[Comp] board load error:', e);
+                document.getElementById('compTableBody').innerHTML = '<div class="lb-empty"><h3>Error loading competition data</h3><p>' + sanitizeForDisplay(e.message) + '</p></div>';
+            }
+        }
+
+        // ============================================
+        // HOME PAGE BADGES (v02.08)
+        // ============================================
+        async function loadCompBadges() {
+            const section = document.getElementById('compBadgesSection');
+            const grid = document.getElementById('compBadgesGrid');
+            if (!section || !grid) return;
+            if (appState.role !== 'athlete' || !appState.athleteUuid) { section.style.display = 'none'; return; }
+
+            // Check if opted in
+            let optedIn = false;
+            try {
+                const { data } = await supabaseClient.from('competition_opt_ins').select('opted_in').eq('athlete_uuid', appState.athleteUuid).maybeSingle();
+                optedIn = data?.opted_in === true;
+            } catch (e) { section.style.display = 'none'; return; }
+
+            if (!optedIn) { section.style.display = 'none'; return; }
+
+            // Load ranks for each competition
+            const badges = [];
+            for (const [compKey, boardDef] of Object.entries(COMP_BOARDS)) {
+                try {
+                    // Check enrollment
+                    const { data: entryData } = await supabaseClient.from('competition_entries').select('enrolled').eq('athlete_uuid', appState.athleteUuid).eq('competition_key', compKey).maybeSingle();
+                    if (!entryData?.enrolled) continue;
+
+                    const { data: allData } = await supabaseClient.from(boardDef.view).select(boardDef.cols).not(boardDef.key, 'is', null);
+                    if (!allData?.length) continue;
+
+                    // Best per athlete
+                    const bestMap = {};
+                    allData.forEach(r => {
+                        const val = parseFloat(r[boardDef.key]); if (isNaN(val)) return;
+                        const prev = bestMap[r.athlete_uuid];
+                        if (!prev || (boardDef.lower ? val < prev : val > prev)) bestMap[r.athlete_uuid] = val;
+                    });
+
+                    const sorted = Object.entries(bestMap).sort((a, b) => boardDef.lower ? a[1] - b[1] : b[1] - a[1]);
+                    const myIdx = sorted.findIndex(([uuid]) => uuid === appState.athleteUuid);
+                    if (myIdx === -1) continue;
+
+                    const rank = myIdx + 1;
+                    const total = sorted.length;
+                    const pct = (rank / total) * 100;
+
+                    let tier = null;
+                    if (pct <= 1) tier = { name: 'Elite', cls: 'elite', icon: 'E' };
+                    else if (pct <= 10) tier = { name: 'Contender', cls: 'contender', icon: 'C' };
+                    else if (pct <= 25) tier = { name: 'Ranked', cls: 'ranked', icon: 'R' };
+
+                    if (tier) {
+                        badges.push({
+                            tier, compKey, label: boardDef.label,
+                            rank, total, value: bestMap[appState.athleteUuid],
+                            format: boardDef.format
+                        });
+                    }
+                } catch (e) { continue; }
+            }
+
+            if (!badges.length) { section.style.display = 'none'; return; }
+
+            section.style.display = '';
+            grid.innerHTML = badges.map(b =>
+                '<div class="comp-badge" onclick="navigateTo(\'leaderboards\')">' +
+                    '<div class="comp-badge-icon ' + b.tier.cls + '">' + b.tier.icon + '</div>' +
+                    '<div class="comp-badge-text">' +
+                        '<div class="comp-badge-tier ' + b.tier.cls + '">Top ' + (b.tier.cls === 'elite' ? '1%' : b.tier.cls === 'contender' ? '10%' : '25%') + ' — ' + b.tier.name + '</div>' +
+                        '<div class="comp-badge-comp">' + b.label + '</div>' +
+                    '</div>' +
+                    '<div class="comp-badge-right">' +
+                        '<div class="comp-badge-rank">#' + b.rank + '</div>' +
+                        '<div class="comp-badge-detail">of ' + b.total + '</div>' +
+                    '</div>' +
+                '</div>'
+            ).join('');
         }
 
         // ============================================

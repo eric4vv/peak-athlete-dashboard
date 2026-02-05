@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
     <title>Peak Athlete - Performance Lab</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -10,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        /* â”€â”€ DARK THEME (default): Midnight Athlete â”€â”€ */
+        /* "" DARK THEME (default): Midnight Athlete "" */
         :root, [data-theme="dark"] {
             --bg-primary: #0B0E14;
             --bg-secondary: #141820;
@@ -51,7 +52,7 @@
             --accent-subtle: rgba(0,194,255,0.08);
         }
 
-        /* â”€â”€ LIGHT THEME: Clean Deck â”€â”€ */
+        /* "" LIGHT THEME: Clean Deck "" */
         [data-theme="light"] {
             --bg-primary: #F3F5F9;
             --bg-secondary: #FFFFFF;
@@ -436,6 +437,16 @@
         .member-btn.leave:hover {
             background: rgba(255, 107, 107, 0.15);
             color: var(--accent-red);
+        }
+
+        .member-btn.remove {
+            background: rgba(255, 107, 107, 0.10);
+            color: var(--accent-red);
+            border: 1px solid rgba(255, 107, 107, 0.18);
+        }
+
+        .member-btn.remove:hover {
+            background: rgba(255, 107, 107, 0.22);
         }
 
         .pending-count-badge {
@@ -960,7 +971,7 @@
             opacity: 1;
         }
 
-        /* Last Session â€” Compact Clickable Card */
+        /* Last Session - Compact Clickable Card */
         .last-session-compact {
             margin-bottom: 20px;
         }
@@ -1954,7 +1965,7 @@
         .start-metric-item .smi-delta.negative { background: rgba(255,107,107,0.15); color: var(--accent-red); }
         .start-metric-item .smi-delta.neutral { background: rgba(148,163,184,0.15); color: var(--text-secondary); }
 
-        /* â”€â”€ Flight Path â€” Minimalist â”€â”€ */
+        /* "" Flight Path - Minimalist "" */
         .flight-path-container {
             position: relative; background: rgba(148,163,184,0.04); border-radius: 14px;
             border: 1px solid var(--border-color); padding: 20px 24px 16px; margin-bottom: 20px;
@@ -1972,14 +1983,14 @@
         .fp-stat-val .unit { font-size: 11px; color: var(--text-muted); font-weight: 400; margin-left: 2px; }
         .fp-stat-delta { font-size: 11px; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
 
-        /* â”€â”€ Velocity Decay Chart container â”€â”€ */
+        /* "" Velocity Decay Chart container "" */
         .vel-decay-container {
             background: rgba(148,163,184,0.04); border-radius: 14px;
             border: 1px solid var(--border-color); padding: 20px 24px 16px; margin-bottom: 20px;
         }
         .vel-decay-container h4 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 14px; }
 
-        /* â”€â”€ Entry Geometry Visual â”€â”€ */
+        /* "" Entry Geometry Visual "" */
         .entry-geom-container {
             background: rgba(148,163,184,0.04); border-radius: 14px;
             border: 1px solid var(--border-color); padding: 20px 24px 16px; margin-bottom: 20px;
@@ -2000,9 +2011,9 @@
             .entry-geom-grid { grid-template-columns: 1fr; }
         }
 
-        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+        /* ============================================ */
         /* COACH DASHBOARD STYLES                      */
-        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+        /* ============================================ */
         #coachDashboard { display: none; }
         .coach-section-header { display:flex; align-items:center; gap:10px; margin:24px 0 14px; }
         .coach-section-header h2 { font-size:15px; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:8px; flex:1; }
@@ -2323,7 +2334,63 @@
         }
 
         /* ============================================ */
-        /* MOBILE RESPONSIVE — v02.04                   */
+        /* TOAST NOTIFICATIONS & CONFIRM MODAL - v02.05 */
+        /* ============================================ */
+        .toast-container {
+            position: fixed; top: 16px; right: 16px; z-index: 10000;
+            display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+        }
+        .toast {
+            pointer-events: auto; display: flex; align-items: center; gap: 10px;
+            padding: 12px 16px; border-radius: 10px; min-width: 280px; max-width: 420px;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3); font-size: 13px; color: var(--text-primary);
+            transform: translateX(120%); transition: transform 0.3s ease, opacity 0.3s ease; opacity: 0;
+        }
+        .toast.show { transform: translateX(0); opacity: 1; }
+        .toast.toast-success { border-color: rgba(0,230,138,0.4); }
+        .toast.toast-error { border-color: rgba(255,107,107,0.4); }
+        .toast.toast-info { border-color: rgba(0,194,255,0.4); }
+        .toast.toast-warning { border-color: rgba(245,166,35,0.4); }
+        .toast-icon { width: 20px; height: 20px; flex-shrink: 0; }
+        .toast-icon.success { color: var(--accent-green); }
+        .toast-icon.error { color: var(--accent-red); }
+        .toast-icon.info { color: var(--accent-blue); }
+        .toast-icon.warning { color: var(--accent-orange); }
+        .toast-msg { flex: 1; line-height: 1.4; }
+        .toast-close { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px;
+            width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 4px; flex-shrink: 0; }
+        .toast-close:hover { background: rgba(148,163,184,0.1); color: var(--text-primary); }
+
+        /* Styled Confirm Modal */
+        .confirm-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999;
+            display: none; align-items: center; justify-content: center; padding: 20px;
+        }
+        .confirm-overlay.active { display: flex; }
+        .confirm-box {
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px;
+            padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+        }
+        .confirm-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+        .confirm-msg { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 20px; }
+        .confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .confirm-btn { padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;
+            cursor: pointer; border: none; font-family: inherit; transition: all 0.15s; }
+        .confirm-btn.cancel { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .confirm-btn.cancel:hover { border-color: var(--text-muted); }
+        .confirm-btn.danger { background: var(--accent-red); color: white; }
+        .confirm-btn.danger:hover { opacity: 0.9; }
+        .confirm-btn.primary { background: var(--accent-blue); color: white; }
+        .confirm-btn.primary:hover { opacity: 0.9; }
+
+        @media (max-width: 768px) {
+            .toast-container { top: 64px; right: 8px; left: 8px; }
+            .toast { min-width: auto; max-width: 100%; }
+        }
+
+        /* ============================================ */
+        /* MOBILE RESPONSIVE - v02.04                   */
         /* ============================================ */
 
         /* --- Mobile Header Bar with Hamburger --- */
@@ -2505,7 +2572,7 @@
 
                 <div class="login-links">
                     <a onclick="toggleAuthMode('forgot')" class="forgot-link">Forgot password?</a>
-                    <span class="login-links-sep">Â·</span>
+                    <span class="login-links-sep">|</span>
                     <span>Don't have an account? <a onclick="toggleAuthMode('signup')">Create Account</a></span>
                 </div>
             </form>
@@ -2594,6 +2661,21 @@
         </div>
     </div>
 
+    <!-- Toast Notification Container (v02.05) -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Styled Confirm Modal (v02.05) -->
+    <div class="confirm-overlay" id="confirmOverlay">
+        <div class="confirm-box">
+            <div class="confirm-title" id="confirmTitle">Confirm</div>
+            <div class="confirm-msg" id="confirmMsg"></div>
+            <div class="confirm-actions">
+                <button class="confirm-btn cancel" id="confirmCancel">Cancel</button>
+                <button class="confirm-btn primary" id="confirmOk">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Password Reset Modal (v02.04) -->
     <div class="modal-overlay" id="passwordResetModal">
         <div class="modal-box" style="max-width: 400px;">
@@ -2658,7 +2740,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.04</span></span>
+                    <span>Analytics <span class="version-tag">v02.06</span></span>
                 </div>
             </div>
 
@@ -2749,7 +2831,7 @@
                 <!-- Membership Pending Banner -->
                 <div id="pendingBanner" style="display:none;"></div>
 
-                <!-- â•â•â• COACH DASHBOARD (shown when no athlete selected) â•â•â• -->
+                <!-- === COACH DASHBOARD (shown when no athlete selected) === -->
                 <div id="coachDashboard">
                     <!-- Filter Bar -->
                     <div class="coach-filter-bar" id="coachFilterBar">
@@ -2854,13 +2936,13 @@
                     </div>
                 </div>
 
-                <!-- â•â•â• ATHLETE HOME SECTIONS (shown when athlete selected, or for athlete role) â•â•â• -->
+                <!-- === ATHLETE HOME SECTIONS (shown when athlete selected, or for athlete role) === -->
                 <div id="athleteHomeSections">
 
                 <!-- Alerts Section -->
                 <div class="alerts-section" id="alertsSection"></div>
 
-                <!-- Performance Pulse â€” 4 trend KPI cards -->
+                <!-- Performance Pulse - 4 trend KPI cards -->
                 <div class="section-header">
                     <h2>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
@@ -2883,7 +2965,7 @@
                     <div class="loading"><div class="loading-spinner"></div>Loading personal bests...</div>
                 </div>
 
-                <!-- Last Session Snapshot â€” compact clickable card -->
+                <!-- Last Session Snapshot - compact clickable card -->
                 <div id="lastSessionCard" class="last-session-compact" style="display:none;">
                     <div class="last-session-inner" id="lastSessionBody">
                         <div class="loading"><div class="loading-spinner"></div>Loading...</div>
@@ -3372,7 +3454,7 @@
                             <div id="turnApproachCharts" style="display:none;">
                                 <div id="turnApproachTimeline"></div>
                                 <div style="margin-top:20px;">
-                                    <h4 style="font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:10px;">Approach Velocity <span class="info-tip"><span class="tip-content">Speed in the last 15m before the wall, split into three 5m zones. <span class="tip-watch">Watch for big drop-offs</span> â€” maintain speed into the wall.</span></span></h4>
+                                    <h4 style="font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:10px;">Approach Velocity <span class="info-tip"><span class="tip-content">Speed in the last 15m before the wall, split into three 5m zones. <span class="tip-watch">Watch for big drop-offs</span> - maintain speed into the wall.</span></span></h4>
                                     <div class="chart-container" style="height:220px;"><canvas id="turnApproachVelChart"></canvas></div>
                                 </div>
                                 <div id="turnApproachMetrics"></div>
@@ -3404,8 +3486,8 @@
                         <!-- Velocity Profile Tab -->
                         <div class="turn-tab-content" id="turnTab-velocity">
                             <div style="margin-bottom:16px;">
-                                <h3 style="font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">Full Velocity Profile <span class="info-tip"><span class="tip-content">Complete velocity: approach (3 zones) â†’ wall â†’ departure (3 zones). Look for <strong>symmetry</strong> â€” approach speed should be matched or exceeded in departure.</span></span></h3>
-                                <p style="font-size:12px; color:var(--text-muted);">Approach through departure â€” 6 velocity zones</p>
+                                <h3 style="font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">Full Velocity Profile <span class="info-tip"><span class="tip-content">Complete velocity: approach (3 zones) -> wall -> departure (3 zones). Look for <strong>symmetry</strong> - approach speed should be matched or exceeded in departure.</span></span></h3>
+                                <p style="font-size:12px; color:var(--text-muted);">Approach through departure - 6 velocity zones</p>
                             </div>
                             <div class="chart-container" style="height:300px;"><canvas id="turnFullVelChart"></canvas></div>
                             <div id="turnVelocityMetrics"></div>
@@ -3698,6 +3780,86 @@
         // ============================================
         // THEME MANAGEMENT
         // ============================================
+        // TOAST NOTIFICATIONS (replaces alert())
+        // ============================================
+        const TOAST_ICONS = {
+            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+            error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+            info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+            warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+        };
+
+        /**
+         * Sanitize text for display: strip URLs (especially GitHub/hosting URLs) and
+         * internal identifiers so they never appear in toasts, modals, or error messages.
+         */
+        function sanitizeForDisplay(text) {
+            if (!text || typeof text !== 'string') return text || '';
+            // Remove full URLs (http/https) - replaces with generic label
+            let clean = text.replace(/https?:\/\/[^\s"'<>)}\]]+/gi, '[service]');
+            // Remove anything that looks like a GitHub pages URL fragment
+            clean = clean.replace(/[a-zA-Z0-9_-]+\.github\.io[^\s]*/gi, '[service]');
+            // Remove Supabase project references
+            clean = clean.replace(/[a-z]{20,}\.supabase\.co/gi, '[service]');
+            // Collapse multiple [service] references
+            clean = clean.replace(/(\[service\]\s*)+/g, '[service] ');
+            return clean.trim();
+        }
+
+        function showToast(message, type = 'info', duration = 4000) {
+            const safeMessage = sanitizeForDisplay(message);
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon ${type}">${TOAST_ICONS[type] || TOAST_ICONS.info}</div>
+                <div class="toast-msg">${safeMessage}</div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => { requestAnimationFrame(() => { toast.classList.add('show'); }); });
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // ============================================
+        // STYLED CONFIRM MODAL (replaces confirm())
+        // ============================================
+        function showConfirm(message, title = 'Confirm', isDanger = false) {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('confirmOverlay');
+                const titleEl = document.getElementById('confirmTitle');
+                const msgEl = document.getElementById('confirmMsg');
+                const okBtn = document.getElementById('confirmOk');
+                const cancelBtn = document.getElementById('confirmCancel');
+
+                titleEl.textContent = sanitizeForDisplay(title);
+                msgEl.textContent = sanitizeForDisplay(message);
+                okBtn.className = isDanger ? 'confirm-btn danger' : 'confirm-btn primary';
+                okBtn.textContent = isDanger ? 'Yes, remove' : 'Confirm';
+                overlay.classList.add('active');
+
+                function cleanup(result) {
+                    overlay.classList.remove('active');
+                    okBtn.removeEventListener('click', onOk);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    overlay.removeEventListener('click', onBackdrop);
+                    resolve(result);
+                }
+                function onOk() { cleanup(true); }
+                function onCancel() { cleanup(false); }
+                function onBackdrop(e) { if (e.target === overlay) cleanup(false); }
+
+                okBtn.addEventListener('click', onOk);
+                cancelBtn.addEventListener('click', onCancel);
+                overlay.addEventListener('click', onBackdrop);
+            });
+        }
+
+        // ============================================
         // MOBILE SIDEBAR
         // ============================================
         function toggleMobileSidebar() {
@@ -3772,7 +3934,7 @@
         // THEME-AWARE COLOR HELPERS
         // ============================================
         // ============================================
-        // INFO-TIP HELPER â€” generates tooltip HTML
+        // INFO-TIP HELPER - generates tooltip HTML
         // ============================================
         function infoTip(text, pos) {
             const cls = pos === 'left' ? ' tip-left' : pos === 'right' ? ' tip-right' : '';
@@ -3781,32 +3943,32 @@
 
         // Centralized tooltip content map
         const TIPS = {
-            // â”€â”€ HOME â”€â”€
+            // "" HOME ""
             perfPulse: 'Shows your <strong>recent trend</strong> across key metrics. Arrows compare your last 3 sessions to the previous 3.',
             personalBests: 'Your fastest time in each event. Tap a card to jump to the full race analysis.',
 
-            // â”€â”€ STARTS â”€â”€
-            reactionTime: 'Time from the start signal to first movement on the block. <span class="tip-good">Lower is better</span> â€” elite swimmers react in 0.55â€“0.70s.',
+            // "" STARTS ""
+            reactionTime: 'Time from the start signal to first movement on the block. <span class="tip-good">Lower is better</span> - elite swimmers react in 0.55-0.70s.',
             flightPhase: 'Time spent in the air from block departure to water entry. A longer flight with good distance is ideal.',
-            split15m: 'Total time from signal to the 15m mark â€” combines reaction, block, flight, and underwater phases.',
+            split15m: 'Total time from signal to the 15m mark - combines reaction, block, flight, and underwater phases.',
             velocity05: 'Average speed in the first 5m off the block. <span class="tip-good">Higher = faster start.</span>',
-            flightPath: 'Tracks your <strong>hip trajectory</strong> through the start. The curve shows height and distance traveled through takeoff, flight, and entry. A good start shows a smooth arc peaking around 0.8â€“1.0m with entry distance of 3â€“4m.',
+            flightPath: 'Tracks your <strong>hip trajectory</strong> through the start. The curve shows height and distance traveled through takeoff, flight, and entry. A good start shows a smooth arc peaking around 0.8-1.0m with entry distance of 3-4m.',
             uwSplits: 'Underwater split times per kick phase after entry. Consistent spacing indicates steady dolphin kicks.',
             uwVelocity: 'Speed during the underwater phase. <span class="tip-good">Aim to hold velocity above 1.8 m/s</span> through breakout. A sharp drop means early surfacing or weak kicks.',
             startVelocity: 'Full velocity profile from block to 15m. The chart should show a <strong>high peak at takeoff</strong> (4+ m/s) with a gradual taper. Sudden drops indicate energy loss at entry or transition.',
             blockMetrics: 'Detailed block phase: push time (time pushing off the block), takeoff velocity, and launch angle. <span class="tip-good">Shorter push + higher velocity = explosive start.</span>',
 
-            // â”€â”€ TURNS â”€â”€
-            turn15inout: 'Time from 15m before the wall to 15m after. <span class="tip-good">Lower is better</span> â€” this is the full turn cycle time.',
-            rotation: 'Time spent rotating at the wall (from hand contact to feet planting). <span class="tip-good">Faster rotation â‰ˆ 0.5â€“0.7s.</span>',
+            // "" TURNS ""
+            turn15inout: 'Time from 15m before the wall to 15m after. <span class="tip-good">Lower is better</span> - this is the full turn cycle time.',
+            rotation: 'Time spent rotating at the wall (from hand contact to feet planting). <span class="tip-good">Faster rotation ~ 0.5-0.7s.</span>',
             pushOff: 'Time spent pushing off the wall. Shorter push-off times with high velocity mean a more powerful turn.',
-            kickRate: 'Dolphin kicks per minute during the underwater phase. <span class="tip-good">Higher rates (110â€“130) with maintained velocity</span> indicate strong underwater work.',
-            approachVel: 'Speed in the last 15m before the wall, split into three 5m zones. <span class="tip-watch">Watch for big drop-offs</span> â€” you want to maintain speed into the wall.',
+            kickRate: 'Dolphin kicks per minute during the underwater phase. <span class="tip-good">Higher rates (110-130) with maintained velocity</span> indicate strong underwater work.',
+            approachVel: 'Speed in the last 15m before the wall, split into three 5m zones. <span class="tip-watch">Watch for big drop-offs</span> - you want to maintain speed into the wall.',
             wallContact: 'Time phases at the wall: adaptation (prep), rotation (flip), hand contact, and push-off. Quick transition through all four phases is key.',
             turnUWVel: 'Velocity after the wall push-off. <span class="tip-good">Good turns maintain 2.0+ m/s</span> through the underwater before breakout.',
-            turnFullVel: 'Complete velocity profile: approach (3 zones) â†’ wall â†’ departure (3 zones). Look for <strong>symmetry</strong> â€” approach speed should be matched or exceeded in departure.',
+            turnFullVel: 'Complete velocity profile: approach (3 zones) -> wall -> departure (3 zones). Look for <strong>symmetry</strong> - approach speed should be matched or exceeded in departure.',
 
-            // â”€â”€ RACES â”€â”€
+            // "" RACES ""
             raceTime: 'Official finish time. Compare against your personal best and the event record to gauge performance.',
             blockTime: 'Time from start signal to leaving the block. Combines reaction time and push-off.',
             splitTimes: 'Cumulative time at each wall. Switch to "Per Segment" to see individual lap times and identify pacing patterns.',
@@ -3818,7 +3980,7 @@
         };
 
         // ============================================
-        // SAMPLE DATA â€” demo records for empty teams
+        // SAMPLE DATA - demo records for empty teams
         // ============================================
         const SAMPLE_STARTS = [
             {
@@ -4093,7 +4255,9 @@
             userProfile: null,
             role: null, // 'athlete' or 'coach'
             athleteUuid: null,
+            coachUuid: null, // current coach's coach_uuid
             teamUuid: null,
+            isTeamOwner: false, // true if this coach created the team
             selectedAthleteUuid: null, // For coach view
             membershipStatus: null, // 'active', 'pending', 'inactive'
             currentPage: 'home',
@@ -4123,7 +4287,7 @@
                     clientFilter: rows => rows
                 };
             }
-            // Too many values â€” skip .in(), filter after fetch
+            // Too many values - skip .in(), filter after fetch
             const allowed = new Set(values);
             return {
                 query: query,
@@ -4186,9 +4350,9 @@
         }
 
         // ============================================
-        // AUTH â€” TOGGLE LOGIN / SIGNUP
+        // AUTH - TOGGLE LOGIN / SIGNUP
         // ============================================
-        // AUTH â€” TOGGLE LOGIN / SIGNUP
+        // AUTH - TOGGLE LOGIN / SIGNUP
         // ============================================
         function toggleAuthMode(mode) {
             const loginForm = document.getElementById('loginForm');
@@ -4210,7 +4374,7 @@
         }
 
         // ============================================
-        // AUTH â€” FORGOT PASSWORD
+        // AUTH - FORGOT PASSWORD
         // ============================================
         document.getElementById('forgotForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -4235,7 +4399,7 @@
                 successEl.classList.add('show');
                 successEl.style.display = 'block';
             } catch (err) {
-                errorEl.textContent = err.message || 'Failed to send reset link. Please try again.';
+                errorEl.textContent = sanitizeForDisplay(err.message) || 'Failed to send reset link. Please try again.';
                 errorEl.classList.add('show');
                 errorEl.style.display = 'block';
             } finally {
@@ -4244,9 +4408,9 @@
             }
         });
 
-        // Handle password reset callback (v02.04 — uses onAuthStateChange instead of hash parsing)
+        // Handle password reset callback (v02.04 - uses onAuthStateChange instead of hash parsing)
         // Supabase v2 fires PASSWORD_RECOVERY event when user clicks the email reset link.
-        // This works regardless of whether the user lands on GitHub Pages directly or inside Wix iframe.
+        // This works regardless of how the dashboard is hosted or embedded.
         let _passwordRecoverySession = null;
 
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
@@ -4321,7 +4485,7 @@
                 }, 2000);
 
             } catch (err) {
-                errorEl.textContent = err.message || 'Failed to update password. The reset link may have expired. Please request a new one.';
+                errorEl.textContent = sanitizeForDisplay(err.message) || 'Failed to update password. The reset link may have expired. Please request a new one.';
                 errorEl.style.display = 'block';
                 btn.disabled = false;
                 btn.textContent = 'Update Password';
@@ -4337,7 +4501,7 @@
         });
 
         // ============================================
-        // AUTH â€” SIGNUP (simple: name, email, password, role)
+        // AUTH - SIGNUP (simple: name, email, password, role)
         // Team join/create happens inside the dashboard after login
         // ============================================
         async function handleSignup(e) {
@@ -4406,7 +4570,7 @@
                 document.getElementById('email').value = email;
 
             } catch (e) {
-                errorEl.textContent = e.message || 'Failed to create account';
+                errorEl.textContent = sanitizeForDisplay(e.message) || 'Failed to create account';
                 errorEl.classList.add('show');
                 console.error('Signup error:', e);
             } finally {
@@ -4440,7 +4604,7 @@
                 showDashboard();
 
             } catch (e) {
-                errorEl.textContent = e.message || 'Failed to sign in';
+                errorEl.textContent = sanitizeForDisplay(e.message) || 'Failed to sign in';
                 errorEl.classList.add('show');
                 console.error('Login error:', e);
             } finally {
@@ -4456,7 +4620,9 @@
                 userProfile: null,
                 role: null,
                 athleteUuid: null,
+                coachUuid: null,
                 teamUuid: null,
+                isTeamOwner: false,
                 selectedAthleteUuid: null,
                 membershipStatus: null,
                 currentPage: 'home',
@@ -4506,14 +4672,46 @@
             if (coachData) {
                 appState.role = 'coach';
                 appState.userProfile = coachData;
+                appState.coachUuid = coachData.coach_uuid;
                 appState.teamUuid = coachData.team_uuid;
                 appState.membershipStatus = coachData.membership_status || 'active';
-                console.log('[loadUserProfile] Coach detected. teamUuid:', appState.teamUuid, 'membershipStatus:', appState.membershipStatus);
+
+                // Check if this coach is the team owner (created_by_uuid on teams table)
+                appState.isTeamOwner = false;
+                if (appState.teamUuid && appState.membershipStatus === 'active') {
+                    try {
+                        const { data: teamInfo } = await supabaseClient
+                            .from('teams')
+                            .select('created_by_uuid')
+                            .eq('team_uuid', appState.teamUuid)
+                            .maybeSingle();
+                        if (teamInfo && teamInfo.created_by_uuid === appState.user.id) {
+                            appState.isTeamOwner = true;
+                        } else if (!teamInfo?.created_by_uuid) {
+                            // Fallback: if no created_by_uuid column exists, check if this is the
+                            // earliest active coach on the team (first coach = team admin)
+                            const { data: earliestCoach } = await supabaseClient
+                                .from('coaches')
+                                .select('coach_uuid')
+                                .eq('team_uuid', appState.teamUuid)
+                                .eq('membership_status', 'active')
+                                .order('created_at', { ascending: true })
+                                .limit(1)
+                                .maybeSingle();
+                            if (earliestCoach && earliestCoach.coach_uuid === appState.coachUuid) {
+                                appState.isTeamOwner = true;
+                            }
+                        }
+                    } catch (ownerCheckErr) {
+                        console.warn('[loadUserProfile] Could not determine team ownership:', ownerCheckErr);
+                    }
+                }
+                console.log('[loadUserProfile] Coach detected. teamUuid:', appState.teamUuid, 'membershipStatus:', appState.membershipStatus, 'isTeamOwner:', appState.isTeamOwner);
                 return;
             }
 
             console.warn('User not found in athletes or coaches table');
-            // New signup â€” check auth metadata for role hint
+            // New signup - check auth metadata for role hint
             const meta = appState.user.user_metadata || {};
             if (meta.role === 'coach') {
                 appState.role = 'coach';
@@ -4635,7 +4833,7 @@
             updatePendingBanner();
 
             const isCoachTeamView = appState.role === 'coach' && !appState.selectedAthleteUuid && appState.teamUuid;
-            console.log('[loadHomeData] role:', appState.role, 'selectedAthlete:', appState.selectedAthleteUuid, 'teamUuid:', appState.teamUuid, 'â†’ isCoachTeamView:', isCoachTeamView);
+            console.log('[loadHomeData] role:', appState.role, 'selectedAthlete:', appState.selectedAthleteUuid, 'teamUuid:', appState.teamUuid, '-> isCoachTeamView:', isCoachTeamView);
 
             // Toggle visibility
             const coachDash = document.getElementById('coachDashboard');
@@ -4728,7 +4926,7 @@
             const ctxPart = appState.role === 'coach'
                 ? (appState.selectedAthleteUuid ? 'Individual athlete view' : 'Team performance overview')
                 : 'Performance snapshot';
-            document.getElementById('greetingTime').textContent = `${datePart}  Â·  ${ctxPart}`;
+            document.getElementById('greetingTime').textContent = `${datePart}  |  ${ctxPart}`;
             const badge = document.getElementById('userRoleBadge');
             if (badge) badge.textContent = appState.role === 'coach' ? 'COACH' : 'ATHLETE';
         }
@@ -4826,7 +5024,7 @@
                 el.style.transform = 'translateX(20px)';
                 setTimeout(() => el.remove(), 200);
 
-                // Store dismiss timestamp â€” suppress for 8 hours
+                // Store dismiss timestamp - suppress for 8 hours
                 try {
                     const dismissed = JSON.parse(localStorage.getItem('pa_dismissed_alerts') || '{}');
                     dismissed[alertId] = Date.now();
@@ -4842,7 +5040,7 @@
                 if (!ts) return false;
                 const eightHours = 8 * 60 * 60 * 1000;
                 if (Date.now() - ts > eightHours) {
-                    // Expired â€” remove from storage
+                    // Expired - remove from storage
                     delete dismissed[alertId];
                     localStorage.setItem('pa_dismissed_alerts', JSON.stringify(dismissed));
                     return false;
@@ -4852,8 +5050,8 @@
         }
 
         async function checkPendingApprovals() {
-            // Only coaches with an active team need this check
-            if (appState.role !== 'coach' || !appState.teamUuid) return;
+            // Only ACTIVE coaches with a team should see pending counts
+            if (appState.role !== 'coach' || !appState.teamUuid || appState.membershipStatus !== 'active') return;
 
             const badge = document.getElementById('pendingBadge');
             const banner = document.getElementById('pendingBanner');
@@ -4866,14 +5064,18 @@
                     .eq('team_uuid', appState.teamUuid)
                     .eq('membership_status', 'pending');
 
-                // Count pending coaches
+                // Count pending coaches (we will filter out self below)
                 const { data: pendingCoaches, error: e2 } = await supabaseClient
                     .from('coaches')
-                    .select('coach_uuid', { count: 'exact', head: false })
+                    .select('coach_uuid, auth_user_id', { count: 'exact', head: false })
                     .eq('team_uuid', appState.teamUuid)
                     .eq('membership_status', 'pending');
 
-                const totalPending = (pendingAthletes?.length || 0) + (pendingCoaches?.length || 0);
+                // Filter out current user from pending coaches count
+                const myAuthId = appState.user?.id;
+                const filteredPendingCoaches = (pendingCoaches || []).filter(c => c.auth_user_id !== myAuthId);
+
+                const totalPending = (pendingAthletes?.length || 0) + filteredPendingCoaches.length;
 
                 // Update nav badge
                 if (badge) {
@@ -4973,7 +5175,7 @@
                     <div class="pb-card">
                         <div class="event-name">${pb.event} <span class="rc-course-tag">${pb.course}</span></div>
                         <div class="pb-time">${formatTime(pb.best)}</div>
-                        <div class="pb-date">${new Date(pb.date).toLocaleDateString()} &middot; ${pb.count} race${pb.count > 1 ? 's' : ''}</div>
+                        <div class="pb-date">${new Date(pb.date).toLocaleDateString()} | ${pb.count} race${pb.count > 1 ? 's' : ''}</div>
                         <div class="trend-indicator ${pb.trend}">${trendIcons[pb.trend]} ${trendLabels[pb.trend]}</div>
                     </div>
                 `).join('');
@@ -5135,13 +5337,13 @@
             const notes = document.getElementById('goalNotesInput').value.trim();
 
             if (!targetValue || isNaN(targetValue)) {
-                alert('Please enter a valid target value');
+                showToast('Please enter a valid target value', 'warning');
                 return;
             }
 
             const athleteUuid = appState.role === 'athlete' ? appState.athleteUuid : appState.selectedAthleteUuid;
             if (!athleteUuid) {
-                alert('No athlete selected');
+                showToast('No athlete selected', 'warning');
                 return;
             }
 
@@ -5216,12 +5418,12 @@
                 await loadAlerts();
             } catch (e) {
                 console.error('Error saving goal:', e);
-                alert('Error saving goal: ' + e.message);
+                showToast('Error saving goal: ' + e.message, 'error');
             }
         }
 
         async function markGoalAchieved(goalUuid) {
-            if (!confirm('Mark this goal as achieved?')) return;
+            if (!(await showConfirm('Mark this goal as achieved?', 'Confirm'))) return;
             try {
                 const { error } = await supabaseClient
                     .from('goals')
@@ -5232,12 +5434,12 @@
                 await loadGoals();
             } catch (e) {
                 console.error('Error updating goal:', e);
-                alert('Error: ' + e.message);
+                showToast('Error: ' + e.message, 'error');
             }
         }
 
         async function deleteGoal(goalUuid) {
-            if (!confirm('Remove this goal?')) return;
+            if (!(await showConfirm('Remove this goal?', 'Remove Goal', true))) return;
             try {
                 const { error } = await supabaseClient
                     .from('goals')
@@ -5248,7 +5450,7 @@
                 await loadGoals();
             } catch (e) {
                 console.error('Error deleting goal:', e);
-                alert('Error: ' + e.message);
+                showToast('Error: ' + e.message, 'error');
             }
         }
 
@@ -5331,7 +5533,7 @@
                 const turnTrend = computeTrend(turn15s);
                 const bestTurn15 = turn15s.length ? Math.min(...turn15s) : null;
 
-                // Card 4: Best Race â€” pick the most-raced event
+                // Card 4: Best Race - pick the most-raced event
                 let raceCard = { value: '--', sub: 'No race data', trend: { trend: 'new-data', label: 'New' }, sparkline: '', eventLabel: 'Race Time' };
                 if (races.length) {
                     const eventMap = {};
@@ -5366,7 +5568,7 @@
                             <div class="pulse-value">${latestReaction ? latestReaction.toFixed(3) + 's' : '--'}</div>
                             <span class="pulse-trend ${reactionTrend.trend}">${trendIcon(reactionTrend.trend)} ${reactionTrend.label}</span>
                         </div>
-                        <div class="pulse-sub">Best: ${bestReaction ? bestReaction.toFixed(3) + 's' : '--'} &middot; ${reactions.length} trial${reactions.length !== 1 ? 's' : ''}</div>
+                        <div class="pulse-sub">Best: ${bestReaction ? bestReaction.toFixed(3) + 's' : '--'} | ${reactions.length} trial${reactions.length !== 1 ? 's' : ''}</div>
                         ${buildSparkline(reactions, 'var(--accent-orange)')}
                     </div>
 
@@ -5377,7 +5579,7 @@
                             <div class="pulse-value">${start15s.length ? start15s[start15s.length - 1].toFixed(2) + 's' : '--'}</div>
                             <span class="pulse-trend ${start15Trend.trend}">${trendIcon(start15Trend.trend)} ${start15Trend.label}</span>
                         </div>
-                        <div class="pulse-sub">Best: ${bestStart15 ? bestStart15.toFixed(2) + 's' : '--'} &middot; ${start15s.length} trial${start15s.length !== 1 ? 's' : ''}</div>
+                        <div class="pulse-sub">Best: ${bestStart15 ? bestStart15.toFixed(2) + 's' : '--'} | ${start15s.length} trial${start15s.length !== 1 ? 's' : ''}</div>
                         ${buildSparkline(start15s, 'var(--accent-blue)')}
                     </div>
 
@@ -5388,7 +5590,7 @@
                             <div class="pulse-value">${turn15s.length ? turn15s[turn15s.length - 1].toFixed(2) + 's' : '--'}</div>
                             <span class="pulse-trend ${turnTrend.trend}">${trendIcon(turnTrend.trend)} ${turnTrend.label}</span>
                         </div>
-                        <div class="pulse-sub">Best: ${bestTurn15 ? bestTurn15.toFixed(2) + 's' : '--'} &middot; ${turn15s.length} trial${turn15s.length !== 1 ? 's' : ''}</div>
+                        <div class="pulse-sub">Best: ${bestTurn15 ? bestTurn15.toFixed(2) + 's' : '--'} | ${turn15s.length} trial${turn15s.length !== 1 ? 's' : ''}</div>
                         ${buildSparkline(turn15s, 'var(--accent-cyan)')}
                     </div>
 
@@ -5399,19 +5601,19 @@
                             <div class="pulse-value">${raceCard.value}</div>
                             <span class="pulse-trend ${raceCard.trend.trend}">${trendIcon(raceCard.trend.trend)} ${raceCard.trend.label}</span>
                         </div>
-                        <div class="pulse-sub">${raceCard.sub} &middot; ${races.length} race${races.length !== 1 ? 's' : ''}</div>
+                        <div class="pulse-sub">${raceCard.sub} | ${races.length} race${races.length !== 1 ? 's' : ''}</div>
                         ${raceCard.sparkline}
                     </div>
                 `;
             } catch (e) {
                 console.error('Error loading performance pulse:', e);
-                container.innerHTML = '<div class="empty-state"><h3>Error loading metrics</h3><p>' + e.message + '</p></div>';
+                container.innerHTML = '<div class="empty-state"><h3>Error loading metrics</h3><p>' + sanitizeForDisplay(e.message) + '</p></div>';
             }
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ================================================================
         // COACH DASHBOARD FUNCTIONS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ================================================================
 
         // Helper: get all active team athletes with their UUIDs and names
         function toggleCoachSection(bodyId, chevronId) {
@@ -5442,7 +5644,7 @@
                 const countEl = document.getElementById('attentionCount');
                 if (countEl) countEl.textContent = remaining > 0 ? `(${remaining})` : '';
                 if (remaining === 0 && grid) {
-                    grid.innerHTML = '<div style="padding:12px 0; color:var(--text-muted); font-size:13px; display:flex; align-items:center; gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>All clear â€” no flags right now</div>';
+                    grid.innerHTML = '<div style="padding:12px 0; color:var(--text-muted); font-size:13px; display:flex; align-items:center; gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>All clear - no flags right now</div>';
                 }
             }, 250);
         }
@@ -5466,7 +5668,7 @@
             } catch(e) { return {}; }
         }
 
-        // â”€â”€ COACH FILTER STATE â”€â”€
+        // "" COACH FILTER STATE ""
         let coachFilters = { group: '', gender: '' };
         let _allTeamAthletes = null;
         let _teamGroups = null;
@@ -5536,7 +5738,7 @@
                     const genderSet = (_allTeamAthletes||[]).filter(a => a.gender).length;
                     let hint = `Showing ${athletes.length} of ${total}`;
                     if (coachFilters.gender && genderSet < total) {
-                        hint += ` (${total - genderSet} without gender set â€” update in Roster)`;
+                        hint += ` (${total - genderSet} without gender set - update in Roster)`;
                     }
                     countEl.textContent = hint;
                 } else {
@@ -5552,7 +5754,7 @@
             ]);
         }
 
-        // â”€â”€ GROUPS MODAL â”€â”€
+        // "" GROUPS MODAL ""
         async function openGroupsModal() {
             document.getElementById('groupsModal').classList.add('active');
             document.getElementById('groupEditPanel').style.display = 'none';
@@ -5605,7 +5807,7 @@
             const nameEl = document.getElementById('newGroupName');
             const colorEl = document.getElementById('newGroupColor');
             const name = nameEl.value.trim();
-            if (!name) { alert('Please enter a group name'); return; }
+            if (!name) { showToast('Please enter a group name', 'warning'); return; }
             try {
                 const { error } = await supabaseClient.from('athlete_groups').insert({
                     team_uuid: appState.teamUuid, group_name: name,
@@ -5614,17 +5816,17 @@
                 if (error) throw error;
                 nameEl.value = '';
                 await renderGroupsList();
-            } catch (e) { alert('Error: ' + e.message); }
+            } catch (e) { showToast('Error: ' + e.message, 'error'); }
         }
 
         async function deleteGroup(groupUuid) {
-            if (!confirm('Delete this group? Athletes stay on the team.')) return;
+            if (!(await showConfirm('Delete this group? Athletes stay on the team.', 'Delete Group', true))) return;
             try {
                 const { error } = await supabaseClient.from('athlete_groups').delete().eq('group_uuid', groupUuid);
                 if (error) throw error;
                 document.getElementById('groupEditPanel').style.display = 'none';
                 await renderGroupsList();
-            } catch (e) { alert('Error: ' + e.message); }
+            } catch (e) { showToast('Error: ' + e.message, 'error'); }
         }
 
         async function editGroupMembers(groupUuid, groupName, groupColor) {
@@ -5648,7 +5850,7 @@
 
             panel.innerHTML = `
                 <div class="group-edit-section">
-                    <div class="group-edit-title"><div class="group-color-dot" style="background:${groupColor}"></div>${groupName} â€” Members (${inGroup.length})</div>
+                    <div class="group-edit-title"><div class="group-color-dot" style="background:${groupColor}"></div>${groupName} - Members (${inGroup.length})</div>
                     <div class="group-member-chips">
                         ${inGroup.length ? inGroup.map(a => `
                             <span class="group-chip member">${a.first_name} ${a.last_name.charAt(0)}.<span class="chip-remove" onclick="removeFromGroup('${groupUuid}','${a.athlete_uuid}',\`${groupName}\`,'${groupColor}')">&times;</span></span>
@@ -5669,7 +5871,7 @@
                 if (error) throw error;
                 await editGroupMembers(groupUuid, groupName, groupColor);
                 await renderGroupsList();
-            } catch (e) { alert('Error: ' + e.message); }
+            } catch (e) { showToast('Error: ' + e.message, 'error'); }
         }
 
         async function removeFromGroup(groupUuid, athleteUuid, groupName, groupColor) {
@@ -5679,7 +5881,7 @@
                 if (error) throw error;
                 await editGroupMembers(groupUuid, groupName, groupColor);
                 await renderGroupsList();
-            } catch (e) { alert('Error: ' + e.message); }
+            } catch (e) { showToast('Error: ' + e.message, 'error'); }
         }
 
         async function updateAthleteGender(athleteUuid, gender) {
@@ -5691,7 +5893,7 @@
                     const ath = _allTeamAthletes.find(a => a.athlete_uuid === athleteUuid);
                     if (ath) ath.gender = gender || null;
                 }
-            } catch (e) { console.error('Error updating gender:', e); alert('Error: ' + e.message); }
+            } catch (e) { console.error('Error updating gender:', e); showToast('Error: ' + e.message, 'error'); }
         }
 
         // Helper: select an athlete from coach dashboard
@@ -5702,7 +5904,7 @@
             reloadActivePage();
         }
 
-        // â”€â”€ 1. TEAM PULSE â”€â”€
+        // "" 1. TEAM PULSE ""
         async function loadTeamPulse() {
             const container = document.getElementById('teamPulseGrid');
             if (!container) return;
@@ -5750,7 +5952,7 @@
                             <div class="pulse-value">${value !== null ? fmt(value) : '--'}</div>
                             <span class="pulse-trend stable" style="font-size:11px; color:var(--text-muted);">${athCount} athlete${athCount!==1?'s':''}</span>
                         </div>
-                        <div class="pulse-sub">Best: ${bestVal !== null ? fmt(bestVal) : '--'} Â· ${count} total trial${count!==1?'s':''}</div>
+                        <div class="pulse-sub">Best: ${bestVal !== null ? fmt(bestVal) : '--'} | ${count} total trial${count!==1?'s':''}</div>
                     </div>`;
                 };
 
@@ -5780,7 +5982,7 @@
             }
         }
 
-        // â”€â”€ 2. ATTENTION FLAGS â”€â”€
+        // "" 2. ATTENTION FLAGS ""
         async function loadAttentionFlags() {
             const container = document.getElementById('attentionGrid');
             const countEl = document.getElementById('attentionCount');
@@ -5847,7 +6049,7 @@
                     const pctWorse = ((recentAvg - olderAvg) / olderAvg * 100);
                     if (pctWorse > 5) {
                         flags.push({ type: 'decline', name: nameMap[uuid], uuid,
-                            desc: `Reaction time up ${pctWorse.toFixed(1)}% (${olderAvg.toFixed(3)}s â†’ ${recentAvg.toFixed(3)}s)`,
+                            desc: `Reaction time up ${pctWorse.toFixed(1)}% (${olderAvg.toFixed(3)}s -> ${recentAvg.toFixed(3)}s)`,
                             key: 'decline_rt_' + uuid });
                     }
                 });
@@ -5871,7 +6073,7 @@
                 if (countEl) countEl.textContent = visibleFlags.length > 0 ? `(${visibleFlags.length})` : '';
 
                 if (!visibleFlags.length) {
-                    container.innerHTML = '<div style="padding:12px 0; color:var(--text-muted); font-size:13px; display:flex; align-items:center; gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>All clear â€” no flags right now</div>';
+                    container.innerHTML = '<div style="padding:12px 0; color:var(--text-muted); font-size:13px; display:flex; align-items:center; gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>All clear - no flags right now</div>';
                     if (headerEl && !flags.length) headerEl.style.display = 'none';
                     return;
                 }
@@ -5900,7 +6102,7 @@
             }
         }
 
-        // â”€â”€ 3. TEAM ROSTER â”€â”€
+        // "" 3. TEAM ROSTER ""
         async function loadTeamRoster() {
             const container = document.getElementById('teamRosterBody');
             const countEl = document.getElementById('rosterCount');
@@ -5993,7 +6195,7 @@
             }
         }
 
-        // â”€â”€ 4. LEADERBOARDS â”€â”€
+        // "" 4. LEADERBOARDS ""
         async function loadEventRecords() {
             const container = document.getElementById('teamEventRecords');
             if (!container) return;
@@ -6075,7 +6277,7 @@
             }
         }
 
-        // â”€â”€ TEAM GOALS â”€â”€
+        // "" TEAM GOALS ""
         async function loadTeamGoals() {
             const container = document.getElementById('teamGoalsGrid');
             const countEl = document.getElementById('teamGoalsCount');
@@ -6280,10 +6482,10 @@
             const target = parseFloat(document.getElementById('tgTargetInput').value);
             const notes = document.getElementById('tgNotesInput').value.trim();
 
-            if (!athleteUuid) { alert('Please select an athlete'); return; }
-            if (!goalType) { alert('Please select a metric'); return; }
-            if (goalType === 'race_time' && !document.getElementById('tgEventSelect').value) { alert('Please select an event'); return; }
-            if (!target || isNaN(target)) { alert('Please enter a valid target'); return; }
+            if (!athleteUuid) { showToast('Please select an athlete', 'warning'); return; }
+            if (!goalType) { showToast('Please select a metric', 'warning'); return; }
+            if (goalType === 'race_time' && !document.getElementById('tgEventSelect').value) { showToast('Please select an event', 'warning'); return; }
+            if (!target || isNaN(target)) { showToast('Please enter a valid target', 'warning'); return; }
 
             // Fetch current best
             let currentBest = null;
@@ -6326,33 +6528,33 @@
                 await loadTeamGoals();
             } catch (e) {
                 console.error('Error saving team goal:', e);
-                alert('Error saving goal: ' + e.message);
+                showToast('Error saving goal: ' + e.message, 'error');
             }
         }
 
         async function markTeamGoalAchieved(goalUuid) {
-            if (!confirm('Mark this goal as achieved?')) return;
+            if (!(await showConfirm('Mark this goal as achieved?', 'Confirm'))) return;
             try {
                 const { error } = await supabaseClient.from('goals')
                     .update({ status: 'achieved', achieved_at: new Date().toISOString() })
                     .eq('goal_uuid', goalUuid);
                 if (error) throw error;
                 await loadTeamGoals();
-            } catch (e) { console.error('Error marking goal:', e); alert('Error: ' + e.message); }
+            } catch (e) { console.error('Error marking goal:', e); showToast('Error: ' + e.message, 'error'); }
         }
 
         async function archiveTeamGoal(goalUuid) {
-            if (!confirm('Archive this goal?')) return;
+            if (!(await showConfirm('Archive this goal?', 'Archive Goal'))) return;
             try {
                 const { error } = await supabaseClient.from('goals')
                     .update({ status: 'archived' })
                     .eq('goal_uuid', goalUuid);
                 if (error) throw error;
                 await loadTeamGoals();
-            } catch (e) { console.error('Error archiving goal:', e); alert('Error: ' + e.message); }
+            } catch (e) { console.error('Error archiving goal:', e); showToast('Error: ' + e.message, 'error'); }
         }
 
-        // â”€â”€ 5. RECENT TEAM ACTIVITY â”€â”€
+        // "" 5. RECENT TEAM ACTIVITY ""
         async function loadTeamActivity() {
             const container = document.getElementById('teamActivityFeed');
             if (!container) return;
@@ -6382,15 +6584,15 @@
                 const activities = [];
                 _ufilt7(startRes.data||[]).forEach(d => activities.push({
                     uuid: d.athlete_uuid, name: nameMap[d.athlete_uuid], type: 'start',
-                    date: d.source_date, desc: `Start Â· ${d.style||'freestyle'} Â· RT ${parseFloat(d.reaction_time_s||0).toFixed(3)}s`
+                    date: d.source_date, desc: `Start | ${d.style||'freestyle'} | RT ${parseFloat(d.reaction_time_s||0).toFixed(3)}s`
                 }));
                 _ufilt7(turnRes.data||[]).forEach(d => activities.push({
                     uuid: d.athlete_uuid, name: nameMap[d.athlete_uuid], type: 'turn',
-                    date: d.source_date, desc: `Turn Â· ${d.style||'freestyle'}`
+                    date: d.source_date, desc: `Turn | ${d.style||'freestyle'}`
                 }));
                 _ufilt7(raceRes.data||[]).forEach(d => { const _u = (d.course||'SCY').toUpperCase() === 'SCY' ? 'Yds' : 'm'; activities.push({
                     uuid: d.athlete_uuid, name: nameMap[d.athlete_uuid], type: 'race',
-                    date: d.source_date, desc: `Race Â· ${d.distance_m||''} ${_u} ${d.style||''} (${(d.course||'SCY').toUpperCase()}) Â· ${formatTime(parseFloat(d.race_time_s))}`
+                    date: d.source_date, desc: `Race | ${d.distance_m||''} ${_u} ${d.style||''} (${(d.course||'SCY').toUpperCase()}) | ${formatTime(parseFloat(d.race_time_s))}`
                 }); });
 
                 activities.sort((a,b) => (b.date||'').localeCompare(a.date||''));
@@ -6472,7 +6674,7 @@
                     html += `<div class="last-session-chip" onclick="navigateTo('starts')">
                         <div class="chip-icon start-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></div>
                         <div class="chip-text">
-                            <div class="chip-title">Last Start${s.style ? ' &middot; ' + s.style : ''} <span class="chip-date">${ago(s.source_date)}</span></div>
+                            <div class="chip-title">Last Start${s.style ? ' | ' + s.style : ''} <span class="chip-date">${ago(s.source_date)}</span></div>
                             <div class="chip-values">
                                 ${s.reaction_time_s ? '<div class="chip-val-group"><span class="chip-val">' + parseFloat(s.reaction_time_s).toFixed(3) + 's</span><span class="chip-val-label">Reaction</span></div>' : ''}
                                 ${s.split_15m_s ? '<div class="chip-val-group"><span class="chip-val">' + parseFloat(s.split_15m_s).toFixed(2) + 's</span><span class="chip-val-label">15m Split</span></div>' : ''}
@@ -6486,7 +6688,7 @@
                     html += `<div class="last-session-chip" onclick="navigateTo('turns')">
                         <div class="chip-icon turn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg></div>
                         <div class="chip-text">
-                            <div class="chip-title">Last Turn${t.style ? ' &middot; ' + t.style : ''} <span class="chip-date">${ago(t.source_date)}</span></div>
+                            <div class="chip-title">Last Turn${t.style ? ' | ' + t.style : ''} <span class="chip-date">${ago(t.source_date)}</span></div>
                             <div class="chip-values">
                                 ${t.split_15m_s ? '<div class="chip-val-group"><span class="chip-val">' + parseFloat(t.split_15m_s).toFixed(2) + 's</span><span class="chip-val-label">15m Split</span></div>' : ''}
                             </div>
@@ -6499,7 +6701,7 @@
                     html += `<div class="last-session-chip" onclick="navigateTo('races')">
                         <div class="chip-icon race-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg></div>
                         <div class="chip-text">
-                            <div class="chip-title">Last Race &middot; ${r.distance_m || ''} ${(r.course||'SCY').toUpperCase() === 'SCY' ? 'Yds' : 'm'} ${r.style || ''} <span class="rc-course-tag">${(r.course||'SCY').toUpperCase()}</span> <span class="chip-date">${ago(r.source_date)}</span></div>
+                            <div class="chip-title">Last Race | ${r.distance_m || ''} ${(r.course||'SCY').toUpperCase() === 'SCY' ? 'Yds' : 'm'} ${r.style || ''} <span class="rc-course-tag">${(r.course||'SCY').toUpperCase()}</span> <span class="chip-date">${ago(r.source_date)}</span></div>
                             <div class="chip-values">
                                 <div class="chip-val-group"><span class="chip-val">${formatTime(r.race_time_s)}</span><span class="chip-val-label">Final Time</span></div>
                             </div>
@@ -6591,10 +6793,10 @@
         // Label helpers
         function startLabel(s) {
             const style = (s.style || 'Start').charAt(0).toUpperCase() + (s.style || 'start').slice(1);
-            return `${style} â€“ ${formatDate(s.source_date)}`;
+            return `${style} - ${formatDate(s.source_date)}`;
         }
 
-        // â”€â”€ INIT COACH BAR â”€â”€
+        // "" INIT COACH BAR ""
         async function initStartCoachBar() {
             const scopeRow = document.querySelector('#startFilterBar .rfb-start-coach');
             if (appState.role !== 'coach' || !appState.teamUuid) {
@@ -6624,7 +6826,7 @@
                 groups.map(g => `<option value="${g.group_uuid}">${g.group_name}</option>`).join('');
         }
 
-        // â”€â”€ COACH SCOPE HANDLERS â”€â”€
+        // "" COACH SCOPE HANDLERS ""
         async function onStartAthleteChange() {
             const val = document.getElementById('startAthleteFilter').value;
             if (val) {
@@ -6678,11 +6880,11 @@
             infoEl.style.display = 'flex';
         }
 
-        // â”€â”€ MAIN LOAD â”€â”€
+        // "" MAIN LOAD ""
         async function loadStartData() {
             await initStartCoachBar();
 
-            // Wire filters (only once â€” use onchange directly)
+            // Wire filters (only once - use onchange directly)
             document.getElementById('startStyleFilter').onchange = () => { clearStartSelection(); applyStartFilters(); };
             document.getElementById('startDateFilter').onchange = () => { clearStartSelection(); applyStartFilters(); };
 
@@ -6700,7 +6902,7 @@
             });
 
             if (startModuleState._sampleMode) {
-                // Already in sample mode â€” just re-render
+                // Already in sample mode - just re-render
                 renderStartSelectorCards();
                 renderAllStartVisuals();
                 return;
@@ -6729,14 +6931,14 @@
                     query = query.eq('athlete_uuid', athleteUuid);
                     startModuleState._multiAthlete = false;
                 } else if (appState.role === 'coach' && appState.teamUuid) {
-                    // All Team mode â€” don't filter, load everything
+                    // All Team mode - don't filter, load everything
                     scopeUuids = (_allTeamAthletes || []).map(a => a.athlete_uuid);
                     startModuleState._multiAthlete = true;
                 } else {
                     startModuleState._multiAthlete = false;
                 }
 
-                // Apply gender filter â€” narrow scopeUuids to matching athletes
+                // Apply gender filter - narrow scopeUuids to matching athletes
                 if (genderFilter && appState.role === 'coach' && _allTeamAthletes) {
                     const genderUuids = new Set(_allTeamAthletes
                         .filter(a => a.gender === genderFilter)
@@ -6749,7 +6951,7 @@
                     startModuleState._multiAthlete = true;
                 }
 
-                // Apply scope to query â€” use .in() for small sets, client-side filter for large
+                // Apply scope to query - use .in() for small sets, client-side filter for large
                 if (scopeUuids) {
                     if (!scopeUuids.length) {
                         startModuleState.allStarts = [];
@@ -6760,7 +6962,7 @@
                     if (scopeUuids.length <= SUPABASE_IN_LIMIT) {
                         query = query.in('athlete_uuid', scopeUuids);
                     } else {
-                        // Too many UUIDs for URL â€” skip .in(), filter client-side after fetch
+                        // Too many UUIDs for URL - skip .in(), filter client-side after fetch
                         clientFilterSet = new Set(scopeUuids);
                         console.log('[loadStartRawData] Using client-side filter for', scopeUuids.length, 'athletes');
                     }
@@ -6943,7 +7145,7 @@
             </div>`;
         }
 
-        // â”€â”€ KPIs â”€â”€
+        // "" KPIs ""
         function renderStartKPIs() {
             const container = document.getElementById('startKpis');
             const starts = startModuleState.filteredStarts;
@@ -7023,7 +7225,7 @@
             }
         }
 
-        // â”€â”€ Trials Table â”€â”€
+        // "" Trials Table ""
         function renderStartTrials() {
             const container = document.getElementById('startTrialsTable');
             const starts = startModuleState.filteredStarts;
@@ -7057,7 +7259,7 @@
             }).join('')}</tbody></table></div>`;
         }
 
-        // â”€â”€ Block Phase Tab â”€â”€
+        // "" Block Phase Tab ""
         function renderBlockPhaseTab() {
             const container = document.getElementById('startBlockPhaseContent');
             const prim = getStartPrimary();
@@ -7110,7 +7312,7 @@
             const total = reaction + push + flight || 1;
 
             let html = `<div style="margin-bottom:16px;">
-                <h3 style="font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">Block Phase â€” ${startLabel(prim)}</h3>
+                <h3 style="font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">Block Phase - ${startLabel(prim)}</h3>
                 ${comp ? `<p style="font-size:12px; color:var(--accent-cyan);">Compared with ${startLabel(comp)}</p>` : ''}
             </div>`;
 
@@ -7165,7 +7367,7 @@
             container.innerHTML = html;
         }
 
-        // â”€â”€ Flight & Entry Tab (v01.21 â€” charts + cards) â”€â”€
+        // "" Flight & Entry Tab (v01.21 - charts + cards) ""
         function renderFlightEntryTab() {
             const chartsDiv = document.getElementById('startFlightCharts');
             const cardsDiv = document.getElementById('startFlightCards');
@@ -7186,15 +7388,15 @@
             const vc = (key) => comp ? parseFloat(comp[key]) : null;
             const fmtV = (val, d=2) => (val == null || isNaN(val)) ? '--' : val.toFixed(d);
 
-            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            // CHARTS SECTION â€” v01.23 Minimalist
-            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            // ============================================
+            // CHARTS SECTION - v01.23 Minimalist
+            // ============================================
             let cHtml = `<div style="margin-bottom:16px;">
-                <h3 style="font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">Flight & Entry â€” ${startLabel(prim)}</h3>
+                <h3 style="font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">Flight & Entry - ${startLabel(prim)}</h3>
                 ${comp ? `<p style="font-size:12px; color:var(--accent-cyan);">Compared with ${startLabel(comp)}</p>` : ''}
             </div>`;
 
-            // â”€â”€ 1. MINIMALIST FLIGHT PATH â”€â”€
+            // "" 1. MINIMALIST FLIGHT PATH ""
             const hipTO = vn('height_hip_takeoff');
             const hipEN = vn('height_hip_entry');
             const entryDist = vn('distance_to_water_entry');
@@ -7218,7 +7420,7 @@
                 const x0 = sx(0), y0 = sy(hipTO);
                 const x1 = sx(entryDist), y1 = sy(isNaN(hipEN) ? 0 : hipEN);
 
-                // Arc control â€” natural parabola
+                // Arc control - natural parabola
                 const apex = Math.max(hipTO, isNaN(hipEN)?hipTO:hipEN) * 1.25;
                 const cpX = sx(entryDist * 0.4), cpY = sy(apex);
 
@@ -7246,7 +7448,7 @@
                         <line x1="${padL}" y1="${waterY}" x2="${padL + plotW}" y2="${waterY}" stroke="rgba(0,194,255,0.25)" stroke-width="1"/>
                         <text x="${padL + plotW + 4}" y="${waterY + 3}" class="fp-lbl" style="font-size:8px; fill:rgba(0,194,255,0.4);">water</text>
 
-                        <!-- Block edge â€” simple vertical line -->
+                        <!-- Block edge - simple vertical line -->
                         <line x1="${padL}" y1="${sy(maxH * 0.6)}" x2="${padL}" y2="${waterY}" stroke="rgba(148,163,184,0.2)" stroke-width="2"/>
 
                         <!-- Distance label on water line -->
@@ -7287,11 +7489,11 @@
                         </div>
                         ${!isNaN(angleTO) ? `<div class="fp-stat">
                             <span class="fp-stat-label">Takeoff Angle</span>
-                            <span class="fp-stat-val">${fmtV(angleTO,1)}<span class="unit">Â°</span></span>
+                            <span class="fp-stat-val">${fmtV(angleTO,1)}<span class="unit">&deg;</span></span>
                         </div>` : ''}
                         ${!isNaN(angleEN) ? `<div class="fp-stat">
                             <span class="fp-stat-label">Entry Angle</span>
-                            <span class="fp-stat-val">${fmtV(angleEN,1)}<span class="unit">Â°</span></span>
+                            <span class="fp-stat-val">${fmtV(angleEN,1)}<span class="unit">&deg;</span></span>
                         </div>` : ''}
                     </div>
                 </div>`;
@@ -7299,7 +7501,7 @@
                 cHtml += '<div class="flight-path-container"><h4>Flight Path ${infoTip(TIPS.flightPath)}</h4><p style="color:var(--text-muted); font-size:12px;">No body position data for this trial</p></div>';
             }
 
-            // â”€â”€ 2. ENTRY GEOMETRY (full width) â”€â”€
+            // "" 2. ENTRY GEOMETRY (full width) ""
             const entAngle = vn('angle_hip_entry_deg');
             const toAngle = vn('angle_hip_takeoff_deg');
             const hfDist = vn('hor_dist_hands_feet_entry');
@@ -7309,16 +7511,16 @@
                     <div class="entry-geom-card">
                         <div class="egc-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 22h20L12 2z"/></svg></div>
                         <div class="egc-label">Hip Angle @ Takeoff</div>
-                        <div class="egc-value">${fmtV(toAngle,1)}<span class="egc-unit">Â°</span></div>
+                        <div class="egc-value">${fmtV(toAngle,1)}<span class="egc-unit">&deg;</span></div>
                         <div class="egc-bar"><div class="egc-bar-fill" style="width:${isNaN(toAngle)?0:Math.min(100,(toAngle/90)*100)}%; background:linear-gradient(90deg, rgba(245,166,35,0.8), rgba(245,166,35,0.5));"></div></div>
-                        ${comp && !isNaN(parseFloat(comp.angle_hip_takeoff_deg)) ? `<div style="font-size:11px; color:var(--accent-cyan); margin-top:4px;">Compare: ${parseFloat(comp.angle_hip_takeoff_deg).toFixed(1)}Â°</div>` : ''}
+                        ${comp && !isNaN(parseFloat(comp.angle_hip_takeoff_deg)) ? `<div style="font-size:11px; color:var(--accent-cyan); margin-top:4px;">Compare: ${parseFloat(comp.angle_hip_takeoff_deg).toFixed(1)}&deg;</div>` : ''}
                     </div>
                     <div class="entry-geom-card">
                         <div class="egc-icon" style="color:var(--accent-purple);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12l10 10 10-10M12 2v20"/></svg></div>
                         <div class="egc-label">Hip Angle @ Entry</div>
-                        <div class="egc-value">${fmtV(entAngle,1)}<span class="egc-unit">Â°</span></div>
+                        <div class="egc-value">${fmtV(entAngle,1)}<span class="egc-unit">&deg;</span></div>
                         <div class="egc-bar"><div class="egc-bar-fill" style="width:${isNaN(entAngle)?0:Math.min(100,(entAngle/90)*100)}%; background:linear-gradient(90deg, rgba(167,139,250,0.8), rgba(167,139,250,0.5));"></div></div>
-                        ${comp && !isNaN(parseFloat(comp.angle_hip_entry_deg)) ? `<div style="font-size:11px; color:var(--accent-cyan); margin-top:4px;">Compare: ${parseFloat(comp.angle_hip_entry_deg).toFixed(1)}Â°</div>` : ''}
+                        ${comp && !isNaN(parseFloat(comp.angle_hip_entry_deg)) ? `<div style="font-size:11px; color:var(--accent-cyan); margin-top:4px;">Compare: ${parseFloat(comp.angle_hip_entry_deg).toFixed(1)}&deg;</div>` : ''}
                     </div>
                     <div class="entry-geom-card">
                         <div class="egc-icon" style="color:var(--accent-cyan);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 8l4 4-4 4"/><path d="M3 12h18"/><path d="M7 8l-4 4 4 4"/></svg></div>
@@ -7330,22 +7532,22 @@
                 </div>
             </div>`;
 
-            // â”€â”€ 3. VELOCITY DECAY LINE CHART â”€â”€
+            // "" 3. VELOCITY DECAY LINE CHART ""
             const velKeys = ['hor_vel_hip_flight', 'hor_vel_hands_entry', 'hor_vel_hip_to_kick1', 'hor_vel_hip_3kicks', 'hor_vel_hip_stroke1', 'hor_vel_hip_stroke2'];
-            const velLabels = ['Hip (Flight)', 'Hands (Entry)', 'Hipâ†’Kick 1', '3 Kicks', 'Stroke 1', 'Stroke 2'];
+            const velLabels = ['Hip (Flight)', 'Hands (Entry)', 'Hip->Kick 1', '3 Kicks', 'Stroke 1', 'Stroke 2'];
             const primVels = velKeys.map(k => { const x = parseFloat(prim[k]); return isNaN(x) ? null : x; });
             const hasVelData = primVels.some(v => v !== null);
 
             if (hasVelData) {
                 cHtml += `<div class="vel-decay-container">
-                    <h4>Velocity Profile â€” Flight to Swim</h4>
+                    <h4>Velocity Profile - Flight to Swim</h4>
                     <div class="chart-container" style="height:260px;"><canvas id="flightVelDecayChart"></canvas></div>
                 </div>`;
             }
 
             chartsDiv.innerHTML = cHtml;
 
-            // â”€â”€ Render velocity decay Chart.js â”€â”€
+            // "" Render velocity decay Chart.js ""
             if (hasVelData) {
                 const canvas = document.getElementById('flightVelDecayChart');
                 const filteredLabels = [], filteredPrim = [], filteredComp = [];
@@ -7404,23 +7606,23 @@
                 });
             }
 
-            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            // KEY METRICS â€” compact summary below charts
-            // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            // ============================================
+            // KEY METRICS - compact summary below charts
+            // ============================================
             let html = `<div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border-color);">
                 <h4 style="font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px;">Key Metrics</h4>
             </div>`;
 
-            // Takeoff velocities â€” not shown in any chart above, always display
+            // Takeoff velocities - not shown in any chart above, always display
             html += `<h4 style="font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:10px;">Takeoff Velocity</h4>
             <div class="start-metric-grid">
                 ${startMetricCard('Horizontal', v('v_takeoff_hor'), 'm/s', comp ? startDelta(vn('v_takeoff_hor'), vc('v_takeoff_hor'), false) : '')}
                 ${startMetricCard('Vertical', v('v_takeoff_ver'), 'm/s', comp ? startDelta(vn('v_takeoff_ver'), vc('v_takeoff_ver'), false) : '')}
                 ${startMetricCard('Resultant', v('v_takeoff_res'), 'm/s', comp ? startDelta(vn('v_takeoff_res'), vc('v_takeoff_res'), false) : '')}
-                ${startMetricCard('Takeoff Angle', v('takeoff_angle_deg', 1), 'Â°', comp ? startDelta(vn('takeoff_angle_deg'), vc('takeoff_angle_deg'), false) : '')}
+                ${startMetricCard('Takeoff Angle', v('takeoff_angle_deg', 1), '&deg;', comp ? startDelta(vn('takeoff_angle_deg'), vc('takeoff_angle_deg'), false) : '')}
             </div>`;
 
-            // Quick-reference summary â€” entry distance + key heights + peak velocity
+            // Quick-reference summary - entry distance + key heights + peak velocity
             html += `<h4 style="font-size:13px; font-weight:600; color:var(--text-secondary); margin:20px 0 10px;">Flight Summary</h4>
             <div class="start-metric-grid">
                 ${startMetricCard('Entry Distance', v('distance_to_water_entry'), 'm', comp ? startDelta(vn('distance_to_water_entry'), vc('distance_to_water_entry'), false) : '')}
@@ -7434,7 +7636,7 @@
             cardsDiv.innerHTML = html;
         }
 
-        // â”€â”€ Underwater Tab â”€â”€
+        // "" Underwater Tab ""
         function renderUnderwaterTab() {
             const contentDiv = document.getElementById('startUnderwaterContent');
             const chartsDiv = document.getElementById('startUnderwaterCharts');
@@ -7461,7 +7663,7 @@
             const vn = (key) => parseFloat(prim[key]);
             const vc = (key) => comp ? parseFloat(comp[key]) : null;
 
-            // â”€â”€ Split Times Chart (horizontal bar) â”€â”€
+            // "" Split Times Chart (horizontal bar) ""
             const splitCanvas = document.getElementById('uwSplitChart');
             const splitLabels = ['5m', '7.5m', '10m', '15m'];
             const splitKeys = ['split_5m_s', 'split_7_5m_s', 'split_10m_s', 'split_15m_s'];
@@ -7507,7 +7709,7 @@
                 }
             });
 
-            // â”€â”€ Underwater Velocity Progression Chart (line) â”€â”€
+            // "" Underwater Velocity Progression Chart (line) ""
             const velCanvas = document.getElementById('uwVelocityChart');
             const velLabels = ['Entry', 'Kick 1', '3 Kicks', 'Stroke 1', 'Stroke 2'];
             const velKeys = ['hor_vel_hands_entry', 'hor_vel_hip_to_kick1', 'hor_vel_hip_3kicks', 'hor_vel_hip_stroke1', 'hor_vel_hip_stroke2'];
@@ -7557,9 +7759,9 @@
                 }
             });
 
-            // â”€â”€ Metrics below charts â”€â”€
+            // "" Metrics below charts ""
             let mHtml = `<div style="margin-bottom:16px;">
-                <h3 style="font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">Underwater Details â€” ${startLabel(prim)}</h3>
+                <h3 style="font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">Underwater Details - ${startLabel(prim)}</h3>
                 ${comp ? `<p style="font-size:12px; color:var(--accent-cyan);">Compared with ${startLabel(comp)}</p>` : ''}
             </div>`;
 
@@ -7581,7 +7783,7 @@
             metricsDiv.innerHTML = mHtml;
         }
 
-        // â”€â”€ Velocity Tab â”€â”€
+        // "" Velocity Tab ""
         function renderStartVelocityTab() {
             const starts = startModuleState.filteredStarts;
             const prim = getStartPrimary();
@@ -7669,7 +7871,7 @@
             }
         }
 
-        // â”€â”€ Start Summary Tab â”€â”€
+        // "" Start Summary Tab ""
         function renderStartSummary() {
             const container = document.getElementById('startSummaryContent');
             const prim = getStartPrimary();
@@ -7750,7 +7952,7 @@
                     { label: 'Vel 5-10m', key: 'avg_vel_5_10', d: 2, unit: 'm/s', lower: false },
                     { label: 'Vel 10-15m', key: 'avg_vel_10_15', d: 2, unit: 'm/s', lower: false },
                     { label: 'Takeoff Velocity', key: 'v_takeoff_res', d: 2, unit: 'm/s', lower: false },
-                    { label: 'Takeoff Angle', key: 'takeoff_angle_deg', d: 1, unit: 'Â°', lower: false },
+                    { label: 'Takeoff Angle', key: 'takeoff_angle_deg', d: 1, unit: '&deg;', lower: false },
                     { label: 'Entry Distance', key: 'distance_to_water_entry', d: 2, unit: 'm', lower: false },
                     { label: 'Kick Rate', key: 'kick_rate', d: 1, unit: '/min', lower: false },
                 ];
@@ -7785,8 +7987,8 @@
         // DATA LOADING - TURNS (Modular v01.21)
         // v01.17 FIX: Corrected all column name mismatches against actual turn_raw view
         // v01.18 FIX: Derive pre-turn approach from existing columns (no SQL migration needed)
-        // v01.21 UX: (1) Approach splits â†’ segmented timeline with 15m/5m/WALL markers
-        //            (2) Wall contact phase order fixed: Adapt â†’ Hand â†’ Rotate â†’ Push
+        // v01.21 UX: (1) Approach splits -> segmented timeline with 15m/5m/WALL markers
+        //            (2) Wall contact phase order fixed: Adapt -> Hand -> Rotate -> Push
         //            (3) Info icon tooltips on wall contact metrics
         //            (4) Login branding: "Peak Athlete / Train Smarter. Reach Your Peak."
         // TODO: Welcome tour overlay for new users (after all modules complete)
@@ -7811,7 +8013,7 @@
 
         function turnLabel(t) {
             const style = (t.style || 'Turn').charAt(0).toUpperCase() + (t.style || 'turn').slice(1);
-            return `${style} â€“ ${formatDate(t.source_date)}`;
+            return `${style} - ${formatDate(t.source_date)}`;
         }
 
         function turnDelta(a, b, lowerBetter = true) {
@@ -7831,7 +8033,7 @@
             </div>`;
         }
 
-        // â”€â”€ INIT TURN COACH BAR â”€â”€
+        // "" INIT TURN COACH BAR ""
         async function initTurnCoachBar() {
             const scopeRow = document.querySelector('#turnFilterBar .rfb-turn-coach');
             if (appState.role !== 'coach' || !appState.teamUuid) {
@@ -7859,7 +8061,7 @@
                 groups.map(g => `<option value="${g.group_uuid}">${g.group_name}</option>`).join('');
         }
 
-        // â”€â”€ TURN COACH SCOPE HANDLERS â”€â”€
+        // "" TURN COACH SCOPE HANDLERS ""
         async function onTurnAthleteChange() {
             const val = document.getElementById('turnAthleteFilter').value;
             if (val) {
@@ -7913,7 +8115,7 @@
             infoEl.style.display = 'flex';
         }
 
-        // â”€â”€ MAIN TURN LOAD â”€â”€
+        // "" MAIN TURN LOAD ""
         async function loadTurnData() {
             await initTurnCoachBar();
 
@@ -7933,7 +8135,7 @@
             });
 
             if (turnModuleState._sampleMode) {
-                // Already in sample mode â€” just re-render
+                // Already in sample mode - just re-render
                 renderTurnSelectorCards();
                 renderAllTurnVisuals();
                 return;
@@ -8144,7 +8346,7 @@
             else if (tab === 'summary') renderTurnSummary();
         }
 
-        // â”€â”€ Turn KPIs â”€â”€
+        // "" Turn KPIs ""
         function renderTurnKPIs() {
             const container = document.getElementById('turnKpis');
             const turns = turnModuleState.filteredTurns;
@@ -8209,7 +8411,7 @@
             }
         }
 
-        // â”€â”€ Turn Trials Table â”€â”€
+        // "" Turn Trials Table ""
         function renderTurnTrials() {
             const container = document.getElementById('turnTrialsTable');
             const turns = turnModuleState.filteredTurns;
@@ -8239,11 +8441,11 @@
             }).join('')}</tbody></table></div>`;
         }
 
-        // â”€â”€ Derive pre-turn approach data â”€â”€
+        // "" Derive pre-turn approach data ""
         // Prefers direct columns from updated v_turn_kpis view.
         // Falls back to derived calculation from combined times if direct columns are null.
         function deriveTurnPre(t) {
-            // Direct columns (from updated view â€” may be null if view not yet updated)
+            // Direct columns (from updated view - may be null if view not yet updated)
             const directSplit15 = parseFloat(t.split_15m_pre_s);
             const directSplit10 = parseFloat(t.split_10m_pre_s);
             const directSplit5  = parseFloat(t.split_5m_pre_s);
@@ -8289,7 +8491,7 @@
             };
         }
 
-        // â”€â”€ Approach Tab â”€â”€
+        // "" Approach Tab ""
         function renderTurnApproach() {
             const contentDiv = document.getElementById('turnApproachContent');
             const chartsDiv = document.getElementById('turnApproachCharts');
@@ -8454,7 +8656,7 @@
                 }
             });
 
-            // Metric cards â€” enhanced with 3-zone and new metrics
+            // Metric cards - enhanced with 3-zone and new metrics
             let mHtml = `<h4 style="font-size:13px; font-weight:600; color:var(--text-secondary); margin:16px 0 10px;">Approach Details</h4>
             <div class="start-metric-grid">`;
             if (threeZone) {
@@ -8481,7 +8683,7 @@
             metricsDiv.innerHTML = mHtml;
         }
 
-        // â”€â”€ Wall Contact Tab â”€â”€
+        // "" Wall Contact Tab ""
         // Info icon SVG helper
         // wallTip renders label + tooltip for wall contact metrics
 
@@ -8506,11 +8708,11 @@
             const total = adaption + rotation + handContact + pushOff || 1;
 
             let html = `<div style="margin-bottom:16px;">
-                <h3 style="font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">Wall Contact â€” ${turnLabel(prim)}</h3>
+                <h3 style="font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">Wall Contact - ${turnLabel(prim)}</h3>
                 ${comp ? `<p style="font-size:12px; color:var(--accent-cyan);">Compared with ${turnLabel(comp)}</p>` : ''}
             </div>`;
 
-            // Phase bar â€” correct biomechanical order: Adapt â†’ Hand â†’ Rotate â†’ Push
+            // Phase bar - correct biomechanical order: Adapt -> Hand -> Rotate -> Push
             html += `<div class="phase-bar-stack">
                 <div class="phase-bar-segment" style="width:${(adaption/total*100).toFixed(1)}%; background:rgba(245,166,35,0.85);">
                     <span class="seg-label">Adapt</span><span class="seg-value">${adaption.toFixed(3)}s</span>
@@ -8545,14 +8747,14 @@
                 ${turnMetricCard(wallTip('Hand Contact', 'Duration the hands are in contact with the wall. A shorter contact time typically means a faster transition into the turn.'), handContact.toFixed(3), 's', comp ? turnDelta(handContact, parseFloat(comp.hand_contact_time_s)) : '')}
                 ${turnMetricCard(wallTip('Rotation', 'Time to complete the flip or turning motion after leaving the wall. Faster rotation helps maintain momentum.'), rotation.toFixed(3), 's', comp ? turnDelta(rotation, parseFloat(comp.rotation_time_s)) : '')}
                 ${turnMetricCard(wallTip('Push-Off', 'Time spent pushing off the wall with the feet. A powerful, quick push-off generates higher exit velocity.'), pushOff.toFixed(3), 's', comp ? turnDelta(pushOff, parseFloat(comp.push_off_time_s)) : '')}
-                ${turnMetricCard(wallTip('Total Wall Time', 'Combined time for all wall contact phases. Lower is generally better â€” it means less time on the wall and more time swimming.'), total.toFixed(3), 's', comp ? turnDelta(total, (parseFloat(comp.adaption_time_s)||0)+(parseFloat(comp.rotation_time_s)||0)+(parseFloat(comp.hand_contact_time_s)||0)+(parseFloat(comp.push_off_time_s)||0)) : '')}
+                ${turnMetricCard(wallTip('Total Wall Time', 'Combined time for all wall contact phases. Lower is generally better - it means less time on the wall and more time swimming.'), total.toFixed(3), 's', comp ? turnDelta(total, (parseFloat(comp.adaption_time_s)||0)+(parseFloat(comp.rotation_time_s)||0)+(parseFloat(comp.hand_contact_time_s)||0)+(parseFloat(comp.push_off_time_s)||0)) : '')}
                 ${turnMetricCard('Push-Off Velocity', prim.push_off_velocity ? parseFloat(prim.push_off_velocity).toFixed(2) : '--', 'm/s', comp && comp.push_off_velocity ? turnDelta(parseFloat(prim.push_off_velocity), parseFloat(comp.push_off_velocity), false) : '')}
             </div>`;
 
             container.innerHTML = html;
         }
 
-        // â”€â”€ Turn Underwater Tab â”€â”€
+        // "" Turn Underwater Tab ""
         function renderTurnUnderwater() {
             const contentDiv = document.getElementById('turnUWContent');
             const chartsDiv = document.getElementById('turnUWCharts');
@@ -8581,9 +8783,9 @@
             const s5 = parseFloat(prim.split_5m_s) || 0;
             const s10 = parseFloat(prim.split_10m_s) || 0;
             const s15 = parseFloat(prim.split_15m_s) || 0;
-            const seg1 = s5;           // wall â†’ 5m
-            const seg2 = s10 - s5;     // 5m â†’ 10m
-            const seg3 = s15 - s10;    // 10m â†’ 15m
+            const seg1 = s5;           // wall -> 5m
+            const seg2 = s10 - s5;     // 5m -> 10m
+            const seg3 = s15 - s10;    // 10m -> 15m
             const totalPost = s15 || 1;
 
             function buildPostTimeline(g1, g2, g3, tot, colors, isCompare) {
@@ -8592,17 +8794,17 @@
                     <span class="approach-wall-label"${isCompare ? ' style="color:var(--accent-cyan);"' : ''}>WALL</span>
                     <div class="approach-wall"${isCompare ? ' style="height:44px; background:var(--accent-cyan); box-shadow:0 0 8px rgba(0,194,255,0.3);"' : ''}></div>
                     <div class="approach-seg" style="flex:${Math.max(15, (g1/tot)*100)}; background:${colors[0]}; margin:0 3px;">
-                        <span class="seg-zone"${isCompare ? ' style="display:none;"' : ''}>Wall â†’ 5m</span>
+                        <span class="seg-zone"${isCompare ? ' style="display:none;"' : ''}>Wall -> 5m</span>
                         <span class="seg-time"${isCompare ? ' style="font-size:12px;"' : ''}>${pf(g1)}s</span>
                     </div>
                     <div class="approach-marker"><span class="marker-dist">5m</span><span class="marker-line"></span></div>
                     <div class="approach-seg" style="flex:${Math.max(15, (g2/tot)*100)}; background:${colors[1]}; margin:0 3px;">
-                        <span class="seg-zone"${isCompare ? ' style="display:none;"' : ''}>5m â†’ 10m</span>
+                        <span class="seg-zone"${isCompare ? ' style="display:none;"' : ''}>5m -> 10m</span>
                         <span class="seg-time"${isCompare ? ' style="font-size:12px;"' : ''}>${pf(g2)}s</span>
                     </div>
                     <div class="approach-marker"><span class="marker-dist">10m</span><span class="marker-line"></span></div>
                     <div class="approach-seg" style="flex:${Math.max(15, (g3/tot)*100)}; background:${colors[2]}; margin:0 3px;">
-                        <span class="seg-zone"${isCompare ? ' style="display:none;"' : ''}>10m â†’ 15m</span>
+                        <span class="seg-zone"${isCompare ? ' style="display:none;"' : ''}>10m -> 15m</span>
                         <span class="seg-time"${isCompare ? ' style="font-size:12px;"' : ''}>${pf(g3)}s</span>
                     </div>
                     <div class="approach-marker"><span class="marker-dist">15m</span><span class="marker-line"></span></div>
@@ -8634,7 +8836,7 @@
 
             timelineDiv.innerHTML = tlHtml;
 
-            // Post-turn velocity (line chart â€” kept)
+            // Post-turn velocity (line chart - kept)
             const velLabels = ['0-5m', '5-10m', '10-15m'];
             const velKeys = ['avg_vel_0_5', 'avg_vel_5_10', 'avg_vel_10_15'];
             const primVels = velKeys.map(k => parseFloat(prim[k]) || 0);
@@ -8679,7 +8881,7 @@
             metricsDiv.innerHTML = mHtml;
         }
 
-        // â”€â”€ Full Velocity Profile Tab â”€â”€
+        // "" Full Velocity Profile Tab ""
         function renderTurnVelocityProfile() {
             const turns = turnModuleState.filteredTurns;
             const prim = getTurnPrimary();
@@ -8766,7 +8968,7 @@
                 }));
             }
 
-            // Wall annotation â€” position depends on number of zones
+            // Wall annotation - position depends on number of zones
             const wallIdx = useThreeZone ? 2.5 : 1.5;  // between last pre and first post
             const wallPlugin = {
                 id: 'wallAnnotation',
@@ -8819,7 +9021,7 @@
             }
         }
 
-        // â”€â”€ Turn Summary Tab â”€â”€
+        // "" Turn Summary Tab ""
         function renderTurnSummary() {
             const container = document.getElementById('turnSummaryContent');
             const prim = getTurnPrimary();
@@ -8991,7 +9193,7 @@
             setupRaceChartToggle();
             await initRaceCoachBar();
             if (raceModuleState._sampleMode) {
-                // Already in sample mode â€” just re-render
+                // Already in sample mode - just re-render
                 populateRaceFilters();
                 renderRaceSelectorCards();
                 renderAllRaceVisuals();
@@ -9001,7 +9203,7 @@
             applyRaceFilters();
         }
 
-        // â”€â”€ RACE COACH BAR â”€â”€
+        // "" RACE COACH BAR ""
         async function initRaceCoachBar() {
             const scopeRow = document.querySelector('#raceFilterBar .rfb-coach-only');
             if (appState.role !== 'coach' || !appState.teamUuid) {
@@ -9120,7 +9322,7 @@
                     raceModuleState._multiAthlete = false;
                 }
 
-                // Apply gender filter â€” narrow scopeUuids to matching athletes
+                // Apply gender filter - narrow scopeUuids to matching athletes
                 if (genderFilter && appState.role === 'coach' && _allTeamAthletes) {
                     const genderUuids = new Set(_allTeamAthletes
                         .filter(a => a.gender === genderFilter)
@@ -9247,7 +9449,7 @@
             courseEl.innerHTML = '<option value="">All Courses</option>' +
                 [...courses].sort().map(c => `<option value="${c}">${c}</option>`).join('');
             if (currentCourse && courses.has(currentCourse)) courseEl.value = currentCourse;
-            // Event filter â€” label uses unit from dominant course or generic
+            // Event filter - label uses unit from dominant course or generic
             const activeCourse = courseEl.value || ([...courses].length === 1 ? [...courses][0] : '');
             const unit = activeCourse === 'SCY' ? 'Yds' : (activeCourse === 'SCM' || activeCourse === 'LCM') ? 'm' : '';
             document.getElementById('raceEventFilter').innerHTML = '<option value="">All Events</option>' +
@@ -9706,7 +9908,7 @@
 
             container.innerHTML = `
                 <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                    <span style="font-size:13px;color:var(--text-secondary);">${formatDate(race.source_date)} &mdash; ${raceLabel(race)}</span>
+                    <span style="font-size:13px;color:var(--text-secondary);">${formatDate(race.source_date)}  -  ${raceLabel(race)}</span>
                     <span class="mono" style="font-size:14px;font-weight:600;">${raceTime ? formatTime(raceTime) : '--'}</span>
                 </div>
                 <div class="split-bars">
@@ -9808,7 +10010,7 @@
             if (compare) getPhaseMetrics(compare.mj).forEach(m => { cmpMap[m.label] = m.value; });
 
             container.innerHTML = `
-                <div style="margin-bottom:12px;"><span style="font-size:13px;color:var(--text-secondary);">${formatDate(race.source_date)} &mdash; ${raceLabel(race)}</span></div>
+                <div style="margin-bottom:12px;"><span style="font-size:13px;color:var(--text-secondary);">${formatDate(race.source_date)}  -  ${raceLabel(race)}</span></div>
                 ${metrics.length ? `<div class="race-detail-metrics">
                     ${metrics.map(m => `<div class="race-metric-item"><span class="race-metric-label">${m.label}</span><span class="race-metric-value">${m.value.toFixed(2)}s ${cmpMap[m.label] != null ? deltaStr(m.value, cmpMap[m.label]) : ''}</span></div>`).join('')}
                 </div>` : '<div class="empty-state"><h3>No start phase data</h3></div>'}
@@ -10135,6 +10337,13 @@
             const section = document.getElementById('pendingMembersSection');
             const container = document.getElementById('pendingMembers');
 
+            // Only ACTIVE coaches can see and manage pending members
+            // A pending coach must not see this section (prevents self-approval)
+            if (appState.role !== 'coach' || appState.membershipStatus !== 'active') {
+                section.style.display = 'none';
+                return;
+            }
+
             try {
                 // Fetch pending athletes
                 const { data: pendingAthletes } = await supabaseClient
@@ -10144,17 +10353,21 @@
                     .eq('membership_status', 'pending')
                     .order('created_at', { ascending: false });
 
-                // Fetch pending coaches
+                // Fetch pending coaches (exclude self by coach_uuid)
                 const { data: pendingCoaches } = await supabaseClient
                     .from('coaches')
-                    .select('coach_uuid, coach_name, created_at')
+                    .select('coach_uuid, coach_name, auth_user_id, created_at')
                     .eq('team_uuid', appState.teamUuid)
                     .eq('membership_status', 'pending')
                     .order('created_at', { ascending: false });
 
+                // Filter out the current user from the pending coaches list
+                const myAuthId = appState.user?.id;
+                const filteredCoaches = (pendingCoaches || []).filter(c => c.auth_user_id !== myAuthId);
+
                 const allPending = [
                     ...(pendingAthletes || []).map(a => ({ ...a, type: 'athlete', name: a.first_name + ' ' + a.last_name, id: a.athlete_uuid })),
-                    ...(pendingCoaches || []).map(c => ({ ...c, type: 'coach', name: c.coach_name, id: c.coach_uuid }))
+                    ...filteredCoaches.map(c => ({ ...c, type: 'coach', name: c.coach_name, id: c.coach_uuid }))
                 ];
 
                 if (!allPending.length) {
@@ -10169,7 +10382,7 @@
                             <div class="member-avatar">${getInitials(m.name.split(' ')[0], m.name.split(' ')[1])}</div>
                             <div>
                                 <div class="member-name">${m.name}</div>
-                                <div class="member-meta">${m.type === 'athlete' ? 'Athlete' : 'Coach'} &middot; Requested ${formatDate(m.created_at)}</div>
+                                <div class="member-meta">${m.type === 'athlete' ? 'Athlete' : 'Coach'} | Requested ${formatDate(m.created_at)}</div>
                             </div>
                         </div>
                         <div class="member-actions">
@@ -10208,10 +10421,13 @@
                             <div class="member-avatar">${getInitials(a.first_name, a.last_name)}</div>
                             <div>
                                 <div class="member-name">${a.first_name} ${a.last_name}</div>
-                                <div class="member-meta">${a.athlete_code} &middot; Joined ${formatDate(a.created_at)}</div>
+                                <div class="member-meta">${a.athlete_code} | Joined ${formatDate(a.created_at)}</div>
                             </div>
                         </div>
-                        <span class="status-badge active">Active</span>
+                        <div class="member-actions">
+                            <span class="status-badge active">Active</span>
+                            ${appState.isTeamOwner ? '<button class="member-btn remove" onclick="removeMember(\'' + a.athlete_uuid + '\', \'athlete\', \'' + a.first_name + ' ' + a.last_name + '\')">Remove</button>' : ''}
+                        </div>
                     </div>
                 `).join('');
             } catch (e) {
@@ -10243,18 +10459,21 @@
                 container.innerHTML = data.map(c => {
                     const isMe = c.auth_user_id === myAuthUuid;
                     const statusClass = c.membership_status || 'active';
+                    const isOwner = appState.isTeamOwner && isMe;
+                    const canRemoveOther = appState.isTeamOwner && !isMe && statusClass === 'active';
                     return `
                     <div class="member-card">
                         <div class="member-info">
                             <div class="member-avatar">${(c.coach_name || 'C')[0].toUpperCase()}</div>
                             <div>
-                                <div class="member-name">${c.coach_name}${isMe ? ' (You)' : ''}</div>
-                                <div class="member-meta">Coach &middot; Since ${formatDate(c.created_at)}</div>
+                                <div class="member-name">${c.coach_name}${isMe ? ' (You)' : ''}${isOwner ? ' <span style="font-size:11px;color:var(--accent-blue);font-weight:500;">&middot; Admin</span>' : ''}</div>
+                                <div class="member-meta">Coach | Since ${formatDate(c.created_at)}</div>
                             </div>
                         </div>
                         <div class="member-actions">
                             <span class="status-badge ${statusClass}">${statusClass}</span>
                             ${isMe && statusClass === 'active' ? '<button class="member-btn leave" onclick="leaveTeam()">Leave Team</button>' : ''}
+                            ${canRemoveOther ? '<button class="member-btn remove" onclick="removeMember(\'' + c.coach_uuid + '\', \'coach\', \'' + (c.coach_name || 'Coach').replace(/'/g, "\\'") + '\')">Remove</button>' : ''}
                         </div>
                     </div>
                 `}).join('');
@@ -10265,7 +10484,11 @@
         }
 
         async function approveMember(id, type) {
-            if (!confirm('Approve this member to join the team?')) return;
+            if (appState.role !== 'coach') { showToast('Only coaches can approve members', 'error'); return; }
+            if (appState.membershipStatus !== 'active') { showToast('Your own membership must be active to approve others', 'error'); return; }
+            // Prevent self-approval
+            if (type === 'coach' && id === appState.coachUuid) { showToast('You cannot approve your own membership', 'error'); return; }
+            if (!(await showConfirm('Approve this member to join the team?', 'Approve Member'))) return;
             try {
                 const table = type === 'athlete' ? 'athletes' : 'coaches';
                 const idCol = type === 'athlete' ? 'athlete_uuid' : 'coach_uuid';
@@ -10279,12 +10502,15 @@
                 await loadTeamAthletes();
             } catch (e) {
                 console.error('Error approving member:', e);
-                alert('Error: ' + e.message);
+                showToast('Error: ' + e.message, 'error');
             }
         }
 
         async function rejectMember(id, type) {
-            if (!confirm('Reject this membership request? They will need to sign up again.')) return;
+            if (appState.role !== 'coach') { showToast('Only coaches can reject members', 'error'); return; }
+            if (appState.membershipStatus !== 'active') { showToast('Your own membership must be active to reject others', 'error'); return; }
+            if (type === 'coach' && id === appState.coachUuid) { showToast('You cannot reject your own membership', 'error'); return; }
+            if (!(await showConfirm('Reject this membership request? They will need to sign up again.', 'Reject Member', true))) return;
             try {
                 const table = type === 'athlete' ? 'athletes' : 'coaches';
                 const idCol = type === 'athlete' ? 'athlete_uuid' : 'coach_uuid';
@@ -10298,7 +10524,34 @@
                 await loadTeamAthletes();
             } catch (e) {
                 console.error('Error rejecting member:', e);
-                alert('Error: ' + e.message);
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        // Remove an active team member (team owner/admin only)
+        async function removeMember(id, type, displayName) {
+            if (!appState.isTeamOwner) { showToast('Only the team admin can remove members', 'error'); return; }
+            // Prevent removing self
+            if (type === 'coach' && id === appState.coachUuid) { showToast('You cannot remove yourself. Use "Leave Team" instead.', 'error'); return; }
+
+            const confirmMsg = 'Remove ' + displayName + ' from the team? They will lose team access and need to rejoin.';
+            if (!(await showConfirm(confirmMsg, 'Remove Member', true))) return;
+
+            try {
+                const table = type === 'athlete' ? 'athletes' : 'coaches';
+                const idCol = type === 'athlete' ? 'athlete_uuid' : 'coach_uuid';
+                const { error } = await supabaseClient
+                    .from(table)
+                    .update({ membership_status: 'inactive', team_uuid: null })
+                    .eq(idCol, id);
+                if (error) throw error;
+
+                showToast(displayName + ' has been removed from the team.', 'success');
+                await loadTeamData();
+                await loadTeamAthletes();
+            } catch (e) {
+                console.error('Error removing member:', e);
+                showToast('Error: ' + e.message, 'error');
             }
         }
 
@@ -10308,7 +10561,7 @@
                 ? 'Leave this team? You will lose access to all team data.'
                 : 'Leave this team? You will keep your personal data but lose team access.';
 
-            if (!confirm(confirmMsg)) return;
+            if (!(await showConfirm(confirmMsg, 'Remove Member', true))) return;
 
             try {
                 if (role === 'athlete') {
@@ -10350,17 +10603,17 @@
                 const approvalAlert = document.getElementById('approvalAlert');
                 if (approvalAlert) approvalAlert.remove();
 
-                // Navigate to home â€” will show "No Team" banner
+                // Navigate to home - will show "No Team" banner
                 navigateTo('home');
-                alert('You have left the team.');
+                showToast('You have left the team.', 'success');
             } catch (e) {
                 console.error('Error leaving team:', e);
-                alert('Error: ' + e.message);
+                showToast('Error: ' + e.message, 'error');
             }
         }
 
         // ============================================
-        // TEAM MODAL â€” JOIN / CREATE TEAM (post-login)
+        // TEAM MODAL - JOIN / CREATE TEAM (post-login)
         // ============================================
         let teamModalMode = 'join'; // 'join' or 'create'
 
@@ -10455,7 +10708,7 @@
                     await createTeam();
                 }
             } catch (e) {
-                errorEl.textContent = e.message || 'An error occurred';
+                errorEl.textContent = sanitizeForDisplay(e.message) || 'An error occurred';
                 errorEl.style.display = 'block';
             } finally {
                 submitBtn.disabled = false;
@@ -10467,7 +10720,7 @@
             const code = document.getElementById('joinTeamCode').value.trim().toUpperCase();
             if (!code) throw new Error('Please enter a team code');
 
-            // Look up team â€” try T_ prefix first, then without
+            // Look up team - try T_ prefix first, then without
             let { data: teamData } = await supabaseClient
                 .from('teams').select('team_uuid, team_name')
                 .eq('team_code', 'T_' + code).maybeSingle();
@@ -10498,7 +10751,7 @@
             appState.teamUuid = teamData.team_uuid;
             appState.membershipStatus = 'pending';
             showDashboard();
-            alert('Request sent to join ' + teamData.team_name + '. A coach will approve your membership.');
+            showToast('Request sent to join ' + teamData.team_name + '. A coach will approve your membership.', 'success', 6000);
         }
 
         async function createTeam() {
@@ -10517,10 +10770,13 @@
                 .maybeSingle();
             if (existing) throw new Error('Team code "' + code + '" is already taken.');
 
-            // Create team
+            // Create team - include created_by_uuid for ownership tracking
+            const insertPayload = { team_name: name, team_code: code };
+            // Try to include created_by_uuid (may fail if column doesn't exist yet - that's OK)
+            try { insertPayload.created_by_uuid = appState.user.id; } catch(_) {}
             const { data: newTeam, error: teamErr } = await supabaseClient
                 .from('teams')
-                .insert({ team_name: name, team_code: code })
+                .insert(insertPayload)
                 .select('team_uuid')
                 .single();
             if (teamErr) throw new Error('Could not create team: ' + teamErr.message);
@@ -10540,8 +10796,9 @@
             await loadUserProfile();
             appState.teamUuid = newTeam.team_uuid;
             appState.membershipStatus = 'active';
+            appState.isTeamOwner = true; // Creator is always the team admin
             showDashboard();
-            alert('Team "' + name + '" created! Share code "' + code + '" with your athletes.');
+            showToast('Team "' + name + '" created! Share code "' + code + '" with your athletes.', 'success', 8000);
         }
 
         // ============================================

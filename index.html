@@ -6100,8 +6100,11 @@
                         
                         <p style="color:var(--text-muted); font-size:13px; margin-bottom:16px;">Your trial will convert to a paid subscription on ${new Date(sub.current_period_end).toLocaleDateString()}.</p>
                         
-                        <button onclick="openBillingPortal()" class="btn" style="width:100%; padding:12px; background:var(--card-bg); border:1px solid var(--border-color);">
+                        <button onclick="openBillingPortal()" class="btn" style="width:100%; padding:12px; background:var(--card-bg); border:1px solid var(--border-color); margin-bottom:8px;">
                             Manage Billing
+                        </button>
+                        <button onclick="cancelSubscription()" class="btn" style="width:100%; padding:12px; background:transparent; border:1px solid rgba(255,100,100,0.3); color:#ff6b6b;">
+                            Cancel Trial
                         </button>
                     </div>
                 `;
@@ -6132,9 +6135,10 @@
                             ${sub.cancel_at_period_end ? '<div style="margin-top:12px; padding:8px; background:rgba(255,100,100,0.1); border-radius:8px; color:#ff6b6b; font-size:13px;">Cancels at end of billing period</div>' : ''}
                         </div>
                         
-                        <button onclick="openBillingPortal()" class="btn" style="width:100%; padding:12px; background:var(--card-bg); border:1px solid var(--border-color);">
+                        <button onclick="openBillingPortal()" class="btn" style="width:100%; padding:12px; background:var(--card-bg); border:1px solid var(--border-color); margin-bottom:8px;">
                             Manage Billing
                         </button>
+                        ${!sub.cancel_at_period_end ? '<button onclick="cancelSubscription()" class="btn" style="width:100%; padding:12px; background:transparent; border:1px solid rgba(255,100,100,0.3); color:#ff6b6b;">Cancel Subscription</button>' : ''}
                     </div>
                 `;
             }
@@ -6158,7 +6162,7 @@
                 // Use current URL if it's https, otherwise fallback to production domain
                 let baseUrl = window.location.origin;
                 if (!baseUrl.startsWith('https://')) {
-                    baseUrl = 'https://rfrsl.com'; // Fallback to production
+                    baseUrl = 'https://www.mypeakathlete.com'; // Fallback to production
                 }
                 const currentPath = window.location.pathname || '/';
                 const successUrl = baseUrl + currentPath + '?checkout=success';
@@ -6186,7 +6190,12 @@
                 }
                 
                 if (data.url) {
-                    window.location.href = data.url;
+                    // Open in new tab because Wix embeds in iframe and Stripe blocks iframe checkout
+                    window.open(data.url, '_blank');
+                    closeSubscriptionModal();
+                    showToast('Stripe checkout opened in new tab. Complete payment there.', 'info');
+                    btn.disabled = false;
+                    btn.textContent = 'Start 14-Day Free Trial';
                 } else {
                     throw new Error('No checkout URL returned');
                 }
@@ -6209,7 +6218,7 @@
                         'Authorization': 'Bearer ' + session.access_token
                     },
                     body: JSON.stringify({
-                        returnUrl: window.location.href
+                        returnUrl: 'https://www.mypeakathlete.com/blank-3'
                     })
                 });
                 
@@ -6220,11 +6229,31 @@
                 }
                 
                 if (data.url) {
-                    window.location.href = data.url;
+                    // Open in new tab because Wix embeds in iframe
+                    window.open(data.url, '_blank');
+                    showToast('Billing portal opened in new tab.', 'info');
                 }
             } catch (e) {
                 console.error('Portal error:', e);
                 showToast('Error opening billing portal: ' + e.message, 'error');
+            }
+        }
+        
+        async function cancelSubscription() {
+            const confirmed = await showConfirm(
+                'Are you sure you want to cancel? You will lose access to Pro features at the end of your billing period.',
+                'Cancel Subscription',
+                true
+            );
+            
+            if (!confirmed) return;
+            
+            try {
+                // Open billing portal for cancellation (Stripe handles it securely)
+                await openBillingPortal();
+            } catch (e) {
+                console.error('Cancel error:', e);
+                showToast('Error: ' + e.message, 'error');
             }
         }
         

@@ -6190,10 +6190,20 @@
                 }
                 
                 if (data.url) {
-                    // Open in new tab because Wix embeds in iframe and Stripe blocks iframe checkout
-                    window.open(data.url, '_blank');
-                    closeSubscriptionModal();
-                    showToast('Stripe checkout opened in new tab. Complete payment there.', 'info');
+                    // Force top-level window to navigate (escape Wix iframe)
+                    try {
+                        window.top.location.href = data.url;
+                    } catch (e) {
+                        // If blocked by same-origin policy, try parent
+                        try {
+                            window.parent.location.href = data.url;
+                        } catch (e2) {
+                            // Last resort: open in new tab with noopener
+                            window.open(data.url, '_blank', 'noopener,noreferrer');
+                            closeSubscriptionModal();
+                            showToast('Stripe checkout opened in new tab. Complete payment there, then refresh this page.', 'info');
+                        }
+                    }
                     btn.disabled = false;
                     btn.textContent = 'Start 14-Day Free Trial';
                 } else {

@@ -3112,7 +3112,8 @@
             border-radius: 12px;
             padding: 4px;
             margin-bottom: 16px;
-            overflow-x: auto;
+            overflow: visible;
+            position: relative;
         }
         .comp-board-tab {
             padding: 10px 18px;
@@ -3125,9 +3126,88 @@
             white-space: nowrap;
             flex: 1;
             text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
         .comp-board-tab:hover { background: var(--bg-card-hover); color: var(--text-primary); }
         .comp-board-tab.active { background: rgba(255,215,0,0.12); color: #FFD700; }
+
+        /* Competition Info Tooltip */
+        .comp-info-tip {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            font-style: normal;
+            color: var(--text-muted);
+            cursor: help;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .comp-board-tab.active .comp-info-tip {
+            background: rgba(255,215,0,0.2);
+            color: #FFD700;
+        }
+        .comp-info-tip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a2e44;
+            border: 1px solid var(--border-hover);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 400;
+            white-space: nowrap;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            pointer-events: none;
+        }
+        .comp-info-tip::before {
+            content: '';
+            position: absolute;
+            top: calc(100% + 2px);
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-bottom-color: #1a2e44;
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+        }
+        .comp-info-tip:hover::after,
+        .comp-info-tip:hover::before {
+            opacity: 1;
+            visibility: visible;
+        }
+        @media (max-width: 768px) {
+            .comp-info-tip::after {
+                white-space: normal;
+                width: 200px;
+                left: auto;
+                right: -10px;
+                transform: none;
+            }
+            .comp-info-tip::before {
+                left: auto;
+                right: 5px;
+                transform: none;
+            }
+        }
 
         /* Competition filter row */
         .comp-filter-row {
@@ -3454,7 +3534,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.08</span></span>
+                    <span>Analytics <span class="version-tag">v02.09</span></span>
                 </div>
             </div>
 
@@ -4508,6 +4588,10 @@
                     <!-- Filter Bar -->
                     <div class="lb-filter-bar" id="lbFilterBar">
                         <div class="lb-filter-group">
+                            <div class="lb-filter-field" id="lbGroupFilterWrap" style="display:none;">
+                                <label>Group</label>
+                                <select id="lbGroupFilter" onchange="applyLbFilters()"><option value="">All Athletes</option></select>
+                            </div>
                             <div class="lb-filter-field" id="lbEventFilterWrap">
                                 <label>Event</label>
                                 <select id="lbEventFilter" onchange="applyLbFilters()"><option value="">All Events</option></select>
@@ -4631,10 +4715,22 @@
 
                     <!-- Competition Board Selector -->
                     <div class="comp-board-bar" id="compBoardBar" style="display:none;">
-                        <div class="comp-board-tab active" data-compboard="fastest_start_15m">Fastest Start</div>
-                        <div class="comp-board-tab" data-compboard="best_reaction">Reaction Time</div>
-                        <div class="comp-board-tab" data-compboard="fastest_turn_15_15">Fastest Turn</div>
-                        <div class="comp-board-tab" data-compboard="best_race_pb">Race PB</div>
+                        <div class="comp-board-tab active" data-compboard="fastest_start_15m">
+                            Fastest Start
+                            <span class="comp-info-tip" data-tooltip="Time from starting signal to 15m mark. Lower is better.">i</span>
+                        </div>
+                        <div class="comp-board-tab" data-compboard="best_reaction">
+                            Reaction Time
+                            <span class="comp-info-tip" data-tooltip="Time from beep to first movement off block. Lower is better.">i</span>
+                        </div>
+                        <div class="comp-board-tab" data-compboard="fastest_turn_15_15">
+                            Fastest Turn
+                            <span class="comp-info-tip" data-tooltip="Time from 15m in to 15m out (30m total). Lower is better.">i</span>
+                        </div>
+                        <div class="comp-board-tab" data-compboard="best_race_pb">
+                            Race PB
+                            <span class="comp-info-tip" data-tooltip="Personal best race time. Filtered by event & course. Lower is better.">i</span>
+                        </div>
                     </div>
 
                     <!-- Competition Gender Filter -->
@@ -5184,6 +5280,9 @@
         const SUPABASE_URL = 'https://wbqgshvbopfukwyqsndq.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndicWdzaHZib3BmdWt3eXFzbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMDk4OTAsImV4cCI6MjA4NDU4NTg5MH0.lmbqvVTyfmlkgkUCo8dAGZuK7Z9tGXUA4Fq9FAsmvhU';
         
+        // Auth email redirects — always use the Wix-hosted page, not the raw iframe URL
+        const AUTH_REDIRECT_URL = 'https://www.mypeakathlete.com/blank-2';
+        
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // ============================================
@@ -5331,7 +5430,7 @@
 
             try {
                 const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: window.location.origin + window.location.pathname
+                    redirectTo: AUTH_REDIRECT_URL
                 });
                 if (error) throw error;
                 successEl.textContent = 'Password reset link sent! Check your email inbox (and spam folder).';
@@ -5484,7 +5583,7 @@
                             role: role,
                             gender: gender
                         },
-                        emailRedirectTo: window.location.origin + window.location.pathname
+                        emailRedirectTo: AUTH_REDIRECT_URL
                     }
                 });
 
@@ -11767,6 +11866,7 @@
             category: 'race',   // team mode: 'race' | 'start' | 'turn'
             metric: '',
             athletes: [],       // team athletes cache
+            groups: [],         // team groups cache (for coaches)
             rankings: [],
             _loaded: false
         };
@@ -11871,12 +11971,70 @@
             }
         }
 
+        // ---- POPULATE GROUP FILTER (coaches only) ----
+        async function populateLbGroupFilter() {
+            const wrap = document.getElementById('lbGroupFilterWrap');
+            const sel = document.getElementById('lbGroupFilter');
+            if (!wrap || !sel) return;
+
+            // Only show for coaches
+            if (appState.role !== 'coach' || !appState.teamUuid) {
+                wrap.style.display = 'none';
+                return;
+            }
+
+            try {
+                const { data: groups } = await supabaseClient
+                    .from('athlete_groups')
+                    .select('group_uuid, group_name, group_color')
+                    .eq('team_uuid', appState.teamUuid)
+                    .order('group_name');
+
+                if (!groups || groups.length === 0) {
+                    wrap.style.display = 'none';
+                    return;
+                }
+
+                wrap.style.display = '';
+                const prev = sel.value;
+                sel.innerHTML = '<option value="">All Athletes</option>' +
+                    groups.map(g => {
+                        const colorDot = g.group_color ? '<span style="color:' + g.group_color + '">● </span>' : '';
+                        return '<option value="' + g.group_uuid + '"' + (g.group_uuid === prev ? ' selected' : '') + ' data-color="' + (g.group_color || '') + '">' + g.group_name + '</option>';
+                    }).join('');
+
+                // Store groups for filtering
+                lbState.groups = groups;
+            } catch (e) {
+                console.warn('[LB] group filter load error:', e);
+                wrap.style.display = 'none';
+            }
+        }
+
+        // ---- GET GROUP MEMBER UUIDS ----
+        async function getLbGroupAthleteUuids(groupUuid) {
+            if (!groupUuid) return null; // No filter
+            try {
+                const { data } = await supabaseClient
+                    .from('athlete_group_members')
+                    .select('athlete_uuid')
+                    .eq('group_uuid', groupUuid);
+                return (data || []).map(d => d.athlete_uuid);
+            } catch (e) {
+                console.warn('[LB] group members load error:', e);
+                return null;
+            }
+        }
+
         // ---- TEAM LEADERBOARD (FIXED — uses getTeamAthleteList) ----
         async function loadTeamLeaderboard() {
             if (!appState.teamUuid) {
                 renderLbEmpty('No team assigned', 'Join or create a team to see team rankings.');
                 return;
             }
+
+            // Populate group filter for coaches
+            await populateLbGroupFilter();
 
             try {
                 // Use the established, working athlete list loader
@@ -11896,9 +12054,24 @@
             const metricDef = (LB_METRICS[cat] || []).find(m => m.key === metric) || (LB_METRICS[cat] || [])[0];
             if (!metricDef) { renderLbEmpty('No metrics available', ''); return; }
 
+            // Apply gender filter
             const genderFilter = document.getElementById('lbGenderFilter')?.value || '';
             let athleteList = lbState.athletes;
             if (genderFilter) athleteList = athleteList.filter(a => a.gender === genderFilter);
+
+            // Apply group filter (coaches only)
+            const groupFilter = document.getElementById('lbGroupFilter')?.value || '';
+            if (groupFilter && appState.role === 'coach') {
+                const groupMemberUuids = await getLbGroupAthleteUuids(groupFilter);
+                if (groupMemberUuids && groupMemberUuids.length > 0) {
+                    athleteList = athleteList.filter(a => groupMemberUuids.includes(a.athlete_uuid));
+                } else if (groupMemberUuids && groupMemberUuids.length === 0) {
+                    // Group exists but has no members
+                    renderLbEmpty('No athletes in group', 'This group has no members yet.');
+                    return;
+                }
+            }
+
             let athleteUuids = athleteList.map(a => a.athlete_uuid);
             if (!athleteUuids.length) {
                 renderLbEmpty('No athletes found', 'No active athletes match the current filters.');

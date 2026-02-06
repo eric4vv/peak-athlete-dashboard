@@ -6115,10 +6115,13 @@
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
-                        <div class="pending-banner-text">
+                        <div class="pending-banner-text" style="flex:1;">
                             <h4>Membership Pending</h4>
                             <p>Your request to join the team is waiting for coach approval. You can still view your personal data.</p>
                         </div>
+                        <button class="btn" style="padding:8px 16px; font-size:12px; background:rgba(255,100,100,0.15); color:#ff6b6b; border:1px solid rgba(255,100,100,0.3);" onclick="leaveTeam()">
+                            Cancel Request
+                        </button>
                     </div>
                 `;
             } else if (!appState.teamUuid) {
@@ -12411,21 +12414,24 @@
                     return;
                 }
 
-                container.innerHTML = data.map(a => `
+                container.innerHTML = data.map(a => {
+                    const isMe = a.athlete_uuid === appState.athleteUuid;
+                    return `
                     <div class="member-card">
                         <div class="member-info">
                             <div class="member-avatar">${getInitials(a.first_name, a.last_name)}</div>
                             <div>
-                                <div class="member-name">${a.first_name} ${a.last_name}</div>
+                                <div class="member-name">${a.first_name} ${a.last_name}${isMe ? ' (You)' : ''}</div>
                                 <div class="member-meta">${a.athlete_code} | Joined ${formatDate(a.created_at)}</div>
                             </div>
                         </div>
                         <div class="member-actions">
                             <span class="status-badge active">Active</span>
-                            ${appState.isTeamOwner ? '<button class="member-btn remove" onclick="removeMember(\'' + a.athlete_uuid + '\', \'athlete\', \'' + a.first_name + ' ' + a.last_name + '\')">Remove</button>' : ''}
+                            ${isMe ? '<button class="member-btn leave" onclick="leaveTeam()">Leave Team</button>' : ''}
+                            ${appState.isTeamOwner && !isMe ? '<button class="member-btn remove" onclick="removeMember(\'' + a.athlete_uuid + '\', \'athlete\', \'' + a.first_name + ' ' + a.last_name + '\')">Remove</button>' : ''}
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             } catch (e) {
                 console.error('Error loading active athletes:', e);
                 container.innerHTML = '<div class="empty-state"><h3>Error loading athletes</h3></div>';
@@ -12468,7 +12474,7 @@
                         </div>
                         <div class="member-actions">
                             <span class="status-badge ${statusClass}">${statusClass}</span>
-                            ${isMe && statusClass === 'active' ? '<button class="member-btn leave" onclick="leaveTeam()">Leave Team</button>' : ''}
+                            ${isMe && (statusClass === 'active' || statusClass === 'pending') ? '<button class="member-btn leave" onclick="leaveTeam()">' + (statusClass === 'pending' ? 'Cancel Request' : 'Leave Team') + '</button>' : ''}
                             ${canRemoveOther ? '<button class="member-btn remove" onclick="removeMember(\'' + c.coach_uuid + '\', \'coach\', \'' + (c.coach_name || 'Coach').replace(/'/g, "\\'") + '\')">Remove</button>' : ''}
                         </div>
                     </div>
@@ -12553,11 +12559,17 @@
 
         async function leaveTeam() {
             const role = appState.role;
-            const confirmMsg = role === 'coach'
-                ? 'Leave this team? You will lose access to all team data.'
-                : 'Leave this team? You will keep your personal data but lose team access.';
+            const isPending = appState.membershipStatus === 'pending';
+            
+            const confirmMsg = isPending
+                ? 'Cancel your request to join this team?'
+                : role === 'coach'
+                    ? 'Leave this team? You will lose access to all team data.'
+                    : 'Leave this team? You will keep your personal data but lose team access.';
+            
+            const confirmTitle = isPending ? 'Cancel Request' : 'Leave Team';
 
-            if (!(await showConfirm(confirmMsg, 'Remove Member', true))) return;
+            if (!(await showConfirm(confirmMsg, confirmTitle, true))) return;
 
             try {
                 if (role === 'athlete') {
@@ -12579,6 +12591,9 @@
                         if (error) throw error;
                     }
                 }
+
+                // Show success message
+                showToast(isPending ? 'Request cancelled' : 'You have left the team', 'success');
 
                 // Clear team state
                 appState.teamUuid = null;

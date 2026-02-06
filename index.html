@@ -3534,7 +3534,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.09</span></span>
+                    <span>Analytics <span class="version-tag">v02.11</span></span>
                 </div>
             </div>
 
@@ -10425,21 +10425,20 @@
                         return;
                     }
 
-                    // Level 2: Fingerprint using normalized fields
+                    // Level 2: Fingerprint using normalized fields + source_file
                     // Normalize strings: trim, lowercase, collapse whitespace
                     const norm = v => String(v||'').trim().toLowerCase().replace(/\s+/g,' ');
                     const dist = norm(mj.Distance || mj.distance);
                     const style = norm(mj.Style || mj.style);
-                    const runtime = norm(mj.Runtime || mj.runtime);
                     const raceTime = parseRaceTime(mj);
 
-                    // Build fingerprint from athlete + date + event identity + time
+                    // Build fingerprint from athlete + date + event + source_file + time
                     const key = [
                         r.athlete_uuid || '',
                         r.source_date || '',
                         dist,
                         style,
-                        runtime,
+                        r.source_file || '',
                         raceTime != null ? raceTime.toFixed(2) : '',
                         r.analysis_session_uuid || ''
                     ].join('|');
@@ -10447,9 +10446,9 @@
                     if (!seen.has('f:' + key)) {
                         seen.add('f:' + key);
 
-                        // Level 3: Also check without session UUID (catches same race imported twice)
+                        // Level 3: Use source_file to distinguish heats vs finals on same day
                         const looseKey = [r.athlete_uuid||'', r.source_date||'', dist, style,
-                            raceTime != null ? raceTime.toFixed(2) : ''].join('|');
+                            r.source_file||'', raceTime != null ? raceTime.toFixed(2) : ''].join('|');
                         if (seen.has('l:' + looseKey)) return;
                         seen.add('l:' + looseKey);
 

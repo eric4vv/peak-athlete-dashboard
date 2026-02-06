@@ -3696,8 +3696,15 @@
                     <div class="user-avatar" id="userAvatar">--</div>
                     <div class="user-details">
                         <h4 id="userName">Loading...</h4>
-                        <span class="role-badge athlete" id="userRole">Athlete</span>
+                        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                            <span class="role-badge athlete" id="userRole">Athlete</span>
+                            <span class="role-badge" id="subscriptionBadge" style="display:none; background:linear-gradient(135deg,var(--accent-green),#00B86B); color:#fff;">Pro</span>
+                        </div>
                     </div>
+                </div>
+                <div class="nav-item" id="subscriptionBtn" onclick="openSubscriptionModal()" style="background:linear-gradient(135deg,var(--accent-green),#00B86B); color:#fff; font-weight:500;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                    <span id="subscriptionBtnText">Upgrade</span>
                 </div>
                 <div class="nav-item" id="logoutBtn">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
@@ -4158,6 +4165,19 @@
                     <div class="modal-footer">
                         <button class="btn-modal cancel" onclick="closeTeamGoalModal()">Cancel</button>
                         <button class="btn-modal save" onclick="saveTeamGoal()">Save Goal</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subscription Modal -->
+            <div class="modal-overlay" id="subscriptionModal">
+                <div class="modal-box" style="max-width:480px;">
+                    <div class="modal-header">
+                        <h2 id="subscriptionModalTitle">Upgrade to Pro</h2>
+                        <button class="modal-close" onclick="closeSubscriptionModal()">&#x2715;</button>
+                    </div>
+                    <div class="modal-body" id="subscriptionModalBody">
+                        <!-- Content loaded dynamically -->
                     </div>
                 </div>
             </div>
@@ -5487,7 +5507,9 @@
             selectedAthleteUuid: null, // For coach view
             membershipStatus: null, // 'active', 'pending', 'inactive'
             currentPage: 'home',
-            charts: {}
+            charts: {},
+            // Subscription
+            subscription: null, // { plan_id, status, is_active, features, days_remaining, etc. }
         };
 
         // ============================================
@@ -5949,6 +5971,279 @@
         }
 
         // ============================================
+        // SUBSCRIPTION MANAGEMENT
+        // ============================================
+        
+        const STRIPE_PRICE_ID = 'price_1Sxr2qCD6zRVSAloBWTyKo3e';
+        
+        async function loadSubscription() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('v_my_subscription')
+                    .select('*')
+                    .single();
+                
+                if (error && error.code !== 'PGRST116') {
+                    console.error('Error loading subscription:', error);
+                }
+                
+                appState.subscription = data || { plan_id: 'free', is_active: false, features: [] };
+                updateSubscriptionUI();
+            } catch (e) {
+                console.error('Subscription load error:', e);
+                appState.subscription = { plan_id: 'free', is_active: false, features: [] };
+                updateSubscriptionUI();
+            }
+        }
+        
+        function updateSubscriptionUI() {
+            const sub = appState.subscription;
+            const badge = document.getElementById('subscriptionBadge');
+            const btn = document.getElementById('subscriptionBtn');
+            const btnText = document.getElementById('subscriptionBtnText');
+            
+            if (!sub || sub.plan_id === 'free' || !sub.is_active) {
+                // Free user - show upgrade button
+                badge.style.display = 'none';
+                btn.style.background = 'linear-gradient(135deg, var(--accent-green), #00B86B)';
+                btnText.textContent = 'Upgrade';
+            } else if (sub.status === 'trialing') {
+                // Trial user
+                badge.textContent = 'Trial';
+                badge.style.display = 'inline-block';
+                badge.style.background = 'linear-gradient(135deg, var(--accent-orange), #F5A623)';
+                btn.style.background = 'var(--card-bg)';
+                btnText.textContent = sub.days_remaining + 'd left';
+            } else {
+                // Paid user
+                badge.textContent = 'Pro';
+                badge.style.display = 'inline-block';
+                badge.style.background = 'linear-gradient(135deg, var(--accent-green), #00B86B)';
+                btn.style.background = 'var(--card-bg)';
+                btnText.textContent = 'Manage';
+            }
+        }
+        
+        function hasFeature(featureName) {
+            const sub = appState.subscription;
+            if (!sub || !sub.features) return false;
+            return sub.features.includes(featureName);
+        }
+        
+        function openSubscriptionModal() {
+            const sub = appState.subscription;
+            const modal = document.getElementById('subscriptionModal');
+            const title = document.getElementById('subscriptionModalTitle');
+            const body = document.getElementById('subscriptionModalBody');
+            
+            if (!sub || sub.plan_id === 'free' || !sub.is_active) {
+                // Show upgrade options
+                title.textContent = 'Upgrade to Pro';
+                body.innerHTML = `
+                    <div style="text-align:center; padding:20px 0;">
+                        <div style="width:64px; height:64px; background:linear-gradient(135deg,var(--accent-green),#00B86B); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                        </div>
+                        <h3 style="font-size:20px; font-weight:600; margin-bottom:8px;">Unlock Full Access</h3>
+                        <p style="color:var(--text-muted); margin-bottom:24px;">Get unlimited history, exports, goals, and more.</p>
+                        
+                        <div style="background:var(--bg-primary); border-radius:12px; padding:20px; text-align:left; margin-bottom:24px;">
+                            <div style="display:flex; align-items:baseline; gap:4px; margin-bottom:16px;">
+                                <span style="font-size:32px; font-weight:700;">$14.99</span>
+                                <span style="color:var(--text-muted);">/month</span>
+                            </div>
+                            <ul style="list-style:none; padding:0; margin:0; display:grid; gap:10px;">
+                                <li style="display:flex; align-items:center; gap:8px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    Unlimited session history
+                                </li>
+                                <li style="display:flex; align-items:center; gap:8px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    Full analysis & comparisons
+                                </li>
+                                <li style="display:flex; align-items:center; gap:8px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    Export to CSV & PDF
+                                </li>
+                                <li style="display:flex; align-items:center; gap:8px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    Goal tracking
+                                </li>
+                                <li style="display:flex; align-items:center; gap:8px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    Video links & notes
+                                </li>
+                                <li style="display:flex; align-items:center; gap:8px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    Team management (coaches)
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <button onclick="startCheckout()" class="btn btn-primary" style="width:100%; padding:14px; font-size:15px; font-weight:600; background:linear-gradient(135deg,var(--accent-green),#00B86B);">
+                            Start 14-Day Free Trial
+                        </button>
+                        <p style="color:var(--text-muted); font-size:12px; margin-top:12px;">Cancel anytime. No charge during trial.</p>
+                    </div>
+                `;
+            } else if (sub.status === 'trialing') {
+                // Show trial status
+                title.textContent = 'Your Trial';
+                body.innerHTML = `
+                    <div style="text-align:center; padding:20px 0;">
+                        <div style="width:64px; height:64px; background:linear-gradient(135deg,var(--accent-orange),#F5A623); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        </div>
+                        <h3 style="font-size:20px; font-weight:600; margin-bottom:8px;">Trial Active</h3>
+                        <p style="color:var(--text-muted); margin-bottom:8px;">You have full Pro access!</p>
+                        <p style="font-size:24px; font-weight:700; color:var(--accent-orange); margin-bottom:24px;">${sub.days_remaining} days remaining</p>
+                        
+                        <p style="color:var(--text-muted); font-size:13px; margin-bottom:16px;">Your trial will convert to a paid subscription on ${new Date(sub.current_period_end).toLocaleDateString()}.</p>
+                        
+                        <button onclick="openBillingPortal()" class="btn" style="width:100%; padding:12px; background:var(--card-bg); border:1px solid var(--border-color);">
+                            Manage Billing
+                        </button>
+                    </div>
+                `;
+            } else {
+                // Show active subscription
+                title.textContent = 'Your Subscription';
+                body.innerHTML = `
+                    <div style="text-align:center; padding:20px 0;">
+                        <div style="width:64px; height:64px; background:linear-gradient(135deg,var(--accent-green),#00B86B); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                        </div>
+                        <h3 style="font-size:20px; font-weight:600; margin-bottom:8px;">Pro Plan</h3>
+                        <p style="color:var(--accent-green); font-weight:500; margin-bottom:24px;">Active</p>
+                        
+                        <div style="background:var(--bg-primary); border-radius:12px; padding:16px; text-align:left; margin-bottom:24px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                                <span style="color:var(--text-muted);">Plan</span>
+                                <span style="font-weight:500;">${sub.plan_name || 'Pro'}</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                                <span style="color:var(--text-muted);">Status</span>
+                                <span style="color:var(--accent-green); font-weight:500;">${sub.status}</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span style="color:var(--text-muted);">Renews</span>
+                                <span>${sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString() : 'N/A'}</span>
+                            </div>
+                            ${sub.cancel_at_period_end ? '<div style="margin-top:12px; padding:8px; background:rgba(255,100,100,0.1); border-radius:8px; color:#ff6b6b; font-size:13px;">Cancels at end of billing period</div>' : ''}
+                        </div>
+                        
+                        <button onclick="openBillingPortal()" class="btn" style="width:100%; padding:12px; background:var(--card-bg); border:1px solid var(--border-color);">
+                            Manage Billing
+                        </button>
+                    </div>
+                `;
+            }
+            
+            modal.classList.add('active');
+        }
+        
+        function closeSubscriptionModal() {
+            document.getElementById('subscriptionModal').classList.remove('active');
+        }
+        
+        async function startCheckout() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Loading...';
+            
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                
+                // Build proper redirect URLs
+                // Use current URL if it's https, otherwise fallback to production domain
+                let baseUrl = window.location.origin;
+                if (!baseUrl.startsWith('https://')) {
+                    baseUrl = 'https://rfrsl.com'; // Fallback to production
+                }
+                const currentPath = window.location.pathname || '/';
+                const successUrl = baseUrl + currentPath + '?checkout=success';
+                const cancelUrl = baseUrl + currentPath + '?checkout=canceled';
+                
+                console.log('Checkout URLs:', { successUrl, cancelUrl });
+                
+                const response = await fetch('https://wbqgshvbopfukwyqsndq.supabase.co/functions/v1/create-checkout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + session.access_token
+                    },
+                    body: JSON.stringify({
+                        priceId: STRIPE_PRICE_ID,
+                        successUrl: successUrl,
+                        cancelUrl: cancelUrl
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    throw new Error('No checkout URL returned');
+                }
+            } catch (e) {
+                console.error('Checkout error:', e);
+                showToast('Error starting checkout: ' + e.message, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Start 14-Day Free Trial';
+            }
+        }
+        
+        async function openBillingPortal() {
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                
+                const response = await fetch('https://wbqgshvbopfukwyqsndq.supabase.co/functions/v1/create-portal', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + session.access_token
+                    },
+                    body: JSON.stringify({
+                        returnUrl: window.location.href
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                if (data.url) {
+                    window.location.href = data.url;
+                }
+            } catch (e) {
+                console.error('Portal error:', e);
+                showToast('Error opening billing portal: ' + e.message, 'error');
+            }
+        }
+        
+        // Check for checkout success/cancel on page load
+        function checkCheckoutStatus() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('checkout') === 'success') {
+                showToast('Welcome to Pro! Your subscription is now active.', 'success');
+                // Remove query param
+                window.history.replaceState({}, '', window.location.pathname);
+                // Reload subscription
+                setTimeout(loadSubscription, 1000);
+            } else if (params.get('checkout') === 'canceled') {
+                showToast('Checkout canceled', 'info');
+                window.history.replaceState({}, '', window.location.pathname);
+            }
+        }
+
+        // ============================================
         // DASHBOARD INITIALIZATION
         // ============================================
         function showDashboard() {
@@ -5958,6 +6253,7 @@
             updateUserUI();
             setupNavigation();
             loadHomeData();
+            loadSubscription(); // Load subscription status
         }
 
         function updateUserUI() {
@@ -13638,12 +13934,18 @@
         });
         setupTeamCodeLookup();
 
+        // Subscription modal: close on overlay click
+        document.getElementById('subscriptionModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'subscriptionModal') closeSubscriptionModal();
+        });
+
         // ============================================
         // INITIALIZATION
         // ============================================
         async function init() {
             await testConnection();
             await checkSession();
+            checkCheckoutStatus(); // Check for Stripe redirect
         }
 
         init();

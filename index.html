@@ -5038,8 +5038,15 @@
          */
         function sanitizeForDisplay(text) {
             if (!text || typeof text !== 'string') return text || '';
+            // First escape HTML entities to prevent XSS
+            let clean = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
             // Remove full URLs (http/https) - replaces with generic label
-            let clean = text.replace(/https?:\/\/[^\s"'<>)}\]]+/gi, '[service]');
+            clean = clean.replace(/https?:\/\/[^\s"'<>)}\]]+/gi, '[link]');
             // Remove anything that looks like a GitHub pages URL fragment
             clean = clean.replace(/[a-zA-Z0-9_-]+\.github\.io[^\s]*/gi, '[service]');
             // Remove Supabase project references
@@ -5974,7 +5981,7 @@
         // SUBSCRIPTION MANAGEMENT
         // ============================================
         
-        const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/test_dRmcN48qe0PDgQK531cEw00';
+        const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/8x214m7mZ0v13id4xcgjC00';
         
         async function loadSubscription() {
             try {

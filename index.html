@@ -2026,6 +2026,108 @@
         .collapsible-body { overflow:hidden; transition: max-height 0.3s ease, opacity 0.25s ease; max-height:2000px; opacity:1; }
         .collapsible-body.collapsed { max-height:0; opacity:0; pointer-events:none; }
 
+        /* ============================================ */
+        /* HOME PAGE CAROUSELS (v02.11) - Option C     */
+        /* ============================================ */
+        .home-carousels-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
+        @media (max-width: 900px) { .home-carousels-row { grid-template-columns:1fr; } }
+        
+        .carousel-card { 
+            background:var(--card-bg); 
+            border:1px solid var(--border); 
+            border-radius:16px; 
+            overflow:hidden;
+            min-height:340px;
+            display:flex;
+            flex-direction:column;
+            box-shadow: 0 0 20px rgba(0, 194, 255, 0.06), inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+        .carousel-card.records-carousel {
+            border-top: 2px solid var(--accent-blue);
+        }
+        .carousel-card.competition-carousel {
+            border-top: 2px solid var(--accent-gold);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+        .carousel-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--border); }
+        .carousel-title { display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; color:var(--text-primary); }
+        .carousel-title svg { width:18px; height:18px; color:var(--accent-blue); }
+        .carousel-filter { display:flex; gap:3px; background:rgba(0,0,0,0.25); padding:3px; border-radius:8px; }
+        .carousel-filter-btn { padding:5px 10px; border-radius:6px; font-size:11px; font-weight:600; color:var(--text-muted); background:transparent; border:none; cursor:pointer; transition:all 0.2s; }
+        .carousel-filter-btn.active { background:var(--accent-blue); color:#000; }
+        .carousel-filter-btn:hover:not(.active) { color:var(--text-primary); }
+        .carousel-body { padding:20px; flex:1; display:flex; flex-direction:column; }
+        .carousel-nav { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-top:1px solid var(--border); background:rgba(0,0,0,0.15); }
+        .carousel-dots { display:flex; gap:5px; }
+        .carousel-dot { width:8px; height:8px; border-radius:50%; background:var(--bg-tertiary); cursor:pointer; transition:all 0.2s; }
+        .carousel-dot.active { background:var(--accent-blue); width:18px; border-radius:4px; }
+        .carousel-arrows { display:flex; gap:6px; }
+        .carousel-arrow { width:30px; height:30px; border-radius:8px; background:var(--bg-tertiary); border:1px solid var(--border); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; }
+        .carousel-arrow:hover { background:var(--border); color:var(--text-primary); }
+        .carousel-arrow:disabled { opacity:0.4; cursor:not-allowed; }
+        
+        /* Records Carousel Slide */
+        .records-slide-title { text-align:center; margin-bottom:16px; }
+        .records-slide-title .stroke-name { font-size:16px; font-weight:700; color:var(--text-primary); }
+        .records-slide-title .stroke-icon { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; margin-right:8px; vertical-align:middle; }
+        .stroke-icon.freestyle { background:rgba(0,194,255,0.15); color:var(--accent-blue); }
+        .stroke-icon.backstroke { background:rgba(168,85,247,0.15); color:var(--accent-purple); }
+        .stroke-icon.breaststroke { background:rgba(34,197,94,0.15); color:var(--accent-green); }
+        .stroke-icon.butterfly { background:rgba(249,115,22,0.15); color:var(--accent-orange); }
+        .stroke-icon.im { background:rgba(236,72,153,0.15); color:#ec4899; }
+        .stroke-icon.medley { background:rgba(236,72,153,0.15); color:#ec4899; }
+        
+        .records-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:12px; flex:1; }
+        .record-card { 
+            background:linear-gradient(180deg, rgba(0,194,255,0.08) 0%, rgba(0,194,255,0.02) 100%);
+            border:1px solid rgba(0,194,255,0.2); 
+            border-radius:12px; 
+            padding:14px; 
+            text-align:center; 
+            transition:all 0.2s; 
+        }
+        .record-card:hover { border-color:rgba(0,194,255,0.4); transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,194,255,0.1); }
+        .record-card .event-dist { font-size:11px; color:var(--text-muted); margin-bottom:6px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+        .record-card .event-time { font-size:22px; font-weight:700; color:var(--accent-blue); font-family:'Monaco','Consolas',monospace; margin-bottom:8px; }
+        .record-card .event-holder { display:flex; align-items:center; justify-content:center; gap:6px; }
+        .record-card .holder-avatar { width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,#ffd700,#ff8c00); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:#000; }
+        .record-card .holder-name { font-size:11px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65px; }
+        .record-card .event-date { font-size:10px; color:var(--text-muted); margin-top:6px; }
+        .record-card.pb-card { 
+            background:linear-gradient(180deg, rgba(168,85,247,0.08) 0%, rgba(168,85,247,0.02) 100%);
+            border:1px solid rgba(168,85,247,0.2); 
+        }
+        .record-card.pb-card:hover { border-color:rgba(168,85,247,0.4); box-shadow:0 4px 12px rgba(168,85,247,0.1); }
+        .record-card.pb-card .event-time { color:var(--accent-purple); }
+        .record-card.pb-card .pb-label { display:inline-flex; align-items:center; gap:3px; font-size:9px; color:var(--accent-gold); margin-top:4px; }
+        .record-card.pb-card .pb-label svg { width:10px; height:10px; }
+        .carousel-slide-label { text-align:center; font-size:10px; color:var(--text-muted); margin-top:auto; padding-top:12px; }
+        
+        /* Competition Podium Mini */
+        .comp-slide-title { text-align:center; font-size:14px; font-weight:600; color:var(--accent-gold); margin-bottom:20px; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .comp-slide-title svg { width:18px; height:18px; }
+        .comp-podium-mini { display:flex; align-items:flex-end; justify-content:center; gap:16px; flex:1; padding-top:10px; }
+        .comp-podium-item { display:flex; flex-direction:column; align-items:center; width:100px; }
+        .comp-podium-item.rank-1 { order:2; }
+        .comp-podium-item.rank-2 { order:1; }
+        .comp-podium-item.rank-3 { order:3; }
+        .comp-avatar-mini { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; margin-bottom:8px; position:relative; }
+        .comp-podium-item.rank-1 .comp-avatar-mini { width:56px; height:56px; font-size:18px; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; box-shadow:0 0 20px rgba(255,215,0,0.35); }
+        .comp-podium-item.rank-2 .comp-avatar-mini { background:linear-gradient(135deg,#c0c0c0,#a0a0a0); color:#000; }
+        .comp-podium-item.rank-3 .comp-avatar-mini { background:linear-gradient(135deg,#cd7f32,#a0522d); color:#fff; }
+        .comp-medal-mini { position:absolute; bottom:-4px; right:-4px; width:18px; height:18px; border-radius:50%; background:var(--card-bg); border:2px solid; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; }
+        .comp-podium-item.rank-1 .comp-medal-mini { border-color:#ffd700; color:#ffd700; }
+        .comp-podium-item.rank-2 .comp-medal-mini { border-color:#c0c0c0; color:#c0c0c0; }
+        .comp-podium-item.rank-3 .comp-medal-mini { border-color:#cd7f32; color:#cd7f32; }
+        .comp-name-mini { font-size:12px; font-weight:600; color:var(--text-primary); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:90px; }
+        .comp-team-mini { font-size:10px; color:var(--text-muted); margin-top:2px; text-align:center; }
+        .comp-value-mini { font-size:14px; font-weight:700; color:var(--accent-gold); font-family:'Monaco',monospace; margin-top:6px; }
+        .comp-podium-item.rank-1 .comp-value-mini { font-size:16px; color:#ffd700; }
+        .comp-bar-mini { width:100%; border-radius:6px 6px 0 0; margin-top:8px; }
+        .comp-podium-item.rank-1 .comp-bar-mini { height:55px; background:linear-gradient(to top,rgba(255,215,0,0.3),rgba(255,215,0,0.08)); }
+        .comp-podium-item.rank-2 .comp-bar-mini { height:42px; background:linear-gradient(to top,rgba(192,192,192,0.3),rgba(192,192,192,0.08)); }
+        .comp-podium-item.rank-3 .comp-bar-mini { height:30px; background:linear-gradient(to top,rgba(205,127,50,0.3),rgba(205,127,50,0.08)); }
+
         /* Event records grid */
         .event-records-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:10px; }
         @media(max-width:500px){ .event-records-grid { grid-template-columns:1fr 1fr; } }
@@ -3542,7 +3644,7 @@
                 <div class="nav-section-title">Home</div>
                 <div class="nav-item active" data-page="home">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                    Dashboard
+                    The Deck
                 </div>
             </div>
 
@@ -3663,12 +3765,67 @@
                         <div class="loading" style="grid-column:1/-1;"><div class="loading-spinner"></div>Loading team metrics...</div>
                     </div>
 
-                    <!-- Team Event Records (was Leaderboards) -->
-                    <div class="coach-section-header"><h2>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-                        Team Records by Event</h2></div>
-                    <div id="teamEventRecords">
-                        <div class="loading"><div class="loading-spinner"></div>Loading records...</div>
+                    <!-- Home Page Carousels (v02.11) -->
+                    <div class="home-carousels-row" id="homeCarouselsRow">
+                        <!-- Team Records / Personal Bests Carousel -->
+                        <div class="carousel-card records-carousel">
+                            <div class="carousel-header">
+                                <div class="carousel-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+                                    <span id="recordsCarouselTitle">Team Records</span>
+                                </div>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <div class="carousel-filter" id="recordsGenderFilter">
+                                        <button class="carousel-filter-btn active" data-gender="">All</button>
+                                        <button class="carousel-filter-btn" data-gender="male">M</button>
+                                        <button class="carousel-filter-btn" data-gender="female">F</button>
+                                    </div>
+                                    <div class="carousel-filter" id="recordsCourseFilter">
+                                        <button class="carousel-filter-btn active" data-course="SCY">SCY</button>
+                                        <button class="carousel-filter-btn" data-course="SCM">SCM</button>
+                                        <button class="carousel-filter-btn" data-course="LCM">LCM</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="carousel-body" id="recordsCarouselBody">
+                                <div class="loading"><div class="loading-spinner"></div>Loading records...</div>
+                            </div>
+                            <div class="carousel-nav">
+                                <div class="carousel-dots" id="recordsCarouselDots"></div>
+                                <div class="carousel-arrows">
+                                    <button class="carousel-arrow" id="recordsPrev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+                                    <button class="carousel-arrow" id="recordsNext"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Competition Leaders Carousel -->
+                        <div class="carousel-card competition-carousel" id="compCarouselCard">
+                            <div class="carousel-header">
+                                <div class="carousel-title" style="color:var(--accent-gold);">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="2" width="4" height="19" rx="1"/></svg>
+                                    Competition Leaders
+                                </div>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <div class="carousel-filter" id="compGenderFilterCarousel">
+                                        <button class="carousel-filter-btn active" data-gender="">All</button>
+                                        <button class="carousel-filter-btn" data-gender="male">M</button>
+                                        <button class="carousel-filter-btn" data-gender="female">F</button>
+                                    </div>
+                                    <a href="#" onclick="navigateTo('leaderboards');return false;" style="font-size:11px;color:var(--accent-blue);text-decoration:none;">View All →</a>
+                                </div>
+                            </div>
+                            <div class="carousel-body" id="compCarouselBody">
+                                <div class="loading"><div class="loading-spinner"></div>Loading competition...</div>
+                            </div>
+                            <div class="carousel-nav">
+                                <div class="carousel-dots" id="compCarouselDots"></div>
+                                <div class="carousel-arrows">
+                                    <button class="carousel-arrow" id="compPrev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+                                    <button class="carousel-arrow" id="compNext"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Team Goals (coach can add/manage) -->
@@ -3697,20 +3854,6 @@
                         <div class="card" style="margin-bottom:6px;"><div class="card-body" id="teamRosterBody" style="padding:0; overflow-x:auto;">
                             <div class="loading"><div class="loading-spinner"></div>Loading roster...</div>
                         </div></div>
-                    </div>
-
-                    <!-- Attention Needed (dismissible, collapsible) -->
-                    <div class="coach-section-header collapsible-header" id="attentionHeader" onclick="toggleCoachSection('attentionCollapse','attentionChevron')">
-                        <h2>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                            Attention Needed<span class="section-count" id="attentionCount"></span>
-                        </h2>
-                        <svg id="attentionChevron" class="collapse-chevron collapsed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-                    </div>
-                    <div class="collapsible-body collapsed" id="attentionCollapse">
-                        <div class="attention-grid" id="attentionGrid">
-                            <div class="loading"><div class="loading-spinner"></div>Checking...</div>
-                        </div>
                     </div>
 
                     <!-- Recent Team Activity (collapsible) -->
@@ -3767,15 +3910,60 @@
                     <div class="loading"><div class="loading-spinner"></div>Loading metrics...</div>
                 </div>
 
-                <!-- Personal Bests -->
-                <div class="section-header">
-                    <h2>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"></circle><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"></path></svg>
-                        Personal Bests
-                    </h2>
-                </div>
-                <div class="pb-grid" id="pbGrid">
-                    <div class="loading"><div class="loading-spinner"></div>Loading personal bests...</div>
+                <!-- Athlete Carousels (v02.11) - PBs + Competition -->
+                <div class="home-carousels-row" id="athleteCarouselsRow">
+                    <!-- Personal Bests Carousel -->
+                    <div class="carousel-card records-carousel">
+                        <div class="carousel-header">
+                            <div class="carousel-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+                                <span>My Personal Bests</span>
+                            </div>
+                            <div class="carousel-filter" id="athleteCourseFilter">
+                                <button class="carousel-filter-btn active" data-course="SCY">SCY</button>
+                                <button class="carousel-filter-btn" data-course="SCM">SCM</button>
+                                <button class="carousel-filter-btn" data-course="LCM">LCM</button>
+                            </div>
+                        </div>
+                        <div class="carousel-body" id="athleteRecordsBody">
+                            <div class="loading"><div class="loading-spinner"></div>Loading PBs...</div>
+                        </div>
+                        <div class="carousel-nav">
+                            <div class="carousel-dots" id="athleteRecordsDots"></div>
+                            <div class="carousel-arrows">
+                                <button class="carousel-arrow" id="athleteRecordsPrev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+                                <button class="carousel-arrow" id="athleteRecordsNext"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Competition Leaders Carousel (Athlete View) -->
+                    <div class="carousel-card competition-carousel" id="athleteCompCarouselCard">
+                        <div class="carousel-header">
+                            <div class="carousel-title" style="color:var(--accent-gold);">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="2" width="4" height="19" rx="1"/></svg>
+                                Competition Leaders
+                            </div>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <div class="carousel-filter" id="athleteCompGenderFilter">
+                                    <button class="carousel-filter-btn active" data-gender="">All</button>
+                                    <button class="carousel-filter-btn" data-gender="male">M</button>
+                                    <button class="carousel-filter-btn" data-gender="female">F</button>
+                                </div>
+                                <a href="#" onclick="navigateTo('leaderboards');return false;" style="font-size:11px;color:var(--accent-blue);text-decoration:none;">View All →</a>
+                            </div>
+                        </div>
+                        <div class="carousel-body" id="athleteCompBody">
+                            <div class="loading"><div class="loading-spinner"></div>Loading competition...</div>
+                        </div>
+                        <div class="carousel-nav">
+                            <div class="carousel-dots" id="athleteCompDots"></div>
+                            <div class="carousel-arrows">
+                                <button class="carousel-arrow" id="athleteCompPrev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+                                <button class="carousel-arrow" id="athleteCompNext"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Last Session Snapshot - compact clickable card -->
@@ -4041,7 +4229,7 @@
                         <div class="rfb-field">
                             <label>Style</label>
                             <select id="startStyleFilter">
-                                <option value="">All Styles</option>
+                                <option value="">All Strokes</option>
                             </select>
                         </div>
                         <div class="rfb-field">
@@ -4210,7 +4398,7 @@
                         <div class="rfb-field">
                             <label>Style</label>
                             <select id="turnStyleFilter">
-                                <option value="">All Styles</option>
+                                <option value="">All Strokes</option>
                             </select>
                         </div>
                         <div class="rfb-field">
@@ -4381,13 +4569,13 @@
                         <div class="rfb-field">
                             <label>Event</label>
                             <select id="raceEventFilter">
-                                <option value="">All Events</option>
+                                <option value="">All Distances</option>
                             </select>
                         </div>
                         <div class="rfb-field">
                             <label>Style</label>
                             <select id="raceStyleFilter">
-                                <option value="">All Styles</option>
+                                <option value="">All Strokes</option>
                             </select>
                         </div>
                         <div class="rfb-field">
@@ -4592,13 +4780,13 @@
                                 <label>Group</label>
                                 <select id="lbGroupFilter" onchange="applyLbFilters()"><option value="">All Athletes</option></select>
                             </div>
-                            <div class="lb-filter-field" id="lbEventFilterWrap">
-                                <label>Event</label>
-                                <select id="lbEventFilter" onchange="applyLbFilters()"><option value="">All Events</option></select>
+                            <div class="lb-filter-field" id="lbDistanceFilterWrap">
+                                <label>Distance</label>
+                                <select id="lbDistanceFilter" onchange="applyLbFilters()"><option value="">All Distances</option></select>
                             </div>
-                            <div class="lb-filter-field" id="lbStyleFilterWrap">
-                                <label>Style</label>
-                                <select id="lbStyleFilter" onchange="applyLbFilters()"><option value="">All Styles</option></select>
+                            <div class="lb-filter-field" id="lbStrokeFilterWrap">
+                                <label>Stroke</label>
+                                <select id="lbStrokeFilter" onchange="applyLbFilters()"><option value="">All Strokes</option></select>
                             </div>
                             <div class="lb-filter-field" id="lbCourseFilterWrap">
                                 <label>Course</label>
@@ -4741,13 +4929,13 @@
                                 <option value="">All</option><option value="male">Male</option><option value="female">Female</option>
                             </select>
                         </div>
-                        <div class="lb-filter-field" id="compEventFilterWrap" style="display:none;">
-                            <label>Event</label>
-                            <select id="compEventFilter" onchange="loadCompetitionBoard()"><option value="">All Events</option></select>
+                        <div class="lb-filter-field" id="compDistanceFilterWrap" style="display:none;">
+                            <label>Distance</label>
+                            <select id="compDistanceFilter" onchange="loadCompetitionBoard()"><option value="">All Distances</option></select>
                         </div>
-                        <div class="lb-filter-field" id="compStyleFilterWrap" style="display:none;">
-                            <label>Style</label>
-                            <select id="compStyleFilter" onchange="loadCompetitionBoard()"><option value="">All Styles</option></select>
+                        <div class="lb-filter-field" id="compStrokeFilterWrap" style="display:none;">
+                            <label>Stroke</label>
+                            <select id="compStrokeFilter" onchange="loadCompetitionBoard()"><option value="">All Strokes</option></select>
                         </div>
                         <div class="comp-participant-count" id="compParticipantCount"></div>
                     </div>
@@ -5891,23 +6079,26 @@
                 console.log('[loadHomeData] Loading coach team dashboard...');
                 _allTeamAthletes = null; // clear cache on fresh load
                 await loadGroupsDropdown();
+                initHomeCarousels(false); // Initialize coach carousel controls
                 await Promise.all([
                     loadTeamPulse(),
-                    loadEventRecords(),
+                    loadRecordsCarousel(),
+                    loadCompetitionCarousel(),
                     loadTeamGoals(),
                     loadTeamRoster(),
-                    loadAttentionFlags(),
                     loadTeamActivity(),
                     checkPendingApprovals()
                 ]);
             } else {
                 // Individual athlete view (athlete role, or coach with athlete selected)
+                initHomeCarousels(true); // Initialize athlete carousel controls
                 await Promise.all([
                     loadAlerts(),
                     loadLastSession(),
                     loadPerformancePulse(),
                     loadGoals(),
-                    loadPersonalBests(),
+                    loadAthleteRecordsCarousel(),
+                    loadAthleteCompCarousel(),
                     loadRecentSessions(),
                     checkPendingApprovals(),
                     loadCompBadges()
@@ -7323,6 +7514,752 @@
             }
         }
 
+        // ============================================
+        // HOME PAGE CAROUSELS (v02.11)
+        // ============================================
+        const carouselState = {
+            records: { currentSlide: 0, slides: [], course: 'SCY', gender: '' },
+            competition: { currentSlide: 0, slides: [], gender: '' },
+            athleteRecords: { currentSlide: 0, slides: [], course: 'SCY' },
+            athleteComp: { currentSlide: 0, slides: [], gender: '' }
+        };
+
+        const STROKES_ORDER = ['freestyle', 'backstroke', 'breaststroke', 'butterfly', 'im', 'medley'];
+        const STROKE_ICONS = {
+            freestyle: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20"/></svg>',
+            backstroke: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/></svg>',
+            breaststroke: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>',
+            butterfly: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+            im: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+            medley: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>'
+        };
+
+        function initHomeCarousels(isAthlete = false) {
+            if (isAthlete) {
+                // Athlete course filter
+                document.querySelectorAll('#athleteCourseFilter .carousel-filter-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        document.querySelectorAll('#athleteCourseFilter .carousel-filter-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        carouselState.athleteRecords.course = btn.dataset.course;
+                        carouselState.athleteRecords.currentSlide = 0;
+                        loadAthleteRecordsCarousel();
+                    };
+                });
+
+                // Athlete competition gender filter
+                document.querySelectorAll('#athleteCompGenderFilter .carousel-filter-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        document.querySelectorAll('#athleteCompGenderFilter .carousel-filter-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        carouselState.athleteComp.gender = btn.dataset.gender;
+                        carouselState.athleteComp.currentSlide = 0;
+                        loadAthleteCompCarousel();
+                    };
+                });
+
+                // Athlete records arrows
+                document.getElementById('athleteRecordsPrev')?.addEventListener('click', () => {
+                    if (carouselState.athleteRecords.currentSlide > 0) {
+                        carouselState.athleteRecords.currentSlide--;
+                        renderAthleteRecordsSlide();
+                    }
+                });
+                document.getElementById('athleteRecordsNext')?.addEventListener('click', () => {
+                    if (carouselState.athleteRecords.currentSlide < carouselState.athleteRecords.slides.length - 1) {
+                        carouselState.athleteRecords.currentSlide++;
+                        renderAthleteRecordsSlide();
+                    }
+                });
+
+                // Athlete competition arrows
+                document.getElementById('athleteCompPrev')?.addEventListener('click', () => {
+                    if (carouselState.athleteComp.currentSlide > 0) {
+                        carouselState.athleteComp.currentSlide--;
+                        renderAthleteCompSlide();
+                    }
+                });
+                document.getElementById('athleteCompNext')?.addEventListener('click', () => {
+                    if (carouselState.athleteComp.currentSlide < carouselState.athleteComp.slides.length - 1) {
+                        carouselState.athleteComp.currentSlide++;
+                        renderAthleteCompSlide();
+                    }
+                });
+            } else {
+                // Coach course filter buttons
+                document.querySelectorAll('#recordsCourseFilter .carousel-filter-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        document.querySelectorAll('#recordsCourseFilter .carousel-filter-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        carouselState.records.course = btn.dataset.course;
+                        carouselState.records.currentSlide = 0;
+                        loadRecordsCarousel();
+                    };
+                });
+
+                // Coach records gender filter
+                document.querySelectorAll('#recordsGenderFilter .carousel-filter-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        document.querySelectorAll('#recordsGenderFilter .carousel-filter-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        carouselState.records.gender = btn.dataset.gender;
+                        carouselState.records.currentSlide = 0;
+                        loadRecordsCarousel();
+                    };
+                });
+
+                // Coach competition gender filter
+                document.querySelectorAll('#compGenderFilterCarousel .carousel-filter-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        document.querySelectorAll('#compGenderFilterCarousel .carousel-filter-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        carouselState.competition.gender = btn.dataset.gender;
+                        carouselState.competition.currentSlide = 0;
+                        loadCompetitionCarousel();
+                    };
+                });
+
+                // Records carousel arrows
+                document.getElementById('recordsPrev')?.addEventListener('click', () => {
+                    if (carouselState.records.currentSlide > 0) {
+                        carouselState.records.currentSlide--;
+                        renderRecordsSlide();
+                    }
+                });
+                document.getElementById('recordsNext')?.addEventListener('click', () => {
+                    if (carouselState.records.currentSlide < carouselState.records.slides.length - 1) {
+                        carouselState.records.currentSlide++;
+                        renderRecordsSlide();
+                    }
+                });
+
+                // Competition carousel arrows
+                document.getElementById('compPrev')?.addEventListener('click', () => {
+                    if (carouselState.competition.currentSlide > 0) {
+                        carouselState.competition.currentSlide--;
+                        renderCompSlide();
+                    }
+                });
+                document.getElementById('compNext')?.addEventListener('click', () => {
+                    if (carouselState.competition.currentSlide < carouselState.competition.slides.length - 1) {
+                        carouselState.competition.currentSlide++;
+                        renderCompSlide();
+                    }
+                });
+            }
+        }
+
+        async function loadRecordsCarousel() {
+            const body = document.getElementById('recordsCarouselBody');
+            const titleEl = document.getElementById('recordsCarouselTitle');
+            if (!body) return;
+
+            const isCoach = appState.role === 'coach' && !appState.selectedAthleteUuid;
+            if (titleEl) titleEl.textContent = isCoach ? 'Team Records' : 'My Personal Bests';
+
+            body.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading...</div>';
+
+            try {
+                const course = carouselState.records.course;
+                const genderFilter = carouselState.records.gender;
+                let athletes, uuids, nameMap = {}, genderMap = {};
+
+                if (isCoach) {
+                    athletes = await getTeamAthleteList();
+                    // Filter by gender if specified
+                    if (genderFilter) {
+                        athletes = athletes.filter(a => a.gender === genderFilter);
+                    }
+                    uuids = athletes.map(a => a.athlete_uuid);
+                    athletes.forEach(a => { 
+                        nameMap[a.athlete_uuid] = a.first_name + ' ' + a.last_name.charAt(0) + '.';
+                        genderMap[a.athlete_uuid] = a.gender;
+                    });
+                } else {
+                    uuids = [appState.selectedAthleteUuid || appState.athleteUuid];
+                }
+
+                if (!uuids.length) {
+                    body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No athlete data available</p></div>';
+                    return;
+                }
+
+                const _uf = new Set(uuids);
+                const _small = uuids.length <= SUPABASE_IN_LIMIT;
+
+                let query = supabaseClient.from('v_race_kpis').select('athlete_uuid, race_time_s, style, distance_m, source_date, course');
+                if (_small) query = query.in('athlete_uuid', uuids);
+                query = query.eq('course', course).not('race_time_s', 'is', null);
+
+                const { data: rawRaces, error } = await query;
+                if (error) throw error;
+
+                const races = _small ? rawRaces : (rawRaces || []).filter(r => _uf.has(r.athlete_uuid));
+
+                if (!races?.length) {
+                    body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No ' + course + ' race data yet</p></div>';
+                    document.getElementById('recordsCarouselDots').innerHTML = '';
+                    return;
+                }
+
+                // Group by stroke, then find best time per event
+                const strokeEvents = {};
+                races.forEach(r => {
+                    const stroke = (r.style || 'unknown').toLowerCase();
+                    const dist = r.distance_m || 0;
+                    const time = parseFloat(r.race_time_s);
+                    if (isNaN(time) || time <= 0) return;
+
+                    if (!strokeEvents[stroke]) strokeEvents[stroke] = {};
+                    const eventKey = dist;
+                    if (!strokeEvents[stroke][eventKey] || time < strokeEvents[stroke][eventKey].time) {
+                        strokeEvents[stroke][eventKey] = { 
+                            time, uuid: r.athlete_uuid, date: r.source_date, dist, stroke 
+                        };
+                    }
+                });
+
+                // Build slides - one per stroke that has data
+                const slides = [];
+                STROKES_ORDER.forEach(stroke => {
+                    if (strokeEvents[stroke] && Object.keys(strokeEvents[stroke]).length > 0) {
+                        const events = Object.values(strokeEvents[stroke]).sort((a, b) => a.dist - b.dist);
+                        slides.push({ stroke, events, nameMap, isCoach, course });
+                    }
+                });
+
+                // Check other strokes not in order
+                Object.keys(strokeEvents).forEach(stroke => {
+                    if (!STROKES_ORDER.includes(stroke) && Object.keys(strokeEvents[stroke]).length > 0) {
+                        const events = Object.values(strokeEvents[stroke]).sort((a, b) => a.dist - b.dist);
+                        slides.push({ stroke, events, nameMap, isCoach, course });
+                    }
+                });
+
+                carouselState.records.slides = slides;
+                if (carouselState.records.currentSlide >= slides.length) carouselState.records.currentSlide = 0;
+                
+                renderRecordsSlide();
+                renderRecordsDots();
+
+            } catch (e) {
+                console.error('Error loading records carousel:', e);
+                body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>Error loading records</p></div>';
+            }
+        }
+
+        function renderRecordsSlide() {
+            const body = document.getElementById('recordsCarouselBody');
+            const slides = carouselState.records.slides;
+            const idx = carouselState.records.currentSlide;
+            
+            if (!slides.length || !body) return;
+            const slide = slides[idx];
+            const unit = slide.course === 'SCY' ? 'Yds' : 'm';
+            const strokeLabel = slide.stroke.charAt(0).toUpperCase() + slide.stroke.slice(1);
+            const strokeClass = slide.stroke.replace(' ', '');
+
+            let html = `<div class="records-slide-title">
+                <span class="stroke-icon ${strokeClass}">${STROKE_ICONS[slide.stroke] || ''}</span>
+                <span class="stroke-name">${strokeLabel}</span>
+            </div>
+            <div class="records-grid">`;
+
+            slide.events.forEach(ev => {
+                const holderName = slide.nameMap[ev.uuid] || '';
+                const initials = holderName ? holderName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0,2) : '??';
+                const dateStr = ev.date ? new Date(ev.date).toLocaleDateString('en-US', { month:'short', day:'numeric' }) : '';
+
+                if (slide.isCoach) {
+                    html += `<div class="record-card">
+                        <div class="event-dist">${ev.dist} ${unit}</div>
+                        <div class="event-time">${formatTime(ev.time)}</div>
+                        <div class="event-holder">
+                            <div class="holder-avatar">${initials}</div>
+                            <span class="holder-name">${holderName}</span>
+                        </div>
+                        <div class="event-date">${dateStr}</div>
+                    </div>`;
+                } else {
+                    html += `<div class="record-card pb-card">
+                        <div class="event-dist">${ev.dist} ${unit}</div>
+                        <div class="event-time">${formatTime(ev.time)}</div>
+                        <div class="event-date">${dateStr}</div>
+                        <div class="pb-label"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>PB</div>
+                    </div>`;
+                }
+            });
+
+            html += `</div>
+            <div class="carousel-slide-label">Slide ${idx + 1} of ${slides.length} — ${strokeLabel}</div>`;
+            body.innerHTML = html;
+
+            // Update dots
+            document.querySelectorAll('#recordsCarouselDots .carousel-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === idx);
+            });
+        }
+
+        function renderRecordsDots() {
+            const dotsEl = document.getElementById('recordsCarouselDots');
+            if (!dotsEl) return;
+            const slides = carouselState.records.slides;
+            dotsEl.innerHTML = slides.map((s, i) => 
+                `<div class="carousel-dot${i === carouselState.records.currentSlide ? ' active' : ''}" onclick="carouselState.records.currentSlide=${i};renderRecordsSlide();" title="${s.stroke}"></div>`
+            ).join('');
+        }
+
+        // Competition carousel
+        const COMP_CAROUSEL_BOARDS = [
+            { key: 'fastest_start', label: 'Fastest Start (0-15m)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' },
+            { key: 'best_reaction', label: 'Best Reaction Time', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
+            { key: 'fastest_turn', label: 'Fastest Turn (15m-15m)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>' },
+            { key: 'best_race_pb', label: 'Best Race Time', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/></svg>' }
+        ];
+
+        async function loadCompetitionCarousel() {
+            const body = document.getElementById('compCarouselBody');
+            const card = document.getElementById('compCarouselCard');
+            if (!body) return;
+
+            body.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading...</div>';
+
+            try {
+                const genderFilter = carouselState.competition.gender;
+                
+                // Get competition athletes
+                const { data: compAthletes, error: compErr } = await supabaseClient
+                    .from('v_competition_athletes')
+                    .select('athlete_uuid, first_name, last_name, team_name');
+
+                if (compErr || !compAthletes?.length) {
+                    if (card) card.style.display = 'none';
+                    body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No athletes found</p></div>';
+                    return;
+                }
+
+                // If gender filter, we need to get gender from athletes table
+                let filteredAthletes = compAthletes;
+                if (genderFilter) {
+                    const compUuids = compAthletes.map(a => a.athlete_uuid);
+                    const { data: athGenders } = await supabaseClient
+                        .from('athletes')
+                        .select('athlete_uuid, gender')
+                        .in('athlete_uuid', compUuids)
+                        .eq('gender', genderFilter);
+                    
+                    if (!athGenders?.length) {
+                        body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No ' + (genderFilter === 'male' ? 'male' : 'female') + ' athletes found</p></div>';
+                        document.getElementById('compCarouselDots').innerHTML = '';
+                        return;
+                    }
+                    
+                    const genderUuids = new Set(athGenders.map(a => a.athlete_uuid));
+                    filteredAthletes = compAthletes.filter(a => genderUuids.has(a.athlete_uuid));
+                }
+
+                if (!filteredAthletes.length) {
+                    body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No athletes found</p></div>';
+                    document.getElementById('compCarouselDots').innerHTML = '';
+                    return;
+                }
+
+                if (card) card.style.display = '';
+                const uuids = filteredAthletes.map(a => a.athlete_uuid);
+                const nameMap = {};
+                const teamMap = {};
+                filteredAthletes.forEach(a => { 
+                    nameMap[a.athlete_uuid] = a.first_name + ' ' + a.last_name.charAt(0) + '.';
+                    teamMap[a.athlete_uuid] = a.team_name || '';
+                });
+
+                // Load data for all boards
+                const slides = [];
+
+                // Fastest Start
+                const { data: starts } = await supabaseClient.from('v_start_kpis').select('athlete_uuid, split_15m_s').in('athlete_uuid', uuids).not('split_15m_s', 'is', null);
+                if (starts?.length) {
+                    const best = {};
+                    starts.forEach(r => { if (!best[r.athlete_uuid] || r.split_15m_s < best[r.athlete_uuid].split_15m_s) best[r.athlete_uuid] = r; });
+                    const sorted = Object.values(best).sort((a, b) => a.split_15m_s - b.split_15m_s).slice(0, 3);
+                    if (sorted.length >= 1) slides.push({ ...COMP_CAROUSEL_BOARDS[0], top3: sorted.map(r => ({ uuid: r.athlete_uuid, value: r.split_15m_s, unit: 's' })), nameMap, teamMap });
+                }
+
+                // Best Reaction
+                const { data: reactions } = await supabaseClient.from('v_start_kpis').select('athlete_uuid, reaction_time_s').in('athlete_uuid', uuids).not('reaction_time_s', 'is', null);
+                if (reactions?.length) {
+                    const best = {};
+                    reactions.forEach(r => { if (!best[r.athlete_uuid] || r.reaction_time_s < best[r.athlete_uuid].reaction_time_s) best[r.athlete_uuid] = r; });
+                    const sorted = Object.values(best).sort((a, b) => a.reaction_time_s - b.reaction_time_s).slice(0, 3);
+                    if (sorted.length >= 1) slides.push({ ...COMP_CAROUSEL_BOARDS[1], top3: sorted.map(r => ({ uuid: r.athlete_uuid, value: r.reaction_time_s, unit: 's' })), nameMap, teamMap });
+                }
+
+                // Fastest Turn
+                const { data: turns } = await supabaseClient.from('v_turn_kpis').select('athlete_uuid, time_15in_15out_s').in('athlete_uuid', uuids).not('time_15in_15out_s', 'is', null);
+                if (turns?.length) {
+                    const best = {};
+                    turns.forEach(r => { if (!best[r.athlete_uuid] || r.time_15in_15out_s < best[r.athlete_uuid].time_15in_15out_s) best[r.athlete_uuid] = r; });
+                    const sorted = Object.values(best).sort((a, b) => a.time_15in_15out_s - b.time_15in_15out_s).slice(0, 3);
+                    if (sorted.length >= 1) slides.push({ ...COMP_CAROUSEL_BOARDS[2], top3: sorted.map(r => ({ uuid: r.athlete_uuid, value: r.time_15in_15out_s, unit: 's' })), nameMap, teamMap });
+                }
+
+                // Best Race PB (just get overall best from any event)
+                const { data: races } = await supabaseClient.from('v_race_kpis').select('athlete_uuid, race_time_s').in('athlete_uuid', uuids).not('race_time_s', 'is', null);
+                if (races?.length) {
+                    const best = {};
+                    races.forEach(r => { if (!best[r.athlete_uuid] || r.race_time_s < best[r.athlete_uuid].race_time_s) best[r.athlete_uuid] = r; });
+                    const sorted = Object.values(best).sort((a, b) => a.race_time_s - b.race_time_s).slice(0, 3);
+                    if (sorted.length >= 1) slides.push({ ...COMP_CAROUSEL_BOARDS[3], top3: sorted.map(r => ({ uuid: r.athlete_uuid, value: r.race_time_s, unit: '' })), nameMap, teamMap });
+                }
+
+                if (!slides.length) {
+                    body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No competition data yet</p></div>';
+                    document.getElementById('compCarouselDots').innerHTML = '';
+                    return;
+                }
+
+                carouselState.competition.slides = slides;
+                if (carouselState.competition.currentSlide >= slides.length) carouselState.competition.currentSlide = 0;
+
+                renderCompSlide();
+                renderCompDots();
+
+            } catch (e) {
+                console.error('Error loading competition carousel:', e);
+                body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>Competition not available</p></div>';
+            }
+        }
+
+        function renderCompSlide() {
+            const body = document.getElementById('compCarouselBody');
+            const slides = carouselState.competition.slides;
+            const idx = carouselState.competition.currentSlide;
+
+            if (!slides.length || !body) return;
+            const slide = slides[idx];
+
+            let html = `<div class="comp-slide-title">${slide.icon}${slide.label}</div>
+            <div class="comp-podium-mini">`;
+
+            [1, 0, 2].forEach(rank => { // Order: 2nd, 1st, 3rd for visual display
+                const item = slide.top3[rank];
+                if (!item) return;
+                const name = slide.nameMap[item.uuid] || 'Unknown';
+                const team = slide.teamMap[item.uuid] || '';
+                const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                const valueStr = slide.unit === 's' ? item.value.toFixed(3) + 's' : formatTime(item.value);
+                const isMe = item.uuid === appState.athleteUuid;
+
+                html += `<div class="comp-podium-item rank-${rank + 1}">
+                    <div class="comp-avatar-mini" ${isMe ? 'style="background:linear-gradient(135deg,#a855f7,#7c3aed);box-shadow:0 0 12px rgba(168,85,247,0.4);"' : ''}>${initials}<div class="comp-medal-mini">${rank + 1}</div></div>
+                    <div class="comp-name-mini" ${isMe ? 'style="color:var(--accent-purple);"' : ''}>${isMe ? 'You' : name}</div>
+                    <div class="comp-team-mini">${team}</div>
+                    <div class="comp-value-mini">${valueStr}</div>
+                    <div class="comp-bar-mini"></div>
+                </div>`;
+            });
+
+            html += `</div><div class="carousel-slide-label">Slide ${idx + 1} of ${slides.length}</div>`;
+            body.innerHTML = html;
+
+            // Update dots
+            document.querySelectorAll('#compCarouselDots .carousel-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === idx);
+            });
+        }
+
+        function renderCompDots() {
+            const dotsEl = document.getElementById('compCarouselDots');
+            if (!dotsEl) return;
+            const slides = carouselState.competition.slides;
+            dotsEl.innerHTML = slides.map((s, i) => 
+                `<div class="carousel-dot${i === carouselState.competition.currentSlide ? ' active' : ''}" onclick="carouselState.competition.currentSlide=${i};renderCompSlide();" title="${s.label}"></div>`
+            ).join('');
+        }
+
+        // ============================================
+        // ATHLETE CAROUSELS (v02.11)
+        // ============================================
+        async function loadAthleteRecordsCarousel() {
+            const body = document.getElementById('athleteRecordsBody');
+            if (!body) return;
+
+            body.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading PBs...</div>';
+
+            try {
+                const course = carouselState.athleteRecords.course;
+                const uuid = appState.athleteUuid;
+
+                if (!uuid) {
+                    body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No athlete data</p></div>';
+                    return;
+                }
+
+                const { data: races, error } = await supabaseClient
+                    .from('v_race_kpis')
+                    .select('athlete_uuid, race_time_s, style, distance_m, source_date, course')
+                    .eq('athlete_uuid', uuid)
+                    .eq('course', course)
+                    .not('race_time_s', 'is', null);
+
+                if (error) throw error;
+
+                if (!races?.length) {
+                    body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No ' + course + ' race data yet</p></div>';
+                    document.getElementById('athleteRecordsDots').innerHTML = '';
+                    return;
+                }
+
+                // Group by stroke, then find best time per event
+                const strokeEvents = {};
+                races.forEach(r => {
+                    const stroke = (r.style || 'unknown').toLowerCase();
+                    const dist = r.distance_m || 0;
+                    const time = parseFloat(r.race_time_s);
+                    if (isNaN(time) || time <= 0) return;
+                    
+                    if (!strokeEvents[stroke]) strokeEvents[stroke] = {};
+                    const key = dist;
+                    if (!strokeEvents[stroke][key] || time < strokeEvents[stroke][key].time) {
+                        strokeEvents[stroke][key] = { time, date: r.source_date, uuid: r.athlete_uuid };
+                    }
+                });
+
+                // Build slides per stroke
+                const slides = [];
+                STROKES_ORDER.forEach(stroke => {
+                    if (!strokeEvents[stroke]) return;
+                    const events = Object.entries(strokeEvents[stroke]).map(([dist, data]) => ({
+                        dist: parseInt(dist), time: data.time, date: data.date, uuid: data.uuid
+                    })).sort((a, b) => a.dist - b.dist);
+                    
+                    if (events.length) {
+                        slides.push({ stroke, events, course });
+                    }
+                });
+
+                if (!slides.length) {
+                    body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No PB data for ' + course + '</p></div>';
+                    document.getElementById('athleteRecordsDots').innerHTML = '';
+                    return;
+                }
+
+                carouselState.athleteRecords.slides = slides;
+                if (carouselState.athleteRecords.currentSlide >= slides.length) carouselState.athleteRecords.currentSlide = 0;
+
+                renderAthleteRecordsSlide();
+                renderAthleteRecordsDots();
+
+            } catch (e) {
+                console.error('Error loading athlete records carousel:', e);
+                body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>Error loading PBs</p></div>';
+            }
+        }
+
+        function renderAthleteRecordsSlide() {
+            const body = document.getElementById('athleteRecordsBody');
+            const slides = carouselState.athleteRecords.slides;
+            const idx = carouselState.athleteRecords.currentSlide;
+
+            if (!slides.length || !body) return;
+            const slide = slides[idx];
+
+            const strokeClass = slide.stroke.toLowerCase().replace(' ', '');
+            const unit = slide.course === 'SCY' ? 'YDS' : 'M';
+
+            let html = `<div class="records-slide-title">
+                <span class="stroke-icon ${strokeClass}">${STROKE_ICONS[strokeClass] || ''}</span>
+                <span class="stroke-name">${slide.stroke.charAt(0).toUpperCase() + slide.stroke.slice(1)}</span>
+            </div>
+            <div class="records-grid">`;
+
+            slide.events.forEach(ev => {
+                const dateStr = ev.date ? new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+                html += `<div class="record-card pb-card">
+                    <div class="event-dist">${ev.dist} ${unit}</div>
+                    <div class="event-time">${formatTime(ev.time)}</div>
+                    <div class="event-date">${dateStr}</div>
+                    <div class="pb-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>PB</div>
+                </div>`;
+            });
+
+            html += `</div><div class="carousel-slide-label">Slide ${idx + 1} of ${slides.length} — ${slide.stroke.charAt(0).toUpperCase() + slide.stroke.slice(1)}</div>`;
+            body.innerHTML = html;
+
+            // Update dots
+            document.querySelectorAll('#athleteRecordsDots .carousel-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === idx);
+            });
+        }
+
+        function renderAthleteRecordsDots() {
+            const dotsEl = document.getElementById('athleteRecordsDots');
+            if (!dotsEl) return;
+            const slides = carouselState.athleteRecords.slides;
+            dotsEl.innerHTML = slides.map((s, i) => 
+                `<div class="carousel-dot${i === carouselState.athleteRecords.currentSlide ? ' active' : ''}" onclick="carouselState.athleteRecords.currentSlide=${i};renderAthleteRecordsSlide();" title="${s.stroke}"></div>`
+            ).join('');
+        }
+
+        async function loadAthleteCompCarousel() {
+            const body = document.getElementById('athleteCompBody');
+            const card = document.getElementById('athleteCompCarouselCard');
+            if (!body) return;
+
+            body.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading...</div>';
+
+            try {
+                const genderFilter = carouselState.athleteComp.gender;
+                
+                // Get competition athletes
+                const { data: compAthletes, error: compErr } = await supabaseClient
+                    .from('v_competition_athletes')
+                    .select('athlete_uuid, first_name, last_name, team_name');
+
+                if (compErr || !compAthletes?.length) {
+                    if (card) card.style.display = 'none';
+                    body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No athletes found</p></div>';
+                    return;
+                }
+
+                // If gender filter, get gender from athletes table
+                let filteredAthletes = compAthletes;
+                if (genderFilter) {
+                    const compUuids = compAthletes.map(a => a.athlete_uuid);
+                    const { data: athGenders } = await supabaseClient
+                        .from('athletes')
+                        .select('athlete_uuid, gender')
+                        .in('athlete_uuid', compUuids)
+                        .eq('gender', genderFilter);
+                    
+                    if (!athGenders?.length) {
+                        body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No ' + (genderFilter === 'male' ? 'male' : 'female') + ' athletes found</p></div>';
+                        document.getElementById('athleteCompDots').innerHTML = '';
+                        return;
+                    }
+                    
+                    const genderUuids = new Set(athGenders.map(a => a.athlete_uuid));
+                    filteredAthletes = compAthletes.filter(a => genderUuids.has(a.athlete_uuid));
+                }
+
+                if (!filteredAthletes.length) {
+                    body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No athletes found</p></div>';
+                    document.getElementById('athleteCompDots').innerHTML = '';
+                    return;
+                }
+
+                if (card) card.style.display = '';
+                const uuids = filteredAthletes.map(a => a.athlete_uuid);
+                const nameMap = {};
+                const teamMap = {};
+                filteredAthletes.forEach(a => { 
+                    nameMap[a.athlete_uuid] = a.first_name + ' ' + a.last_name.charAt(0) + '.';
+                    teamMap[a.athlete_uuid] = a.team_name || '';
+                });
+
+                // Load data for all boards (same as coach but we highlight the current athlete)
+                const slides = [];
+
+                // Fastest Start
+                const { data: starts } = await supabaseClient.from('v_start_kpis').select('athlete_uuid, split_15m_s').in('athlete_uuid', uuids).not('split_15m_s', 'is', null);
+                if (starts?.length) {
+                    const best = {};
+                    starts.forEach(r => { if (!best[r.athlete_uuid] || r.split_15m_s < best[r.athlete_uuid].split_15m_s) best[r.athlete_uuid] = r; });
+                    const sorted = Object.values(best).sort((a, b) => a.split_15m_s - b.split_15m_s).slice(0, 3);
+                    if (sorted.length >= 1) slides.push({ ...COMP_CAROUSEL_BOARDS[0], top3: sorted.map(r => ({ uuid: r.athlete_uuid, value: r.split_15m_s, unit: 's' })), nameMap, teamMap });
+                }
+
+                // Best Reaction
+                const { data: reactions } = await supabaseClient.from('v_start_kpis').select('athlete_uuid, reaction_time_s').in('athlete_uuid', uuids).not('reaction_time_s', 'is', null);
+                if (reactions?.length) {
+                    const best = {};
+                    reactions.forEach(r => { if (!best[r.athlete_uuid] || r.reaction_time_s < best[r.athlete_uuid].reaction_time_s) best[r.athlete_uuid] = r; });
+                    const sorted = Object.values(best).sort((a, b) => a.reaction_time_s - b.reaction_time_s).slice(0, 3);
+                    if (sorted.length >= 1) slides.push({ ...COMP_CAROUSEL_BOARDS[1], top3: sorted.map(r => ({ uuid: r.athlete_uuid, value: r.reaction_time_s, unit: 's' })), nameMap, teamMap });
+                }
+
+                // Fastest Turn
+                const { data: turns } = await supabaseClient.from('v_turn_kpis').select('athlete_uuid, time_15in_15out_s').in('athlete_uuid', uuids).not('time_15in_15out_s', 'is', null);
+                if (turns?.length) {
+                    const best = {};
+                    turns.forEach(r => { if (!best[r.athlete_uuid] || r.time_15in_15out_s < best[r.athlete_uuid].time_15in_15out_s) best[r.athlete_uuid] = r; });
+                    const sorted = Object.values(best).sort((a, b) => a.time_15in_15out_s - b.time_15in_15out_s).slice(0, 3);
+                    if (sorted.length >= 1) slides.push({ ...COMP_CAROUSEL_BOARDS[2], top3: sorted.map(r => ({ uuid: r.athlete_uuid, value: r.time_15in_15out_s, unit: 's' })), nameMap, teamMap });
+                }
+
+                // Best Race PB
+                const { data: races } = await supabaseClient.from('v_race_kpis').select('athlete_uuid, race_time_s').in('athlete_uuid', uuids).not('race_time_s', 'is', null);
+                if (races?.length) {
+                    const best = {};
+                    races.forEach(r => { if (!best[r.athlete_uuid] || r.race_time_s < best[r.athlete_uuid].race_time_s) best[r.athlete_uuid] = r; });
+                    const sorted = Object.values(best).sort((a, b) => a.race_time_s - b.race_time_s).slice(0, 3);
+                    if (sorted.length >= 1) slides.push({ ...COMP_CAROUSEL_BOARDS[3], top3: sorted.map(r => ({ uuid: r.athlete_uuid, value: r.race_time_s, unit: '' })), nameMap, teamMap });
+                }
+
+                if (!slides.length) {
+                    body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No competition data yet</p></div>';
+                    document.getElementById('athleteCompDots').innerHTML = '';
+                    return;
+                }
+
+                carouselState.athleteComp.slides = slides;
+                if (carouselState.athleteComp.currentSlide >= slides.length) carouselState.athleteComp.currentSlide = 0;
+
+                renderAthleteCompSlide();
+                renderAthleteCompDots();
+
+            } catch (e) {
+                console.error('Error loading athlete competition carousel:', e);
+                body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>Competition not available</p></div>';
+            }
+        }
+
+        function renderAthleteCompSlide() {
+            const body = document.getElementById('athleteCompBody');
+            const slides = carouselState.athleteComp.slides;
+            const idx = carouselState.athleteComp.currentSlide;
+
+            if (!slides.length || !body) return;
+            const slide = slides[idx];
+
+            let html = `<div class="comp-slide-title">${slide.icon}${slide.label}</div>
+            <div class="comp-podium-mini">`;
+
+            [1, 0, 2].forEach(rank => {
+                const item = slide.top3[rank];
+                if (!item) return;
+                const name = slide.nameMap[item.uuid] || 'Unknown';
+                const team = slide.teamMap[item.uuid] || '';
+                const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                const valueStr = slide.unit === 's' ? item.value.toFixed(3) + 's' : formatTime(item.value);
+                const isMe = item.uuid === appState.athleteUuid;
+
+                html += `<div class="comp-podium-item rank-${rank + 1}">
+                    <div class="comp-avatar-mini" ${isMe ? 'style="background:linear-gradient(135deg,#a855f7,#7c3aed);box-shadow:0 0 12px rgba(168,85,247,0.4);"' : ''}>${initials}<div class="comp-medal-mini">${rank + 1}</div></div>
+                    <div class="comp-name-mini" ${isMe ? 'style="color:var(--accent-purple);"' : ''}>${isMe ? 'You' : name}</div>
+                    <div class="comp-team-mini">${team}</div>
+                    <div class="comp-value-mini">${valueStr}</div>
+                    <div class="comp-bar-mini"></div>
+                </div>`;
+            });
+
+            html += `</div><div class="carousel-slide-label">Slide ${idx + 1} of ${slides.length}</div>`;
+            body.innerHTML = html;
+
+            document.querySelectorAll('#athleteCompDots .carousel-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === idx);
+            });
+        }
+
+        function renderAthleteCompDots() {
+            const dotsEl = document.getElementById('athleteCompDots');
+            if (!dotsEl) return;
+            const slides = carouselState.athleteComp.slides;
+            dotsEl.innerHTML = slides.map((s, i) => 
+                `<div class="carousel-dot${i === carouselState.athleteComp.currentSlide ? ' active' : ''}" onclick="carouselState.athleteComp.currentSlide=${i};renderAthleteCompSlide();" title="${s.label}"></div>`
+            ).join('');
+        }
+
         // "" TEAM GOALS ""
         async function loadTeamGoals() {
             const container = document.getElementById('teamGoalsGrid');
@@ -8069,7 +9006,7 @@
             const styles = [...new Set(startModuleState.allStarts.map(s => s.style).filter(Boolean))];
             const styleSel = document.getElementById('startStyleFilter');
             if (styleSel) {
-                styleSel.innerHTML = '<option value="">All Styles</option>' +
+                styleSel.innerHTML = '<option value="">All Strokes</option>' +
                     styles.sort().map(st => `<option value="${st}">${st.charAt(0).toUpperCase() + st.slice(1)}</option>`).join('');
             }
         }
@@ -8333,7 +9270,7 @@
                         <div class="phase-bar-segment" style="width:${(avgPush/total*100).toFixed(1)}%; background:rgba(0,194,255,0.85);">
                             <span class="seg-label">Push</span><span class="seg-value">${avgPush.toFixed(3)}s</span>
                         </div>
-                        <div class="phase-bar-segment" style="width:${(avgFlight/total*100).toFixed(1)}%; background:rgba(0,194,255,0.85);">
+                        <div class="phase-bar-segment" style="width:${(avgFlight/total*100).toFixed(1)}%; background:rgba(168,85,247,0.85);">
                             <span class="seg-label">Flight</span><span class="seg-value">${avgFlight.toFixed(3)}s</span>
                         </div>
                     </div>
@@ -8370,7 +9307,7 @@
                 <div class="phase-bar-segment" style="width:${(push/total*100).toFixed(1)}%; background:rgba(0,194,255,0.85);">
                     <span class="seg-label">Push</span><span class="seg-value">${push.toFixed(3)}s</span>
                 </div>
-                <div class="phase-bar-segment" style="width:${(flight/total*100).toFixed(1)}%; background:rgba(0,194,255,0.85);">
+                <div class="phase-bar-segment" style="width:${(flight/total*100).toFixed(1)}%; background:rgba(168,85,247,0.85);">
                     <span class="seg-label">Flight</span><span class="seg-value">${flight.toFixed(3)}s</span>
                 </div>
             </div>`;
@@ -8389,7 +9326,7 @@
                     <div class="phase-bar-segment" style="width:${(cp/ct*100).toFixed(1)}%; background:rgba(0,194,255,0.6);">
                         <span class="seg-value" style="font-size:11px">${cp.toFixed(3)}s</span>
                     </div>
-                    <div class="phase-bar-segment" style="width:${(cf/ct*100).toFixed(1)}%; background:rgba(0,194,255,0.6);">
+                    <div class="phase-bar-segment" style="width:${(cf/ct*100).toFixed(1)}%; background:rgba(168,85,247,0.6);">
                         <span class="seg-value" style="font-size:11px">${cf.toFixed(3)}s</span>
                     </div>
                 </div>`;
@@ -9290,7 +10227,7 @@
             const styles = [...new Set(turnModuleState.allTurns.map(t => t.style).filter(Boolean))];
             const styleSel = document.getElementById('turnStyleFilter');
             if (styleSel) {
-                styleSel.innerHTML = '<option value="">All Styles</option>' + styles.map(st => `<option value="${st}">${st.charAt(0).toUpperCase() + st.slice(1)}</option>`).join('');
+                styleSel.innerHTML = '<option value="">All Strokes</option>' + styles.map(st => `<option value="${st}">${st.charAt(0).toUpperCase() + st.slice(1)}</option>`).join('');
             }
         }
 
@@ -10125,13 +11062,26 @@
                     <div class="start-metric-item" style="padding:20px;">
                         <div style="font-size:13px; font-weight:600; color:var(--accent-cyan); margin-bottom:12px;">
                             <svg style="width:16px;height:16px;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V8M5 12H2a10 10 0 0020 0h-3"/></svg>
-                            Underwater
+                            Underwater (Post-Turn)
                         </div>
                         <div style="font-size:12px; color:var(--text-secondary); line-height:1.8;">
-                            15m Split: <strong style="color:var(--text-primary)">${pf(prim.split_15m_s, 2)}s</strong><br>
-                            Kick Rate: <strong style="color:var(--text-primary)">${pf(prim.kick_rate, 1)} /min</strong><br>
+                            Split 5m: <strong style="color:var(--text-primary)">${pf(prim.split_5m_s, 2)}s</strong><br>
+                            Split 10m: <strong style="color:var(--text-primary)">${pf(prim.split_10m_s, 2)}s</strong><br>
+                            Split 15m: <strong style="color:var(--text-primary)">${pf(prim.split_15m_s, 2)}s</strong><br>
                             Surface Break: <strong style="color:var(--text-primary)">${pf(prim.surface_break_s, 2)}s</strong><br>
-                            Vel 0-5m: <strong style="color:var(--text-primary)">${pf(prim.avg_vel_0_5, 2)} m/s</strong>
+                            Kick Rate: <strong style="color:var(--text-primary)">${pf(prim.kick_rate, 1)} /min</strong>
+                        </div>
+                    </div>
+                    <div class="start-metric-item" style="padding:20px;">
+                        <div style="font-size:13px; font-weight:600; color:var(--accent-green); margin-bottom:12px;">
+                            <svg style="width:16px;height:16px;vertical-align:middle;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                            Post-Turn Velocity
+                        </div>
+                        <div style="font-size:12px; color:var(--text-secondary); line-height:1.8;">
+                            Vel 0-5m: <strong style="color:var(--text-primary)">${pf(prim.avg_vel_0_5, 2)} m/s</strong><br>
+                            Vel 5-10m: <strong style="color:var(--text-primary)">${pf(prim.avg_vel_5_10, 2)} m/s</strong><br>
+                            Vel 10-15m: <strong style="color:var(--text-primary)">${pf(prim.avg_vel_10_15, 2)} m/s</strong><br>
+                            Stroke Rate: <strong style="color:var(--text-primary)">${pf(prim.stroke_rate_post_turn, 1)} /min</strong>
                         </div>
                     </div>
                     <div class="start-metric-item" style="padding:20px;">
@@ -10425,20 +11375,21 @@
                         return;
                     }
 
-                    // Level 2: Fingerprint using normalized fields + source_file
+                    // Level 2: Fingerprint using normalized fields
                     // Normalize strings: trim, lowercase, collapse whitespace
                     const norm = v => String(v||'').trim().toLowerCase().replace(/\s+/g,' ');
                     const dist = norm(mj.Distance || mj.distance);
                     const style = norm(mj.Style || mj.style);
+                    const runtime = norm(mj.Runtime || mj.runtime);
                     const raceTime = parseRaceTime(mj);
 
-                    // Build fingerprint from athlete + date + event + source_file + time
+                    // Build fingerprint from athlete + date + event identity + time
                     const key = [
                         r.athlete_uuid || '',
                         r.source_date || '',
                         dist,
                         style,
-                        r.source_file || '',
+                        runtime,
                         raceTime != null ? raceTime.toFixed(2) : '',
                         r.analysis_session_uuid || ''
                     ].join('|');
@@ -10446,9 +11397,9 @@
                     if (!seen.has('f:' + key)) {
                         seen.add('f:' + key);
 
-                        // Level 3: Use source_file to distinguish heats vs finals on same day
+                        // Level 3: Also check without session UUID (catches same race imported twice)
                         const looseKey = [r.athlete_uuid||'', r.source_date||'', dist, style,
-                            r.source_file||'', raceTime != null ? raceTime.toFixed(2) : ''].join('|');
+                            raceTime != null ? raceTime.toFixed(2) : ''].join('|');
                         if (seen.has('l:' + looseKey)) return;
                         seen.add('l:' + looseKey);
 
@@ -10497,9 +11448,9 @@
             // Event filter - label uses unit from dominant course or generic
             const activeCourse = courseEl.value || ([...courses].length === 1 ? [...courses][0] : '');
             const unit = activeCourse === 'SCY' ? 'Yds' : (activeCourse === 'SCM' || activeCourse === 'LCM') ? 'm' : '';
-            document.getElementById('raceEventFilter').innerHTML = '<option value="">All Events</option>' +
+            document.getElementById('raceEventFilter').innerHTML = '<option value="">All Distances</option>' +
                 [...events].sort((a,b)=>Number(a)-Number(b)).map(e=>`<option value="${e}">${e}${unit ? ' '+unit : ''}</option>`).join('');
-            document.getElementById('raceStyleFilter').innerHTML = '<option value="">All Styles</option>' +
+            document.getElementById('raceStyleFilter').innerHTML = '<option value="">All Strokes</option>' +
                 [...styles].sort().map(s=>`<option value="${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('');
         }
 
@@ -10709,7 +11660,7 @@
             const bestTime = allTimes.length ? Math.min(...allTimes) : null;
             const avgTime = allTimes.length ? allTimes.reduce((s,t) => s+t, 0) / allTimes.length : null;
 
-            let raceTime = avgTime, blockTime = null, strokeTotal = null, label = 'average', eventLabel = 'All Events';
+            let raceTime = avgTime, blockTime = null, strokeTotal = null, label = 'average', eventLabel = 'All Distances';
 
             if (isSingle && primary) {
                 raceTime = parseRaceTime(primary.mj);
@@ -11955,7 +12906,7 @@
 
         function updateLbFilterVisibility() {
             const cat = lbState.category;
-            const eventWrap = document.getElementById('lbEventFilterWrap');
+            const eventWrap = document.getElementById('lbDistanceFilterWrap');
             const courseWrap = document.getElementById('lbCourseFilterWrap');
             if (eventWrap) eventWrap.style.display = cat === 'race' ? '' : 'none';
             if (courseWrap) courseWrap.style.display = cat === 'race' ? '' : 'none';
@@ -12093,28 +13044,25 @@
         }
 
         async function loadLbRaceRankings(metricDef, athleteUuids) {
-            const styleFilter = document.getElementById('lbStyleFilter')?.value || '';
+            const strokeFilter = document.getElementById('lbStrokeFilter')?.value || '';
             const courseFilter = document.getElementById('lbCourseFilter')?.value || '';
-            const eventFilter = document.getElementById('lbEventFilter')?.value || '';
+            const distanceFilter = document.getElementById('lbDistanceFilter')?.value || '';
             let query = supabaseClient.from('v_race_kpis').select('athlete_uuid, race_time_s, style, distance_m, source_date, course');
             const { query: q1, clientFilter: cf1 } = safeInFilter(query, 'athlete_uuid', athleteUuids);
             query = q1;
-            if (styleFilter) query = query.eq('style', styleFilter);
+            if (strokeFilter) query = query.eq('style', strokeFilter);
             if (courseFilter) query = query.eq('course', courseFilter);
-            if (eventFilter) {
-                const parts = eventFilter.split('_');
-                if (parts.length === 2) query = query.eq('distance_m', parseInt(parts[0])).eq('style', parts[1]);
-            }
+            if (distanceFilter) query = query.eq('distance_m', parseInt(distanceFilter));
             query = query.not('race_time_s', 'is', null);
             const { data, error } = await query;
             if (error) throw error;
             let rows = cf1(data || []);
-            populateLbEventOptions(rows);
-            populateLbStyleOptions(rows);
+            populateLbDistanceOptions(rows);
+            populateLbStrokeOptions(rows);
             const bestMap = {};
             rows.forEach(r => {
                 const ek = r.distance_m + '_' + (r.style || 'unknown');
-                const uk = r.athlete_uuid + '__' + (eventFilter ? '' : ek);
+                const uk = r.athlete_uuid + '__' + ((distanceFilter && strokeFilter) ? '' : ek);
                 if (!bestMap[uk] || r.race_time_s < bestMap[uk].race_time_s) bestMap[uk] = r;
             });
             let best = Object.values(bestMap);
@@ -12123,7 +13071,7 @@
         }
 
         async function loadLbStartRankings(metricDef, athleteUuids) {
-            const styleFilter = document.getElementById('lbStyleFilter')?.value || '';
+            const styleFilter = document.getElementById('lbStrokeFilter')?.value || '';
             const key = metricDef.key;
             let query = supabaseClient.from('v_start_kpis').select('athlete_uuid, ' + key + ', style, source_date').not(key, 'is', null);
             const { query: q1, clientFilter: cf1 } = safeInFilter(query, 'athlete_uuid', athleteUuids);
@@ -12132,7 +13080,7 @@
             const { data, error } = await query;
             if (error) throw error;
             let rows = cf1(data || []);
-            populateLbStyleOptions(rows);
+            populateLbStrokeOptions(rows);
             const bestMap = {};
             rows.forEach(r => {
                 const val = parseFloat(r[key]); if (isNaN(val)) return;
@@ -12145,7 +13093,7 @@
         }
 
         async function loadLbTurnRankings(metricDef, athleteUuids) {
-            const styleFilter = document.getElementById('lbStyleFilter')?.value || '';
+            const styleFilter = document.getElementById('lbStrokeFilter')?.value || '';
             const key = metricDef.key;
             let query = supabaseClient.from('v_turn_kpis').select('athlete_uuid, ' + key + ', style, source_date').not(key, 'is', null);
             const { query: q1, clientFilter: cf1 } = safeInFilter(query, 'athlete_uuid', athleteUuids);
@@ -12154,7 +13102,7 @@
             const { data, error } = await query;
             if (error) throw error;
             let rows = cf1(data || []);
-            populateLbStyleOptions(rows);
+            populateLbStrokeOptions(rows);
             const bestMap = {};
             rows.forEach(r => {
                 const val = parseFloat(r[key]); if (isNaN(val)) return;
@@ -12166,20 +13114,26 @@
             return best.map((r, i) => ({ rank: i + 1, athlete_uuid: r.athlete_uuid, value: r.value, style: r.style, date: r.source_date, raw: r }));
         }
 
-        function populateLbEventOptions(rows) {
-            const sel = document.getElementById('lbEventFilter'); if (!sel) return;
+        function populateLbDistanceOptions(rows) {
+            const sel = document.getElementById('lbDistanceFilter'); if (!sel) return;
             const prev = sel.value;
-            const events = new Map();
-            (rows || []).forEach(r => { if (r.distance_m && r.style) { const k = r.distance_m + '_' + r.style; const c = (r.course || 'SCY').toUpperCase(); const u = c === 'SCY' ? 'Yds' : 'm'; events.set(k, r.distance_m + ' ' + u + ' ' + r.style); }});
-            const sorted = [...events.entries()].sort((a, b) => parseInt(a[0]) - parseInt(b[0]) || a[1].localeCompare(b[1]));
-            sel.innerHTML = '<option value="">All Events</option>' + sorted.map(([k, v]) => '<option value="' + k + '"' + (k === prev ? ' selected' : '') + '>' + v + '</option>').join('');
+            const distances = new Map();
+            (rows || []).forEach(r => { 
+                if (r.distance_m) { 
+                    const c = (r.course || 'SCY').toUpperCase(); 
+                    const u = c === 'SCY' ? 'Yds' : 'm'; 
+                    distances.set(r.distance_m, r.distance_m + ' ' + u); 
+                }
+            });
+            const sorted = [...distances.entries()].sort((a, b) => a[0] - b[0]);
+            sel.innerHTML = '<option value="">All Distances</option>' + sorted.map(([k, v]) => '<option value="' + k + '"' + (k == prev ? ' selected' : '') + '>' + v + '</option>').join('');
         }
 
-        function populateLbStyleOptions(rows) {
-            const sel = document.getElementById('lbStyleFilter'); if (!sel) return;
+        function populateLbStrokeOptions(rows) {
+            const sel = document.getElementById('lbStrokeFilter'); if (!sel) return;
             const prev = sel.value;
-            const styles = new Set(); (rows || []).forEach(r => { if (r.style) styles.add(r.style); });
-            sel.innerHTML = '<option value="">All Styles</option>' + [...styles].sort().map(s => '<option value="' + s + '"' + (s === prev ? ' selected' : '') + '>' + s.charAt(0).toUpperCase() + s.slice(1) + '</option>').join('');
+            const strokes = new Set(); (rows || []).forEach(r => { if (r.style) strokes.add(r.style); });
+            sel.innerHTML = '<option value="">All Strokes</option>' + [...strokes].sort().map(s => '<option value="' + s + '"' + (s === prev ? ' selected' : '') + '>' + s.charAt(0).toUpperCase() + s.slice(1) + '</option>').join('');
         }
 
         function applyLbFilters() {
@@ -12407,8 +13361,8 @@
 
         function updateCompFilterVisibility() {
             const isRace = compState.board === 'best_race_pb';
-            const ew = document.getElementById('compEventFilterWrap');
-            const sw = document.getElementById('compStyleFilterWrap');
+            const ew = document.getElementById('compDistanceFilterWrap');
+            const sw = document.getElementById('compStrokeFilterWrap');
             if (ew) ew.style.display = isRace ? '' : 'none';
             if (sw) sw.style.display = isRace ? '' : 'none';
         }
@@ -12424,11 +13378,28 @@
             try {
                 const { data } = await supabaseClient
                     .from('v_competition_athletes')
-                    .select('athlete_uuid, first_name, last_name, gender, team_name');
+                    .select('athlete_uuid, first_name, last_name, team_name');
 
                 const genderFilter = document.getElementById('compGenderFilter')?.value || '';
                 let athletes = data || [];
-                if (genderFilter) athletes = athletes.filter(a => a.gender === genderFilter);
+                
+                // If gender filter, get gender from athletes table
+                if (genderFilter && athletes.length) {
+                    const compUuids = athletes.map(a => a.athlete_uuid);
+                    const { data: athGenders } = await supabaseClient
+                        .from('athletes')
+                        .select('athlete_uuid, gender')
+                        .in('athlete_uuid', compUuids)
+                        .eq('gender', genderFilter);
+                    
+                    if (athGenders?.length) {
+                        const genderUuids = new Set(athGenders.map(a => a.athlete_uuid));
+                        athletes = athletes.filter(a => genderUuids.has(a.athlete_uuid));
+                    } else {
+                        athletes = [];
+                    }
+                }
+                
                 compState.athletes = athletes;
             } catch (e) {
                 console.warn('[Comp] athlete load failed (view may not exist yet):', e.message);
@@ -12453,10 +13424,10 @@
 
                 // Extra filters for race PB
                 if (compState.board === 'best_race_pb') {
-                    const ef = document.getElementById('compEventFilter')?.value || '';
-                    const sf = document.getElementById('compStyleFilter')?.value || '';
-                    if (ef) { const p = ef.split('_'); if (p.length === 2) query = query.eq('distance_m', parseInt(p[0])).eq('style', p[1]); }
-                    if (sf) query = query.eq('style', sf);
+                    const distFilter = document.getElementById('compDistanceFilter')?.value || '';
+                    const strokeFilter = document.getElementById('compStrokeFilter')?.value || '';
+                    if (distFilter) query = query.eq('distance_m', parseInt(distFilter));
+                    if (strokeFilter) query = query.eq('style', strokeFilter);
                 }
 
                 const { data, error } = await query;
@@ -12465,12 +13436,26 @@
 
                 // Populate race-specific filters
                 if (compState.board === 'best_race_pb') {
-                    const evSel = document.getElementById('compEventFilter');
-                    if (evSel) {
-                        const prev = evSel.value;
-                        const evs = new Map();
-                        rows.forEach(r => { if (r.distance_m && r.style) { const k = r.distance_m + '_' + r.style; const c = (r.course || 'SCY').toUpperCase(); evs.set(k, r.distance_m + (c === 'SCY' ? ' Yds ' : 'm ') + r.style); }});
-                        evSel.innerHTML = '<option value="">All Events</option>' + [...evs.entries()].sort((a,b) => parseInt(a[0]) - parseInt(b[0])).map(([k,v]) => '<option value="' + k + '"' + (k === prev ? ' selected' : '') + '>' + v + '</option>').join('');
+                    // Populate distance filter
+                    const distSel = document.getElementById('compDistanceFilter');
+                    if (distSel) {
+                        const prev = distSel.value;
+                        const dists = new Map();
+                        rows.forEach(r => { 
+                            if (r.distance_m) { 
+                                const c = (r.course || 'SCY').toUpperCase(); 
+                                dists.set(r.distance_m, r.distance_m + (c === 'SCY' ? ' Yds' : 'm')); 
+                            }
+                        });
+                        distSel.innerHTML = '<option value="">All Distances</option>' + [...dists.entries()].sort((a,b) => a[0] - b[0]).map(([k,v]) => '<option value="' + k + '"' + (k == prev ? ' selected' : '') + '>' + v + '</option>').join('');
+                    }
+                    // Populate stroke filter
+                    const strokeSel = document.getElementById('compStrokeFilter');
+                    if (strokeSel) {
+                        const prev = strokeSel.value;
+                        const strokes = new Set();
+                        rows.forEach(r => { if (r.style) strokes.add(r.style); });
+                        strokeSel.innerHTML = '<option value="">All Strokes</option>' + [...strokes].sort().map(s => '<option value="' + s + '"' + (s === prev ? ' selected' : '') + '>' + s.charAt(0).toUpperCase() + s.slice(1) + '</option>').join('');
                     }
                 }
 

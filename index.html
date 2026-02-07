@@ -6020,7 +6020,9 @@
                 badge.style.display = 'inline-block';
                 badge.style.background = 'linear-gradient(135deg, var(--accent-orange), #F5A623)';
                 btn.style.background = 'var(--card-bg)';
-                btnText.textContent = sub.days_remaining + 'd left';
+                const trialEndDate = sub.trial_end ? new Date(sub.trial_end) : null;
+                const daysRemaining = trialEndDate ? Math.max(0, Math.ceil((trialEndDate - new Date()) / (1000 * 60 * 60 * 24))) : 0;
+                btnText.textContent = daysRemaining + 'd left';
             } else {
                 // Paid user
                 badge.textContent = 'Pro';
@@ -6096,6 +6098,10 @@
             } else if (sub.status === 'trialing') {
                 // Show trial status
                 title.textContent = 'Your Trial';
+                const trialEndDate = sub.trial_end ? new Date(sub.trial_end) : null;
+                const daysRemaining = trialEndDate ? Math.max(0, Math.ceil((trialEndDate - new Date()) / (1000 * 60 * 60 * 24))) : 0;
+                const trialEndFormatted = trialEndDate ? trialEndDate.toLocaleDateString() : 'N/A';
+                
                 body.innerHTML = `
                     <div style="text-align:center; padding:20px 0;">
                         <div style="width:64px; height:64px; background:linear-gradient(135deg,var(--accent-orange),#F5A623); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
@@ -6103,9 +6109,9 @@
                         </div>
                         <h3 style="font-size:20px; font-weight:600; margin-bottom:8px;">Trial Active</h3>
                         <p style="color:var(--text-muted); margin-bottom:8px;">You have full Pro access!</p>
-                        <p style="font-size:24px; font-weight:700; color:var(--accent-orange); margin-bottom:24px;">${sub.days_remaining} days remaining</p>
+                        <p style="font-size:24px; font-weight:700; color:var(--accent-orange); margin-bottom:24px;">${daysRemaining} days remaining</p>
                         
-                        <p style="color:var(--text-muted); font-size:13px; margin-bottom:16px;">Your trial will convert to a paid subscription on ${new Date(sub.current_period_end).toLocaleDateString()}.</p>
+                        <p style="color:var(--text-muted); font-size:13px; margin-bottom:16px;">Your trial will convert to a paid subscription on ${trialEndFormatted}.</p>
                         
                         <button onclick="openBillingPortal()" class="btn" style="width:100%; padding:12px; background:var(--card-bg); border:1px solid var(--border-color); margin-bottom:8px;">
                             Manage Billing

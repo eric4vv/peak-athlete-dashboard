@@ -1952,6 +1952,17 @@
         }
         .start-metric-item {
             padding: 14px; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border-color);
+            position: relative; cursor: help;
+        }
+        .start-metric-item[title]:hover::after {
+            content: attr(title);
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            background: var(--bg-primary); color: var(--text-primary); padding: 8px 12px;
+            border-radius: 6px; font-size: 11px; font-weight: 400; white-space: normal;
+            max-width: 220px; text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 100;
+            border: 1px solid var(--border-color); margin-bottom: 6px;
+            font-family: 'Montserrat', sans-serif;
         }
         .start-metric-item .smi-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
         .start-metric-item .smi-value {
@@ -2365,6 +2376,22 @@
         .race-metric-item {
             display: flex; flex-direction: column; gap: 2px;
             padding: 8px 10px; background: var(--bg-card); border-radius: 8px;
+            position: relative; cursor: help;
+        }
+        .race-metric-item[title]:hover::after {
+            content: attr(title);
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            background: var(--bg-primary); color: var(--text-primary); padding: 8px 12px;
+            border-radius: 6px; font-size: 11px; font-weight: 400; white-space: nowrap;
+            max-width: 250px; white-space: normal; text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 100;
+            border: 1px solid var(--border-color); margin-bottom: 6px;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .race-metric-item[title]:hover::before {
+            content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            border: 6px solid transparent; border-top-color: var(--border-color);
+            margin-bottom: -6px; z-index: 101;
         }
         .race-metric-label { font-size: 11px; color: var(--text-muted); }
         .race-metric-value { font-size: 14px; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
@@ -4648,8 +4675,8 @@
                             <div class="card-header">
                                 <h3 class="card-title">Split Times <span class="info-tip"><span class="tip-content">Cumulative time at each wall. Switch to "Per Segment" to see individual lap times and identify pacing patterns.</span></span></h3>
                                 <div class="chart-toggle" id="splitChartToggle">
-                                    <button class="chart-toggle-btn active" data-mode="cumulative">Cumulative</button>
-                                    <button class="chart-toggle-btn" data-mode="segment">Per Segment</button>
+                                    <button class="chart-toggle-btn" data-mode="cumulative">Cumulative</button>
+                                    <button class="chart-toggle-btn active" data-mode="segment">Per Segment</button>
                                 </div>
                             </div>
                             <div class="card-body">
@@ -4686,7 +4713,7 @@
 
                         <div class="card">
                             <div class="card-header">
-                                <h3 class="card-title">Start Phase Breakdown <span class="info-tip"><span class="tip-content">Breakdown of time in each phase of the race start: on-block, flight, dip, and underwater to surface break.</span></span></h3>
+                                <h3 class="card-title">Start Phase Breakdown <span class="info-tip"><span class="tip-content">Breakdown of time in each phase of the race start: on-block, flight, and underwater to surface break.</span></span></h3>
                             </div>
                             <div class="card-body" id="raceStartPhase">
                                 <div class="loading"><div class="loading-spinner"></div>Loading...</div>
@@ -5226,7 +5253,7 @@
             raceVelocity: 'Average speed per segment. <span class="tip-watch">Watch for negative splits</span> (getting faster) vs positive splits (slowing down). Elite pacing often shows a slight U-shape.',
             strokeRate: 'Strokes per minute in each segment. Increasing stroke rate with decreasing distance-per-stroke can indicate fatigue.',
             strokeCount: 'Total strokes per lap. Fewer strokes with the same split time means better efficiency (distance per stroke).',
-            startPhase: 'Breakdown of time spent in each phase of the race start: on-block, flight, dip, and underwater to surface break.',
+            startPhase: 'Breakdown of time spent in each phase of the race start: on-block, flight, and underwater to surface break.',
         };
 
         // ============================================
@@ -8248,36 +8275,29 @@
             try {
                 const genderFilter = carouselState.competition.gender;
                 
-                // Get competition athletes
-                const { data: compAthletes, error: compErr } = await supabaseClient
+                // Get competition athletes (view includes gender)
+                let compQuery = supabaseClient
                     .from('v_competition_athletes')
-                    .select('athlete_uuid, first_name, last_name, team_name');
+                    .select('athlete_uuid, first_name, last_name, team_name, gender');
+                
+                // Apply gender filter directly if set
+                if (genderFilter) {
+                    compQuery = compQuery.eq('gender', genderFilter);
+                }
+                
+                const { data: compAthletes, error: compErr } = await compQuery;
 
                 if (compErr || !compAthletes?.length) {
                     if (card) card.style.display = 'none';
-                    body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No athletes found</p></div>';
+                    const msg = genderFilter 
+                        ? `No ${genderFilter === 'male' ? 'male' : 'female'} athletes found`
+                        : 'No athletes found';
+                    body.innerHTML = `<div class="empty-state" style="padding:40px 0;"><p>${msg}</p></div>`;
                     return;
                 }
 
-                // If gender filter, we need to get gender from athletes table
+                // Use compAthletes directly (already filtered by gender if needed)
                 let filteredAthletes = compAthletes;
-                if (genderFilter) {
-                    const compUuids = compAthletes.map(a => a.athlete_uuid);
-                    const { data: athGenders } = await supabaseClient
-                        .from('athletes')
-                        .select('athlete_uuid, gender')
-                        .in('athlete_uuid', compUuids)
-                        .eq('gender', genderFilter);
-                    
-                    if (!athGenders?.length) {
-                        body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No ' + (genderFilter === 'male' ? 'male' : 'female') + ' athletes found</p></div>';
-                        document.getElementById('compCarouselDots').innerHTML = '';
-                        return;
-                    }
-                    
-                    const genderUuids = new Set(athGenders.map(a => a.athlete_uuid));
-                    filteredAthletes = compAthletes.filter(a => genderUuids.has(a.athlete_uuid));
-                }
 
                 if (!filteredAthletes.length) {
                     body.innerHTML = '<div class="empty-state" style="padding:40px 0;"><p>No athletes found</p></div>';
@@ -8297,38 +8317,70 @@
                 // Load data for all boards
                 const slides = [];
 
-                // Fastest Start
-                const { data: starts } = await supabaseClient.from('v_start_kpis').select('athlete_uuid, split_15m_s').in('athlete_uuid', uuids).not('split_15m_s', 'is', null);
+                // Fastest Start - use safeInFilter for large lists
+                let startQuery = supabaseClient.from('v_start_kpis').select('athlete_uuid, split_15m_s').not('split_15m_s', 'is', null);
+                const { query: sq1, clientFilter: scf1 } = safeInFilter(startQuery, 'athlete_uuid', uuids);
+                const { data: startsRaw } = await sq1;
+                const starts = scf1(startsRaw || []);
                 if (starts?.length) {
                     const best = {};
-                    starts.forEach(r => { if (!best[r.athlete_uuid] || r.split_15m_s < best[r.athlete_uuid].split_15m_s) best[r.athlete_uuid] = r; });
+                    starts.forEach(r => { 
+                        const time = parseFloat(r.split_15m_s);
+                        if (!best[r.athlete_uuid] || time < parseFloat(best[r.athlete_uuid].split_15m_s)) {
+                            best[r.athlete_uuid] = { ...r, split_15m_s: time };
+                        }
+                    });
                     const sorted = Object.values(best).sort((a, b) => a.split_15m_s - b.split_15m_s).slice(0, 3);
                     if (sorted.length >= 1) slides.push({ ...COMP_CAROUSEL_BOARDS[0], top3: sorted.map(r => ({ uuid: r.athlete_uuid, value: r.split_15m_s, unit: 's' })), nameMap, teamMap });
                 }
 
                 // Best Reaction
-                const { data: reactions } = await supabaseClient.from('v_start_kpis').select('athlete_uuid, reaction_time_s').in('athlete_uuid', uuids).not('reaction_time_s', 'is', null);
+                let reactQuery = supabaseClient.from('v_start_kpis').select('athlete_uuid, reaction_time_s').not('reaction_time_s', 'is', null);
+                const { query: rq1, clientFilter: rcf1 } = safeInFilter(reactQuery, 'athlete_uuid', uuids);
+                const { data: reactionsRaw } = await rq1;
+                const reactions = rcf1(reactionsRaw || []);
                 if (reactions?.length) {
                     const best = {};
-                    reactions.forEach(r => { if (!best[r.athlete_uuid] || r.reaction_time_s < best[r.athlete_uuid].reaction_time_s) best[r.athlete_uuid] = r; });
+                    reactions.forEach(r => { 
+                        const time = parseFloat(r.reaction_time_s);
+                        if (!best[r.athlete_uuid] || time < parseFloat(best[r.athlete_uuid].reaction_time_s)) {
+                            best[r.athlete_uuid] = { ...r, reaction_time_s: time };
+                        }
+                    });
                     const sorted = Object.values(best).sort((a, b) => a.reaction_time_s - b.reaction_time_s).slice(0, 3);
                     if (sorted.length >= 1) slides.push({ ...COMP_CAROUSEL_BOARDS[1], top3: sorted.map(r => ({ uuid: r.athlete_uuid, value: r.reaction_time_s, unit: 's' })), nameMap, teamMap });
                 }
 
                 // Fastest Turn
-                const { data: turns } = await supabaseClient.from('v_turn_kpis').select('athlete_uuid, time_15in_15out_s').in('athlete_uuid', uuids).not('time_15in_15out_s', 'is', null);
+                let turnQuery = supabaseClient.from('v_turn_kpis').select('athlete_uuid, time_15in_15out_s').not('time_15in_15out_s', 'is', null);
+                const { query: tq1, clientFilter: tcf1 } = safeInFilter(turnQuery, 'athlete_uuid', uuids);
+                const { data: turnsRaw } = await tq1;
+                const turns = tcf1(turnsRaw || []);
                 if (turns?.length) {
                     const best = {};
-                    turns.forEach(r => { if (!best[r.athlete_uuid] || r.time_15in_15out_s < best[r.athlete_uuid].time_15in_15out_s) best[r.athlete_uuid] = r; });
+                    turns.forEach(r => { 
+                        const time = parseFloat(r.time_15in_15out_s);
+                        if (!best[r.athlete_uuid] || time < parseFloat(best[r.athlete_uuid].time_15in_15out_s)) {
+                            best[r.athlete_uuid] = { ...r, time_15in_15out_s: time };
+                        }
+                    });
                     const sorted = Object.values(best).sort((a, b) => a.time_15in_15out_s - b.time_15in_15out_s).slice(0, 3);
                     if (sorted.length >= 1) slides.push({ ...COMP_CAROUSEL_BOARDS[2], top3: sorted.map(r => ({ uuid: r.athlete_uuid, value: r.time_15in_15out_s, unit: 's' })), nameMap, teamMap });
                 }
 
                 // Best Race PB (just get overall best from any event)
-                const { data: races } = await supabaseClient.from('v_race_kpis').select('athlete_uuid, race_time_s').in('athlete_uuid', uuids).not('race_time_s', 'is', null);
+                let raceQuery = supabaseClient.from('v_race_kpis').select('athlete_uuid, race_time_s').not('race_time_s', 'is', null);
+                const { query: racq1, clientFilter: raccf1 } = safeInFilter(raceQuery, 'athlete_uuid', uuids);
+                const { data: racesRaw } = await racq1;
+                const races = raccf1(racesRaw || []);
                 if (races?.length) {
                     const best = {};
-                    races.forEach(r => { if (!best[r.athlete_uuid] || r.race_time_s < best[r.athlete_uuid].race_time_s) best[r.athlete_uuid] = r; });
+                    races.forEach(r => { 
+                        const time = parseFloat(r.race_time_s);
+                        if (!best[r.athlete_uuid] || time < parseFloat(best[r.athlete_uuid].race_time_s)) {
+                            best[r.athlete_uuid] = { ...r, race_time_s: time };
+                        }
+                    });
                     const sorted = Object.values(best).sort((a, b) => a.race_time_s - b.race_time_s).slice(0, 3);
                     if (sorted.length >= 1) slides.push({ ...COMP_CAROUSEL_BOARDS[3], top3: sorted.map(r => ({ uuid: r.athlete_uuid, value: r.race_time_s, unit: '' })), nameMap, teamMap });
                 }
@@ -9542,8 +9594,36 @@
         }
 
         // Start metric card HTML helper
-        function startMetricCard(label, value, unit, deltaHtml) {
-            return `<div class="start-metric-item">
+        // Tooltip definitions for Start Analysis metrics
+        const startMetricTooltips = {
+            'Reaction Time': 'Time from start signal to first movement on the block',
+            'Push Time': 'Time spent pushing off the block (from first movement to feet leaving)',
+            'Flight Phase': 'Time in the air from block departure to water entry',
+            'Block Empty': 'Total time from signal until feet leave the block',
+            'Block Reaction': 'Time from signal to initial reaction/movement',
+            'Takeoff Velocity': 'Speed at the moment of leaving the block',
+            'Takeoff Angle': 'Angle of body trajectory at takeoff (degrees)',
+            'Entry Distance': 'Horizontal distance from block to water entry point',
+            'Entry Angle': 'Angle of body at water entry (degrees from horizontal)',
+            'Time to 5m': 'Cumulative time from start signal to 5 meter mark',
+            'Time to 7.5m': 'Cumulative time from start signal to 7.5 meter mark',
+            'Time to 10m': 'Cumulative time from start signal to 10 meter mark',
+            'Time to 15m': 'Cumulative time from start signal to 15 meter mark',
+            'Avg Reaction': 'Average reaction time across all trials',
+            'Avg Push Time': 'Average push time across all trials',
+            'Avg Flight Phase': 'Average flight time across all trials',
+            'Total Trials': 'Number of start trials in current selection',
+            'Underwater Time': 'Time from water entry to head breaking surface',
+            'Kick Count': 'Number of underwater kicks before surfacing',
+            'Velocity 0-5m': 'Average speed from start to 5 meter mark',
+            'Velocity 5-10m': 'Average speed from 5m to 10m mark',
+            'Velocity 10-15m': 'Average speed from 10m to 15m mark',
+        };
+
+        function startMetricCard(label, value, unit, deltaHtml, customTip) {
+            const tip = customTip || startMetricTooltips[label] || '';
+            const tipAttr = tip ? ` title="${tip}"` : '';
+            return `<div class="start-metric-item"${tipAttr}>
                 <div class="smi-label">${label}</div>
                 <div class="smi-value">${value}<span class="smi-unit">${unit}</span>${deltaHtml || ''}</div>
             </div>`;
@@ -10430,8 +10510,42 @@
             return `<span class="smi-delta ${cls}">${sign}${diff.toFixed(3)}</span>`;
         }
 
-        function turnMetricCard(label, value, unit, deltaHtml) {
-            return `<div class="start-metric-item">
+        // Tooltip definitions for Turn Analysis metrics
+        const turnMetricTooltips = {
+            'Split 15m pre': 'Cumulative time at 15 meters before the wall',
+            'Split 10m pre': 'Cumulative time at 10 meters before the wall',
+            'Split 5m pre': 'Cumulative time at 5 meters before the wall',
+            '15m pre Split': 'Cumulative time at 15 meters before the wall',
+            '5m pre Split': 'Cumulative time at 5 meters before the wall',
+            'Vel 15-10m': 'Average velocity from 15m to 10m before the wall',
+            'Vel 10-5m': 'Average velocity from 10m to 5m before the wall',
+            'Vel 5-0m': 'Average velocity from 5m to the wall (approach speed)',
+            'Vel 15-5m pre': 'Average velocity from 15m to 5m before the wall',
+            'Wall Contact': 'Duration of contact with the wall during the turn',
+            'Hand Contact': 'Time hands are in contact with the wall',
+            'Rotation Time': 'Time to complete the flip/turn rotation',
+            'Adaption Time': 'Time to adjust body position before push-off',
+            'Push-off Time': 'Duration of the push-off from the wall',
+            'Push-off Velocity': 'Speed immediately after leaving the wall',
+            'Split 5m post': 'Time from wall to 5 meters after',
+            'Split 10m post': 'Time from wall to 10 meters after',
+            'Split 15m post': 'Time from wall to 15 meters after',
+            'Vel 0-5m': 'Average velocity from wall to 5m after',
+            'Vel 5-10m': 'Average velocity from 5m to 10m after the wall',
+            'Vel 10-15m': 'Average velocity from 10m to 15m after the wall',
+            'Surface Break': 'Distance from wall when head breaks the surface',
+            'Kick Rate': 'Underwater kick frequency (kicks per minute)',
+            'Time 5m In/Out': 'Total time from 5m before wall to 5m after',
+            'Time 15m In/Out': 'Total time from 15m before wall to 15m after',
+            'Time 5m/15m': 'Total time from 5m before wall to 15m after',
+            'Stroke Rate Pre': 'Stroke rate approaching the wall',
+            'Stroke Rate Post': 'Stroke rate after surfacing from turn',
+        };
+
+        function turnMetricCard(label, value, unit, deltaHtml, customTip) {
+            const tip = customTip || turnMetricTooltips[label] || '';
+            const tipAttr = tip ? ` title="${tip}"` : '';
+            return `<div class="start-metric-item"${tipAttr}>
                 <div class="smi-label">${label}</div>
                 <div class="smi-value">${value}<span class="smi-unit">${unit}</span>${deltaHtml || ''}</div>
             </div>`;
@@ -11586,7 +11700,7 @@
             filteredRaces: [],
             primaryIdx: null,    // index into filteredRaces
             compareIdx: null,    // index into filteredRaces
-            splitChartMode: 'cumulative',
+            splitChartMode: 'segment',
             activeTab: 'splits',
             _groupUuids: null,   // array of UUIDs when group selected
             _multiAthlete: false,
@@ -12025,10 +12139,11 @@
             return sp.length ? sp[sp.length - 1].cumTime : null;
         }
 
-        function splitsToSegments(splits) {
+        function splitsToSegments(splits, unit) {
+            unit = unit || 'm';
             return splits.map((s, i) => {
                 const prev = i > 0 ? splits[i-1] : { distance: 0, cumTime: 0 };
-                return { label: `${prev.distance}-${s.distance}m`, segTime: parseFloat((s.cumTime - prev.cumTime).toFixed(2)), cumTime: s.cumTime, distStart: prev.distance, distEnd: s.distance };
+                return { label: `${prev.distance}-${s.distance}${unit}`, segTime: parseFloat((s.cumTime - prev.cumTime).toFixed(2)), cumTime: s.cumTime, distStart: prev.distance, distEnd: s.distance };
             });
         }
 
@@ -12269,6 +12384,8 @@
             const sortedDists = [...allDists].sort((a,b)=>a-b);
 
             const isSeg = raceModuleState.splitChartMode === 'segment';
+            const primaryRace = toChart[0];
+            const distUnit = primaryRace ? (courseUnit(primaryRace) === 'Yds' ? 'yds' : 'm') : 'm';
             const datasets = toChart.map((r, i) => {
                 const splits = extractSplits(r.mj);
                 const sm = {}; splits.forEach(s => sm[s.distance] = s.cumTime);
@@ -12284,7 +12401,7 @@
 
             appState.charts.splits = new Chart(canvas, {
                 type: isSeg ? 'bar' : 'line',
-                data: { labels: sortedDists.map(d=>d+'m'), datasets },
+                data: { labels: sortedDists.map(d=>d+distUnit), datasets },
                 plugins: [dataLabelsPlugin],
                 options: {
                     responsive: true, maintainAspectRatio: false,
@@ -12309,7 +12426,8 @@
             const splits = extractSplits(race.mj);
             if (splits.length < 2) { container.innerHTML = '<div class="empty-state"><h3>Not enough split data</h3></div>'; return; }
 
-            const segments = splitsToSegments(splits);
+            const barDistUnit = courseUnit(race) === 'Yds' ? 'yds' : 'm';
+            const segments = splitsToSegments(splits, barDistUnit);
             const maxSeg = Math.max(...segments.map(s=>s.segTime));
             const minSeg = Math.min(...segments.map(s=>s.segTime));
             const range = maxSeg - minSeg || 1;
@@ -12320,7 +12438,7 @@
             let cmpSegMap = {};
             if (compare) {
                 const cSplits = extractSplits(compare.mj);
-                if (cSplits.length >= 2) splitsToSegments(cSplits).forEach(s => { cmpSegMap[s.label] = s.segTime; });
+                if (cSplits.length >= 2) splitsToSegments(cSplits, barDistUnit).forEach(s => { cmpSegMap[s.label] = s.segTime; });
             }
 
             container.innerHTML = `
@@ -12358,10 +12476,12 @@
             const race = primary || raceModuleState.filteredRaces[0];
             if (!race) return;
 
+            const velDistUnit = race ? (courseUnit(race) === 'Yds' ? 'yds' : 'm') : 'm';
+
             function buildVelData(r) {
                 const sp = extractSplits(r.mj);
                 if (sp.length < 2) return [];
-                return splitsToSegments(sp).map(s => ({ label: s.label, velocity: s.segTime > 0 ? parseFloat(((s.distEnd - s.distStart) / s.segTime).toFixed(2)) : 0 }));
+                return splitsToSegments(sp, velDistUnit).map(s => ({ label: s.label, velocity: s.segTime > 0 ? parseFloat(((s.distEnd - s.distStart) / s.segTime).toFixed(2)) : 0 }));
             }
 
             const segs = buildVelData(race);
@@ -12413,12 +12533,12 @@
 
             function getPhaseMetrics(mj) {
                 return [
-                    { label:'On-Block Phase', value:parseFloat(mj['On-block phase'])||null },
-                    { label:'Leaving Block', value:parseFloat(mj['Leaving block'])||null },
-                    { label:'Flight Phase', value:parseFloat(mj['Flight phase'])||null },
-                    { label:'Dip', value:parseFloat(mj['Dip'])||null },
-                    { label:'Underwater Phase', value:parseFloat(mj['Underwater phase'])||null },
-                    { label:'Surface Break', value:parseFloat(mj['Surface break'])||null },
+                    { label:'On-Block Phase', value:parseFloat(mj['On-block phase'])||null, tip:'Time spent on the starting block before leaving' },
+                    { label:'Leaving Block', value:parseFloat(mj['Leaving block'])||null, tip:'Total time from start signal until feet leave the block' },
+                    { label:'Flight Phase', value:parseFloat(mj['Flight phase'])||null, tip:'Time in the air from block departure to water entry' },
+                    // { label:'Dip', value:parseFloat(mj['Dip'])||null, tip:'Time from water entry to reaching the deepest point of the dive' }, // Hidden - data unclear
+                    { label:'Underwater Phase', value:parseFloat(mj['Underwater phase'])||null, tip:'Time spent underwater from entry until head breaks the surface' },
+                    { label:'Surface Break', value:parseFloat(mj['Surface break'])||null, tip:'Total time from start signal until head breaks the surface' },
                 ].filter(m => m.value !== null);
             }
 
@@ -12429,7 +12549,7 @@
             container.innerHTML = `
                 <div style="margin-bottom:12px;"><span style="font-size:13px;color:var(--text-secondary);">${formatDate(race.source_date)}  -  ${raceLabel(race)}</span></div>
                 ${metrics.length ? `<div class="race-detail-metrics">
-                    ${metrics.map(m => `<div class="race-metric-item"><span class="race-metric-label">${m.label}</span><span class="race-metric-value">${m.value.toFixed(2)}s ${cmpMap[m.label] != null ? deltaStr(m.value, cmpMap[m.label]) : ''}</span></div>`).join('')}
+                    ${metrics.map(m => `<div class="race-metric-item" title="${m.tip}"><span class="race-metric-label">${m.label}</span><span class="race-metric-value">${m.value.toFixed(2)}s ${cmpMap[m.label] != null ? deltaStr(m.value, cmpMap[m.label]) : ''}</span></div>`).join('')}
                 </div>` : '<div class="empty-state"><h3>No start phase data</h3></div>'}
             `;
         }
@@ -12469,8 +12589,9 @@
                 }
             }
 
+            const strokeDistUnit = race ? (courseUnit(race) === 'Yds' ? 'yds' : 'm') : 'm';
             appState.charts.strokeRate = new Chart(canvas, {
-                type:'line', data: { labels: rates.map(r=>r.distance+'m'), datasets },
+                type:'line', data: { labels: rates.map(r=>r.distance+strokeDistUnit), datasets },
                 plugins: [dataLabelsPlugin],
                 options: {
                     responsive:true, maintainAspectRatio:false,
@@ -12611,6 +12732,17 @@
                             </div>
                         </div>
                         <div class="compare-mini-section">
+                            <h4><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Cumulative Splits</h4>
+                            <div class="race-detail-metrics">
+                                ${(() => {
+                                    const p50Splits = pSplits.filter(s => s.distance % 50 === 0);
+                                    const unit = courseUnit(primary) === 'Yds' ? 'yds' : 'm';
+                                    if (!p50Splits.length) return '<div class="race-metric-item"><span class="race-metric-label">No 50 splits</span><span class="race-metric-value">--</span></div>';
+                                    return p50Splits.map(s => `<div class="race-metric-item"><span class="race-metric-label">${s.distance}${unit}</span><span class="race-metric-value">${formatTime(s.cumTime)}</span></div>`).join('');
+                                })()}
+                            </div>
+                        </div>
+                        <div class="compare-mini-section">
                             <h4><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg> Stroke Data</h4>
                             <div class="race-detail-metrics">
                                 ${pSC.map(sc=>`<div class="race-metric-item"><span class="race-metric-label">Lap ${sc.lap} Count</span><span class="race-metric-value">${sc.count}</span></div>`).join('') || '<div class="race-metric-item"><span class="race-metric-label">No data</span><span class="race-metric-value">--</span></div>'}
@@ -12660,6 +12792,18 @@
                             const cSeg = cSegs[i];
                             return metricRow(s.label, s.segTime, cSeg ? cSeg.segTime : null, 's');
                         }).join('')}
+                        <tr><td colspan="4" style="padding:8px 10px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;background:var(--bg-secondary);">Cumulative Splits (50${courseUnit(primary) === 'Yds' ? 'yds' : 'm'})</td></tr>
+                        ${(() => {
+                            // Extract splits at 50m intervals
+                            const p50Splits = pSplits.filter(s => s.distance % 50 === 0);
+                            const c50Splits = cSplits.filter(s => s.distance % 50 === 0);
+                            if (!p50Splits.length) return '<tr><td colspan="4" style="padding:6px 10px;font-size:13px;color:var(--text-muted);">No 50m splits available</td></tr>';
+                            return p50Splits.map((s, i) => {
+                                const cSplit = c50Splits.find(cs => cs.distance === s.distance);
+                                const label = s.distance + (courseUnit(primary) === 'Yds' ? 'yds' : 'm');
+                                return metricRow(label, s.cumTime, cSplit ? cSplit.cumTime : null, 's');
+                            }).join('');
+                        })()}
                         <tr><td colspan="4" style="padding:8px 10px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;background:var(--bg-secondary);">Stroke Counts</td></tr>
                         ${pSC.map((sc,i) => {
                             const cC = cSC[i];
@@ -13807,33 +13951,23 @@
 
             updateCompFilterVisibility();
 
-            // Load competition athletes
+            // Load competition athletes (view includes gender)
             try {
-                const { data } = await supabaseClient
-                    .from('v_competition_athletes')
-                    .select('athlete_uuid, first_name, last_name, team_name');
-
                 const genderFilter = document.getElementById('compGenderFilter')?.value || '';
-                let athletes = data || [];
                 
-                // If gender filter, get gender from athletes table
-                if (genderFilter && athletes.length) {
-                    const compUuids = athletes.map(a => a.athlete_uuid);
-                    const { data: athGenders } = await supabaseClient
-                        .from('athletes')
-                        .select('athlete_uuid, gender')
-                        .in('athlete_uuid', compUuids)
-                        .eq('gender', genderFilter);
-                    
-                    if (athGenders?.length) {
-                        const genderUuids = new Set(athGenders.map(a => a.athlete_uuid));
-                        athletes = athletes.filter(a => genderUuids.has(a.athlete_uuid));
-                    } else {
-                        athletes = [];
-                    }
+                let compQuery = supabaseClient
+                    .from('v_competition_athletes')
+                    .select('athlete_uuid, first_name, last_name, team_name, gender');
+                
+                // Apply gender filter directly if set
+                if (genderFilter) {
+                    compQuery = compQuery.eq('gender', genderFilter);
                 }
                 
-                compState.athletes = athletes;
+                const { data, error } = await compQuery;
+                if (error) throw error;
+                
+                compState.athletes = data || [];
             } catch (e) {
                 console.warn('[Comp] athlete load failed (view may not exist yet):', e.message);
                 compState.athletes = [];

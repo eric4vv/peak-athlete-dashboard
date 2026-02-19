@@ -14822,7 +14822,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}`,
+                        'apikey': SUPABASE_KEY
                     },
                     body: JSON.stringify({
                         filename: file.name,
@@ -14900,7 +14901,8 @@
                         method: 'POST',
                         headers: { 
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
+                            'Authorization': `Bearer ${token}`,
+                            'apikey': SUPABASE_KEY
                         },
                         body: JSON.stringify({
                             athleteName: appState.athleteName || 'Unknown',

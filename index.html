@@ -14926,7 +14926,7 @@
                 const { data: subData } = await supabaseClient
                     .from('subscriptions')
                     .select('subscription_id, race_analyses_used')
-                    .eq('user_id', appState.authUserId)
+                    .eq('user_id', appState.user?.id)
                     .in('status', ['active', 'trialing'])
                     .order('created_at', { ascending: false })
                     .limit(1)

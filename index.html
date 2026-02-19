@@ -2397,7 +2397,7 @@
         .race-metric-value { font-size: 14px; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
 
         /* ============================================
-           RACE ANALYSIS REQUEST - SLIM BAR (v02.13)
+           RACE ANALYSIS REQUEST - SLIM BAR (v02.14)
            ============================================ */
         .race-request-slim {
             display: flex; justify-content: space-between; align-items: center;
@@ -2570,7 +2570,7 @@
         }
 
         /* ============================================
-           ADMIN PANEL (v02.13)
+           ADMIN PANEL (v02.14)
            ============================================ */
         .super-admin-bar {
             display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
@@ -2709,12 +2709,17 @@
         .request-history-info { flex: 1; }
         .request-history-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
         .request-history-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .request-history-note { 
+            font-size: 12px; color: var(--accent-green); margin-top: 4px; 
+            font-style: italic;
+        }
         .request-history-badge {
             padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
         }
         .request-history-badge.pending { background: rgba(245,166,35,0.15); color: var(--accent-orange); }
         .request-history-badge.processing { background: rgba(0,194,255,0.15); color: var(--accent-blue); }
         .request-history-badge.completed { background: rgba(0,230,138,0.15); color: var(--accent-green); }
+        .request-history-badge.failed { background: rgba(255,107,107,0.15); color: var(--accent-red); }
         .request-history-link {
             padding: 6px 12px; background: var(--accent-blue); border-radius: 6px;
             color: white; font-size: 12px; font-weight: 600; text-decoration: none;
@@ -3995,7 +4000,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.13</span></span>
+                    <span>Analytics <span class="version-tag">v02.14</span></span>
                 </div>
             </div>
 
@@ -4263,7 +4268,7 @@
                 <!-- Alerts Section -->
                 <div class="alerts-section" id="alertsSection"></div>
 
-                <!-- Race Analysis Request - Slim Bar (v02.13) -->
+                <!-- Race Analysis Request - Slim Bar (v02.14) -->
                 <div class="race-request-slim" id="raceRequestCard" style="display:none;">
                     <div class="race-request-slim-left">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -5535,7 +5540,7 @@
                 </div>
             </section>
 
-            <!-- Admin Page (Race Requests Management) - v02.13 -->
+            <!-- Admin Page (Race Requests Management) - v02.14 -->
             <section class="page-section" id="page-admin">
                 <div class="page-header">
                     <h1>Race Analysis Requests</h1>
@@ -6959,7 +6964,7 @@
             setupNavigation();
             loadHomeData();
             loadSubscription(); // Load subscription status
-            checkAdminStatus(); // Check if user is admin (v02.13)
+            checkAdminStatus(); // Check if user is admin (v02.14)
         }
 
         function updateUserUI() {
@@ -14746,7 +14751,7 @@
         });
 
         // ============================================
-        // RACE ANALYSIS REQUEST (v02.13)
+        // RACE ANALYSIS REQUEST (v02.14)
         // ============================================
         const EDGE_FUNCTION_URL = 'https://wbqgshvbopfukwyqsndq.supabase.co/functions/v1/r2-upload-url';
         const STRIPE_EXTRA_ANALYSIS = 'https://buy.stripe.com/3cI8wO9v7b9FaKF7JogjC02';
@@ -15195,7 +15200,7 @@
         });
 
         // ============================================
-        // ADMIN PANEL (v02.13)
+        // ADMIN PANEL (v02.14)
         // ============================================
         let adminState = {
             isRaceAdmin: false,
@@ -15476,8 +15481,8 @@
                                 </select>
                             </div>
                             <div class="admin-modal-field">
-                                <label>Admin Notes</label>
-                                <textarea id="adminNotesInput" placeholder="Optional notes about this request..."></textarea>
+                                <label>Admin Notes (visible to athlete when completed)</label>
+                                <textarea id="adminNotesInput" placeholder="e.g., 50 Free Finals - uploaded to Races tab"></textarea>
                             </div>
                         </div>
                         <div class="admin-modal-footer">
@@ -15562,7 +15567,7 @@
         }
 
         // ============================================
-        // ATHLETE REQUEST HISTORY (v02.13)
+        // ATHLETE REQUEST HISTORY (v02.14)
         // ============================================
         async function loadAthleteRequestHistory() {
             // Add request history section to home page if athlete
@@ -15613,6 +15618,7 @@
                     const date = new Date(req.created_at).toLocaleDateString();
                     const title = `${req.distance_m || '?'} ${req.style || 'Unknown'}`;
                     const event = req.event_name || 'Race Analysis';
+                    const course = req.course || '';
                     
                     const statusIcons = {
                         pending: '⏳',
@@ -15621,18 +15627,24 @@
                         failed: '❌'
                     };
                     
-                    const viewLink = req.status === 'completed' && req.race_raw_uuid 
-                        ? `<a href="#" class="request-history-link" onclick="viewAnalysisResult('${req.race_raw_uuid}');return false;">View Results</a>`
-                        : '';
+                    // Show admin note for completed/failed
+                    let noteHtml = '';
+                    if ((req.status === 'completed' || req.status === 'failed') && req.admin_notes) {
+                        noteHtml = `<div class="request-history-note">${sanitizeForDisplay(req.admin_notes)}</div>`;
+                    } else if (req.status === 'completed') {
+                        noteHtml = `<div class="request-history-note">Check Races tab for results</div>`;
+                    } else if (req.status === 'failed') {
+                        noteHtml = `<div class="request-history-note" style="color:var(--accent-red);">Analysis could not be completed</div>`;
+                    }
                     
                     return `<div class="request-history-card">
                         <div class="request-history-status">${statusIcons[req.status] || '❓'}</div>
                         <div class="request-history-info">
-                            <div class="request-history-title">${sanitizeForDisplay(title)} - ${sanitizeForDisplay(event)}</div>
+                            <div class="request-history-title">${sanitizeForDisplay(title)} ${course} - ${sanitizeForDisplay(event)}</div>
                             <div class="request-history-sub">Submitted ${date}</div>
+                            ${noteHtml}
                         </div>
                         <span class="request-history-badge ${req.status}">${req.status.charAt(0).toUpperCase() + req.status.slice(1)}</span>
-                        ${viewLink}
                     </div>`;
                 }).join('');
                 

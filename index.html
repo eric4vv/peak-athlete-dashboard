@@ -562,6 +562,7 @@
             display: flex;
             flex-direction: column;
             z-index: 100;
+            overflow-y: auto;
         }
 
         .sidebar-logo {
@@ -2397,40 +2398,97 @@
         .race-metric-value { font-size: 14px; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
 
         /* ============================================
-           RACE ANALYSIS REQUEST - SLIM BAR (v02.14)
+           RACE ANALYSIS - COMBINED CARD (v02.14)
            ============================================ */
-        .race-request-slim {
+        .analysis-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px; margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .analysis-card-header {
             display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 18px; cursor: pointer;
             background: linear-gradient(135deg, rgba(167,139,250,0.08) 0%, rgba(0,194,255,0.08) 100%);
-            border: 1px solid rgba(167,139,250,0.2);
-            border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
         }
-        .race-request-slim-left {
+        .analysis-card-header:hover { background: linear-gradient(135deg, rgba(167,139,250,0.12) 0%, rgba(0,194,255,0.12) 100%); }
+        .analysis-card-title {
             display: flex; align-items: center; gap: 10px;
+            font-size: 15px; font-weight: 600; color: var(--text-primary);
         }
-        .race-request-slim-left svg { width: 18px; height: 18px; color: var(--accent-purple); }
-        .race-request-slim-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-        .race-request-slim-quota {
+        .analysis-card-title svg { width: 20px; height: 20px; color: var(--accent-purple); }
+        .analysis-card-meta { display: flex; align-items: center; gap: 10px; }
+        .analysis-card-quota {
             font-size: 12px; color: var(--text-muted); background: var(--bg-secondary);
-            padding: 3px 8px; border-radius: 4px;
+            padding: 4px 10px; border-radius: 6px;
         }
-        .race-request-slim-right { display: flex; align-items: center; gap: 12px; }
-        .race-request-slim-pending {
+        .analysis-card-pending {
             font-size: 11px; color: var(--accent-orange); background: rgba(245,166,35,0.15);
-            padding: 3px 8px; border-radius: 4px; font-weight: 500;
+            padding: 4px 10px; border-radius: 6px; font-weight: 600;
         }
-        .race-request-slim-btn {
-            display: flex; align-items: center; gap: 6px; padding: 8px 14px;
+        .analysis-card-chevron {
+            width: 18px; height: 18px; color: var(--text-muted);
+            transition: transform 0.3s ease;
+        }
+        .analysis-card.collapsed .analysis-card-chevron { transform: rotate(-90deg); }
+        .analysis-card-body {
+            padding: 16px 18px;
+            display: flex; gap: 16px; align-items: flex-start;
+            transition: all 0.3s ease;
+        }
+        .analysis-card.collapsed .analysis-card-body { display: none; }
+        .analysis-card-upload {
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            min-width: 160px;
+        }
+        .analysis-upload-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            padding: 16px 24px;
             background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
-            border: none; border-radius: 6px; color: white; font-size: 12px; font-weight: 600;
-            cursor: pointer; transition: all 0.2s; font-family: 'Montserrat', sans-serif;
+            border: none; border-radius: 10px; color: white;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; font-family: 'Montserrat', sans-serif;
         }
-        .race-request-slim-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(167,139,250,0.3); }
-        .race-request-slim-btn svg { width: 14px; height: 14px; }
-        .race-request-slim-buy {
-            font-size: 11px; color: var(--accent-purple); text-decoration: none;
+        .analysis-upload-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(167,139,250,0.4); }
+        .analysis-upload-btn svg { width: 24px; height: 24px; }
+        .analysis-upload-hint { font-size: 11px; color: var(--text-muted); }
+        .analysis-buy-link { font-size: 11px; color: var(--accent-purple); text-decoration: none; }
+        .analysis-buy-link:hover { text-decoration: underline; }
+        .analysis-card-history {
+            flex: 1; display: flex; flex-direction: column; gap: 8px;
+            max-height: 180px; overflow-y: auto;
         }
-        .race-request-slim-buy:hover { text-decoration: underline; }
+        .analysis-history-empty {
+            color: var(--text-muted); font-size: 13px;
+            padding: 20px; text-align: center;
+        }
+        .analysis-history-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 12px; background: var(--bg-secondary);
+            border-radius: 8px; transition: all 0.2s;
+        }
+        .analysis-history-item:hover { background: var(--bg-card-hover); }
+        .analysis-history-icon { font-size: 18px; flex-shrink: 0; }
+        .analysis-history-info { flex: 1; min-width: 0; }
+        .analysis-history-title {
+            font-size: 13px; font-weight: 600; color: var(--text-primary);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .analysis-history-sub { font-size: 11px; color: var(--text-muted); }
+        .analysis-history-note {
+            font-size: 11px; color: var(--accent-green); font-style: italic;
+            margin-top: 2px;
+        }
+        .analysis-history-badge {
+            padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;
+            flex-shrink: 0;
+        }
+        .analysis-history-badge.pending { background: rgba(245,166,35,0.15); color: var(--accent-orange); }
+        .analysis-history-badge.processing { background: rgba(0,194,255,0.15); color: var(--accent-blue); }
+        .analysis-history-badge.completed { background: rgba(0,230,138,0.15); color: var(--accent-green); }
+        .analysis-history-badge.failed { background: rgba(255,107,107,0.15); color: var(--accent-red); }
 
         /* Buy Options Dropdown */
         .race-request-buy-dropdown {
@@ -2471,8 +2529,9 @@
         .race-upload-bar-btn svg { width: 16px; height: 16px; color: var(--accent-purple); }
 
         @media (max-width: 600px) {
-            .race-request-slim { flex-direction: column; gap: 12px; align-items: flex-start; }
-            .race-request-slim-right { width: 100%; justify-content: space-between; }
+            .analysis-card-body { flex-direction: column; }
+            .analysis-card-upload { width: 100%; }
+            .analysis-upload-btn { width: 100%; }
             .race-upload-bar { flex-direction: column; gap: 12px; align-items: flex-start; }
             .race-upload-bar-btn { width: 100%; justify-content: center; }
         }
@@ -2696,34 +2755,6 @@
         .admin-modal-btn.cancel { background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-secondary); }
         .admin-modal-btn.save { background: var(--accent-blue); border: none; color: white; }
         .admin-modal-btn.save:hover { background: var(--accent-purple); }
-
-        /* Athlete Request History Section */
-        .request-history-section { margin-top: 20px; }
-        .request-history-card {
-            display: flex; align-items: center; gap: 14px; padding: 14px 16px;
-            background: var(--bg-card); border: 1px solid var(--border-color);
-            border-radius: 10px; margin-bottom: 10px; transition: all 0.2s;
-        }
-        .request-history-card:hover { border-color: var(--accent-blue); }
-        .request-history-status { font-size: 20px; }
-        .request-history-info { flex: 1; }
-        .request-history-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-        .request-history-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-        .request-history-note { 
-            font-size: 12px; color: var(--accent-green); margin-top: 4px; 
-            font-style: italic;
-        }
-        .request-history-badge {
-            padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
-        }
-        .request-history-badge.pending { background: rgba(245,166,35,0.15); color: var(--accent-orange); }
-        .request-history-badge.processing { background: rgba(0,194,255,0.15); color: var(--accent-blue); }
-        .request-history-badge.completed { background: rgba(0,230,138,0.15); color: var(--accent-green); }
-        .request-history-badge.failed { background: rgba(255,107,107,0.15); color: var(--accent-red); }
-        .request-history-link {
-            padding: 6px 12px; background: var(--accent-blue); border-radius: 6px;
-            color: white; font-size: 12px; font-weight: 600; text-decoration: none;
-        }
 
         @media (max-width: 768px) {
             .super-admin-bar { flex-direction: column; align-items: flex-start; }
@@ -4268,20 +4299,31 @@
                 <!-- Alerts Section -->
                 <div class="alerts-section" id="alertsSection"></div>
 
-                <!-- Race Analysis Request - Slim Bar (v02.14) -->
-                <div class="race-request-slim" id="raceRequestCard" style="display:none;">
-                    <div class="race-request-slim-left">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        <span class="race-request-slim-title">Request Race Analysis</span>
-                        <span class="race-request-slim-quota" id="quotaText">0 of 2 used</span>
-                    </div>
-                    <div class="race-request-slim-right">
-                        <span class="race-request-slim-pending" id="pendingCountBadge" style="display:none;">0 pending</span>
-                        <button class="race-request-slim-btn" onclick="openUploadModal()">
+                <!-- Race Analysis Card - Combined (v02.14) -->
+                <div class="analysis-card" id="raceRequestCard" style="display:none;">
+                    <div class="analysis-card-header" onclick="toggleAnalysisCard()">
+                        <div class="analysis-card-title">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                            Upload Video
-                        </button>
-                        <a href="#" class="race-request-slim-buy" id="slimBuyLink" onclick="showBuyOptions(event)" style="display:none;">Need more?</a>
+                            Race Analysis
+                        </div>
+                        <div class="analysis-card-meta">
+                            <span class="analysis-card-quota" id="quotaText">0 of 2 used</span>
+                            <span class="analysis-card-pending" id="pendingCountBadge" style="display:none;">0 pending</span>
+                            <svg class="analysis-card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                    </div>
+                    <div class="analysis-card-body" id="analysisCardBody">
+                        <div class="analysis-card-upload">
+                            <button class="analysis-upload-btn" onclick="openUploadModal()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                Upload Race Video
+                            </button>
+                            <span class="analysis-upload-hint">MP4, MOV up to 500MB</span>
+                            <a href="#" class="analysis-buy-link" id="slimBuyLink" onclick="showBuyOptions(event)" style="display:none;">Need more analyses?</a>
+                        </div>
+                        <div class="analysis-card-history" id="analysisCardHistory">
+                            <div class="analysis-history-empty">No requests yet</div>
+                        </div>
                     </div>
                 </div>
 
@@ -7112,8 +7154,7 @@
                     loadRecentSessions(),
                     checkPendingApprovals(),
                     loadCompBadges(),
-                    initRaceRequestCard(),
-                    loadAthleteRequestHistory()
+                    initRaceRequestCard()
                 ]);
             }
         }
@@ -14875,6 +14916,7 @@
                 
                 uploadState.requests = data || [];
                 updatePendingBadge();
+                renderAnalysisHistory();
             } catch (e) {
                 console.error('Error loading race requests:', e);
             }
@@ -14892,6 +14934,55 @@
                 badge.style.display = 'inline';
             } else {
                 badge.style.display = 'none';
+            }
+        }
+
+        // Render analysis history in combined card
+        function renderAnalysisHistory() {
+            const container = document.getElementById('analysisCardHistory');
+            if (!container) return;
+            
+            if (!uploadState.requests || uploadState.requests.length === 0) {
+                container.innerHTML = '<div class="analysis-history-empty">No analysis requests yet</div>';
+                return;
+            }
+            
+            const statusIcons = {
+                pending: '⏳',
+                processing: '🔄',
+                completed: '✅',
+                failed: '❌'
+            };
+            
+            container.innerHTML = uploadState.requests.map(req => {
+                const date = new Date(req.created_at).toLocaleDateString();
+                const title = `${req.distance_m || '?'} ${req.style || 'Unknown'} ${req.course || ''}`.trim();
+                const event = req.event_name || '';
+                
+                let noteHtml = '';
+                if ((req.status === 'completed' || req.status === 'failed') && req.admin_notes) {
+                    noteHtml = `<div class="analysis-history-note">${sanitizeForDisplay(req.admin_notes)}</div>`;
+                } else if (req.status === 'completed') {
+                    noteHtml = `<div class="analysis-history-note">Check Races tab for results</div>`;
+                }
+                
+                return `<div class="analysis-history-item">
+                    <div class="analysis-history-icon">${statusIcons[req.status] || '❓'}</div>
+                    <div class="analysis-history-info">
+                        <div class="analysis-history-title">${sanitizeForDisplay(title)}${event ? ' - ' + sanitizeForDisplay(event) : ''}</div>
+                        <div class="analysis-history-sub">${date}</div>
+                        ${noteHtml}
+                    </div>
+                    <span class="analysis-history-badge ${req.status}">${req.status}</span>
+                </div>`;
+            }).join('');
+        }
+
+        // Toggle analysis card collapse
+        function toggleAnalysisCard() {
+            const card = document.getElementById('raceRequestCard');
+            if (card) {
+                card.classList.toggle('collapsed');
             }
         }
 
@@ -15564,101 +15655,6 @@
             } catch (e) {
                 console.error('Error counting pending requests:', e);
             }
-        }
-
-        // ============================================
-        // ATHLETE REQUEST HISTORY (v02.14)
-        // ============================================
-        async function loadAthleteRequestHistory() {
-            // Add request history section to home page if athlete
-            if (appState.role !== 'athlete' || !appState.athleteUuid) return;
-            
-            // Check if section exists, create if not
-            let section = document.getElementById('requestHistorySection');
-            if (!section) {
-                const goalsSection = document.querySelector('#goalsGrid')?.parentElement;
-                if (goalsSection) {
-                    section = document.createElement('div');
-                    section.id = 'requestHistorySection';
-                    section.className = 'request-history-section';
-                    section.innerHTML = `
-                        <div class="section-header">
-                            <h2>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                My Analysis Requests
-                            </h2>
-                        </div>
-                        <div id="requestHistoryList"></div>
-                    `;
-                    goalsSection.parentNode.insertBefore(section, goalsSection.nextSibling);
-                }
-            }
-            
-            const listEl = document.getElementById('requestHistoryList');
-            if (!listEl) return;
-            
-            try {
-                const { data, error } = await supabaseClient
-                    .from('race_requests')
-                    .select('*')
-                    .eq('athlete_uuid', appState.athleteUuid)
-                    .order('created_at', { ascending: false })
-                    .limit(5);
-                
-                if (error) throw error;
-                
-                if (!data || data.length === 0) {
-                    section.style.display = 'none';
-                    return;
-                }
-                
-                section.style.display = 'block';
-                
-                listEl.innerHTML = data.map(req => {
-                    const date = new Date(req.created_at).toLocaleDateString();
-                    const title = `${req.distance_m || '?'} ${req.style || 'Unknown'}`;
-                    const event = req.event_name || 'Race Analysis';
-                    const course = req.course || '';
-                    
-                    const statusIcons = {
-                        pending: '⏳',
-                        processing: '🔄',
-                        completed: '✅',
-                        failed: '❌'
-                    };
-                    
-                    // Show admin note for completed/failed
-                    let noteHtml = '';
-                    if ((req.status === 'completed' || req.status === 'failed') && req.admin_notes) {
-                        noteHtml = `<div class="request-history-note">${sanitizeForDisplay(req.admin_notes)}</div>`;
-                    } else if (req.status === 'completed') {
-                        noteHtml = `<div class="request-history-note">Check Races tab for results</div>`;
-                    } else if (req.status === 'failed') {
-                        noteHtml = `<div class="request-history-note" style="color:var(--accent-red);">Analysis could not be completed</div>`;
-                    }
-                    
-                    return `<div class="request-history-card">
-                        <div class="request-history-status">${statusIcons[req.status] || '❓'}</div>
-                        <div class="request-history-info">
-                            <div class="request-history-title">${sanitizeForDisplay(title)} ${course} - ${sanitizeForDisplay(event)}</div>
-                            <div class="request-history-sub">Submitted ${date}</div>
-                            ${noteHtml}
-                        </div>
-                        <span class="request-history-badge ${req.status}">${req.status.charAt(0).toUpperCase() + req.status.slice(1)}</span>
-                    </div>`;
-                }).join('');
-                
-            } catch (e) {
-                console.error('Error loading request history:', e);
-                section.style.display = 'none';
-            }
-        }
-
-        // View analysis result (navigate to races page with specific race)
-        function viewAnalysisResult(raceRawUuid) {
-            // Navigate to races and potentially pre-select this race
-            navigateTo('races');
-            // Could add logic to auto-select the race
         }
 
         // ============================================

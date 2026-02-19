@@ -2397,7 +2397,7 @@
         .race-metric-value { font-size: 14px; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
 
         /* ============================================
-           RACE ANALYSIS REQUEST - SLIM BAR (v02.12)
+           RACE ANALYSIS REQUEST - SLIM BAR (v02.13)
            ============================================ */
         .race-request-slim {
             display: flex; justify-content: space-between; align-items: center;
@@ -2567,6 +2567,165 @@
             .race-request-upload-btn { padding: 16px; }
             .upload-form-grid { grid-template-columns: 1fr; }
             .race-request-buy-options { flex-direction: column; }
+        }
+
+        /* ============================================
+           ADMIN PANEL (v02.13)
+           ============================================ */
+        .super-admin-bar {
+            display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+            background: linear-gradient(135deg, rgba(167,139,250,0.15) 0%, rgba(255,107,157,0.15) 100%);
+            border: 1px solid rgba(167,139,250,0.3);
+            border-radius: 12px; padding: 14px 18px; margin-bottom: 16px;
+        }
+        .super-admin-label {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; font-weight: 700; color: var(--accent-purple);
+        }
+        .super-admin-label svg { width: 18px; height: 18px; }
+        .super-admin-filters { display: flex; gap: 10px; flex: 1; }
+        .super-admin-filters select {
+            padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color);
+            border-radius: 6px; color: var(--text-primary); font-size: 13px; min-width: 160px;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .super-admin-view-btn {
+            display: flex; align-items: center; gap: 6px; padding: 8px 14px;
+            background: var(--accent-purple); border: none; border-radius: 6px;
+            color: white; font-size: 12px; font-weight: 600; cursor: pointer;
+            font-family: 'Montserrat', sans-serif; transition: all 0.2s;
+        }
+        .super-admin-view-btn:hover { background: var(--accent-pink); }
+        .super-admin-view-btn svg { width: 14px; height: 14px; }
+
+        .admin-filter-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+        }
+        .admin-filter-left { display: flex; gap: 6px; }
+        .admin-filter-btn {
+            padding: 8px 14px; background: var(--bg-secondary); border: 1px solid var(--border-color);
+            border-radius: 6px; color: var(--text-secondary); font-size: 12px; font-weight: 500;
+            cursor: pointer; transition: all 0.2s; font-family: 'Montserrat', sans-serif;
+        }
+        .admin-filter-btn:hover { border-color: var(--accent-blue); color: var(--text-primary); }
+        .admin-filter-btn.active { background: var(--accent-blue); border-color: var(--accent-blue); color: white; }
+        .admin-count { font-size: 13px; color: var(--text-muted); }
+
+        .admin-requests-table {
+            background: var(--bg-card); border-radius: 12px; overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        .admin-requests-table table {
+            width: 100%; border-collapse: collapse;
+        }
+        .admin-requests-table th {
+            padding: 12px 14px; text-align: left; font-size: 11px; font-weight: 600;
+            color: var(--text-muted); text-transform: uppercase; background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .admin-requests-table td {
+            padding: 14px; font-size: 13px; color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .admin-requests-table tr:last-child td { border-bottom: none; }
+        .admin-requests-table tr:hover td { background: var(--bg-card-hover); }
+        .loading-cell { text-align: center; color: var(--text-muted); padding: 40px !important; }
+
+        .admin-status-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+        }
+        .admin-status-badge.pending { background: rgba(245,166,35,0.15); color: var(--accent-orange); }
+        .admin-status-badge.processing { background: rgba(0,194,255,0.15); color: var(--accent-blue); }
+        .admin-status-badge.completed { background: rgba(0,230,138,0.15); color: var(--accent-green); }
+        .admin-status-badge.failed { background: rgba(255,107,107,0.15); color: var(--accent-red); }
+        .admin-status-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: currentColor;
+        }
+        .admin-status-badge.pending .admin-status-dot,
+        .admin-status-badge.processing .admin-status-dot { animation: pulse-status 1.5s infinite; }
+
+        .admin-actions { display: flex; gap: 6px; }
+        .admin-action-btn {
+            padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color);
+            background: var(--bg-secondary); color: var(--text-secondary); font-size: 11px;
+            cursor: pointer; transition: all 0.2s; font-family: 'Montserrat', sans-serif;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .admin-action-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+        .admin-action-btn.primary { background: var(--accent-blue); border-color: var(--accent-blue); color: white; }
+        .admin-action-btn.primary:hover { background: var(--accent-purple); border-color: var(--accent-purple); }
+        .admin-action-btn svg { width: 12px; height: 12px; }
+
+        /* Admin Status Update Modal */
+        .admin-modal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); z-index: 1000; display: flex;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .admin-modal-content {
+            background: var(--bg-card); border-radius: 16px; width: 100%; max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .admin-modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 18px 20px; border-bottom: 1px solid var(--border-color);
+        }
+        .admin-modal-header h3 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0; }
+        .admin-modal-body { padding: 20px; }
+        .admin-modal-field { margin-bottom: 16px; }
+        .admin-modal-field label {
+            display: block; font-size: 11px; font-weight: 600; color: var(--text-muted);
+            text-transform: uppercase; margin-bottom: 6px;
+        }
+        .admin-modal-field select, .admin-modal-field textarea {
+            width: 100%; padding: 10px 12px; background: var(--bg-input);
+            border: 1px solid var(--border-color); border-radius: 8px;
+            color: var(--text-primary); font-size: 14px; font-family: 'Montserrat', sans-serif;
+        }
+        .admin-modal-field textarea { min-height: 80px; resize: vertical; }
+        .admin-modal-footer {
+            padding: 16px 20px; border-top: 1px solid var(--border-color);
+            display: flex; justify-content: flex-end; gap: 10px;
+        }
+        .admin-modal-btn {
+            padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;
+            cursor: pointer; font-family: 'Montserrat', sans-serif; transition: all 0.2s;
+        }
+        .admin-modal-btn.cancel { background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-secondary); }
+        .admin-modal-btn.save { background: var(--accent-blue); border: none; color: white; }
+        .admin-modal-btn.save:hover { background: var(--accent-purple); }
+
+        /* Athlete Request History Section */
+        .request-history-section { margin-top: 20px; }
+        .request-history-card {
+            display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 10px; margin-bottom: 10px; transition: all 0.2s;
+        }
+        .request-history-card:hover { border-color: var(--accent-blue); }
+        .request-history-status { font-size: 20px; }
+        .request-history-info { flex: 1; }
+        .request-history-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .request-history-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .request-history-badge {
+            padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+        }
+        .request-history-badge.pending { background: rgba(245,166,35,0.15); color: var(--accent-orange); }
+        .request-history-badge.processing { background: rgba(0,194,255,0.15); color: var(--accent-blue); }
+        .request-history-badge.completed { background: rgba(0,230,138,0.15); color: var(--accent-green); }
+        .request-history-link {
+            padding: 6px 12px; background: var(--accent-blue); border-radius: 6px;
+            color: white; font-size: 12px; font-weight: 600; text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            .super-admin-bar { flex-direction: column; align-items: flex-start; }
+            .super-admin-filters { width: 100%; flex-direction: column; }
+            .super-admin-filters select { width: 100%; }
+            .admin-requests-table { overflow-x: auto; }
+            .admin-requests-table table { min-width: 700px; }
         }
 
         /* Race chart toggle */
@@ -3836,7 +3995,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.12</span></span>
+                    <span>Analytics <span class="version-tag">v02.13</span></span>
                 </div>
             </div>
 
@@ -3878,6 +4037,16 @@
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                     Team Overview
                     <span id="pendingBadge" class="pending-count-badge" style="display:none;">0</span>
+                </div>
+            </div>
+
+            <!-- Admin Section (only visible to admins) -->
+            <div class="nav-section" id="adminSection" style="display: none;">
+                <div class="nav-section-title">Admin</div>
+                <div class="nav-item" data-page="admin">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    Race Requests
+                    <span id="adminPendingBadge" class="pending-count-badge" style="display:none;">0</span>
                 </div>
             </div>
 
@@ -4094,7 +4263,7 @@
                 <!-- Alerts Section -->
                 <div class="alerts-section" id="alertsSection"></div>
 
-                <!-- Race Analysis Request - Slim Bar (v02.12) -->
+                <!-- Race Analysis Request - Slim Bar (v02.13) -->
                 <div class="race-request-slim" id="raceRequestCard" style="display:none;">
                     <div class="race-request-slim-left">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -5363,6 +5532,68 @@
                     <div class="card-body" id="teamCoaches">
                         <div class="loading"><div class="loading-spinner"></div>Loading...</div>
                     </div>
+                </div>
+            </section>
+
+            <!-- Admin Page (Race Requests Management) - v02.13 -->
+            <section class="page-section" id="page-admin">
+                <div class="page-header">
+                    <h1>Race Analysis Requests</h1>
+                    <p>Manage pending video analysis requests</p>
+                </div>
+
+                <!-- Super Admin: Team Switcher -->
+                <div class="super-admin-bar" id="superAdminBar" style="display:none;">
+                    <div class="super-admin-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        Super Admin Mode
+                    </div>
+                    <div class="super-admin-filters">
+                        <select id="superAdminTeamFilter" onchange="onSuperAdminTeamChange()">
+                            <option value="">All Teams</option>
+                        </select>
+                        <select id="superAdminAthleteFilter" onchange="onSuperAdminAthleteChange()">
+                            <option value="">All Athletes</option>
+                        </select>
+                    </div>
+                    <button class="super-admin-view-btn" id="superAdminViewBtn" onclick="viewAsSelectedAthlete()" style="display:none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        View Dashboard
+                    </button>
+                </div>
+
+                <!-- Admin Filter Bar -->
+                <div class="admin-filter-bar">
+                    <div class="admin-filter-left">
+                        <button class="admin-filter-btn active" data-status="" onclick="filterAdminRequests('')">All</button>
+                        <button class="admin-filter-btn" data-status="pending" onclick="filterAdminRequests('pending')">Pending</button>
+                        <button class="admin-filter-btn" data-status="processing" onclick="filterAdminRequests('processing')">Processing</button>
+                        <button class="admin-filter-btn" data-status="completed" onclick="filterAdminRequests('completed')">Completed</button>
+                    </div>
+                    <div class="admin-filter-right">
+                        <span class="admin-count" id="adminRequestCount">0 requests</span>
+                    </div>
+                </div>
+
+                <!-- Requests Table -->
+                <div class="admin-requests-table">
+                    <table id="adminRequestsTable">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Athlete</th>
+                                <th>Event</th>
+                                <th>Distance</th>
+                                <th>Stroke</th>
+                                <th>Course</th>
+                                <th>Submitted</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminRequestsBody">
+                            <tr><td colspan="8" class="loading-cell"><div class="loading-spinner"></div> Loading requests...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </section>
         </main>
@@ -6728,6 +6959,7 @@
             setupNavigation();
             loadHomeData();
             loadSubscription(); // Load subscription status
+            checkAdminStatus(); // Check if user is admin (v02.13)
         }
 
         function updateUserUI() {
@@ -6820,6 +7052,9 @@
                 case 'leaderboards':
                     loadLeaderboardData();
                     break;
+                case 'admin':
+                    loadAdminPage();
+                    break;
             }
         }
 
@@ -6872,7 +7107,8 @@
                     loadRecentSessions(),
                     checkPendingApprovals(),
                     loadCompBadges(),
-                    initRaceRequestCard()
+                    initRaceRequestCard(),
+                    loadAthleteRequestHistory()
                 ]);
             }
         }
@@ -12228,42 +12464,35 @@
                 rows.forEach(r => {
                     const mj = r.metrics_json || {};
 
-                    // Level 1: trial_uuid (strongest - exact row identity)
-                    if (r.trial_uuid) {
-                        if (seen.has('t:' + r.trial_uuid)) return;
-                        seen.add('t:' + r.trial_uuid);
+                    // Level 1: race_uuid (strongest - exact row identity)
+                    if (r.race_uuid) {
+                        if (seen.has('r:' + r.race_uuid)) return;
+                        seen.add('r:' + r.race_uuid);
                         dedupedRaces.push({ ...r, mj });
                         return;
                     }
 
-                    // Level 2: Fingerprint using normalized fields
+                    // Level 2: Fingerprint using normalized fields + source_file
                     // Normalize strings: trim, lowercase, collapse whitespace
                     const norm = v => String(v||'').trim().toLowerCase().replace(/\s+/g,' ');
                     const dist = norm(mj.Distance || mj.distance);
                     const style = norm(mj.Style || mj.style);
-                    const runtime = norm(mj.Runtime || mj.runtime);
                     const raceTime = parseRaceTime(mj);
+                    const sourceFile = norm(r.source_file || '');
 
-                    // Build fingerprint from athlete + date + event identity + time
+                    // Build fingerprint from athlete + date + event identity + time + source file
                     const key = [
                         r.athlete_uuid || '',
                         r.source_date || '',
                         dist,
                         style,
-                        runtime,
                         raceTime != null ? raceTime.toFixed(2) : '',
-                        r.analysis_session_uuid || ''
+                        sourceFile,
+                        r.session_uuid || ''
                     ].join('|');
 
                     if (!seen.has('f:' + key)) {
                         seen.add('f:' + key);
-
-                        // Level 3: Also check without session UUID (catches same race imported twice)
-                        const looseKey = [r.athlete_uuid||'', r.source_date||'', dist, style,
-                            raceTime != null ? raceTime.toFixed(2) : ''].join('|');
-                        if (seen.has('l:' + looseKey)) return;
-                        seen.add('l:' + looseKey);
-
                         dedupedRaces.push({ ...r, mj });
                     }
                 });
@@ -12455,12 +12684,7 @@
         }
 
         function parseRaceTime(mj) {
-            const rt = mj.Runtime || mj.runtime;
-            if (rt && typeof rt === 'string') {
-                const p = rt.replace(/^0+:/, '').split(':');
-                if (p.length === 1) return parseFloat(p[0]);
-                if (p.length === 2) return parseFloat(p[0]) * 60 + parseFloat(p[1]);
-            }
+            // ALWAYS use splits for race time - Runtime is video length, NOT race time
             const sp = extractSplits(mj);
             return sp.length ? sp[sp.length - 1].cumTime : null;
         }
@@ -14522,7 +14746,7 @@
         });
 
         // ============================================
-        // RACE ANALYSIS REQUEST (v02.12)
+        // RACE ANALYSIS REQUEST (v02.13)
         // ============================================
         const EDGE_FUNCTION_URL = 'https://wbqgshvbopfukwyqsndq.supabase.co/functions/v1/r2-upload-url';
         const STRIPE_EXTRA_ANALYSIS = 'https://buy.stripe.com/3cI8wO9v7b9FaKF7JogjC02';
@@ -14969,6 +15193,461 @@
                 if (el) el.addEventListener('change', validateUploadForm);
             });
         });
+
+        // ============================================
+        // ADMIN PANEL (v02.13)
+        // ============================================
+        let adminState = {
+            isRaceAdmin: false,
+            isSuperAdmin: false,
+            currentFilter: '',
+            allRequests: [],
+            allTeams: [],
+            allAthletes: [],
+            selectedTeamUuid: '',
+            selectedAthleteUuid: ''
+        };
+
+        // Check admin status on login
+        async function checkAdminStatus() {
+            try {
+                const { data, error } = await supabaseClient.rpc('is_admin');
+                if (error) throw error;
+                
+                if (data && data.length > 0) {
+                    adminState.isRaceAdmin = data[0].is_race_admin || false;
+                    adminState.isSuperAdmin = data[0].is_super_admin || false;
+                }
+            } catch (e) {
+                console.log('Not an admin or error checking:', e.message);
+                adminState.isRaceAdmin = false;
+                adminState.isSuperAdmin = false;
+            }
+            
+            // Show/hide admin section in sidebar
+            const adminSection = document.getElementById('adminSection');
+            if (adminSection) {
+                adminSection.style.display = adminState.isRaceAdmin ? 'block' : 'none';
+            }
+            
+            // Show super admin bar if applicable
+            const superAdminBar = document.getElementById('superAdminBar');
+            if (superAdminBar) {
+                superAdminBar.style.display = adminState.isSuperAdmin ? 'flex' : 'none';
+            }
+            
+            // Load teams for super admin dropdown
+            if (adminState.isSuperAdmin) {
+                await loadAllTeamsForAdmin();
+            }
+        }
+
+        // Load all teams for super admin dropdown
+        async function loadAllTeamsForAdmin() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('v_all_teams')
+                    .select('*')
+                    .order('team_name');
+                
+                if (error) throw error;
+                adminState.allTeams = data || [];
+                
+                const select = document.getElementById('superAdminTeamFilter');
+                if (select) {
+                    select.innerHTML = '<option value="">All Teams</option>' +
+                        adminState.allTeams.map(t => 
+                            `<option value="${t.team_uuid}">${sanitizeForDisplay(t.team_name)} (${t.athlete_count})</option>`
+                        ).join('');
+                }
+            } catch (e) {
+                console.error('Error loading teams for admin:', e);
+            }
+        }
+
+        // On team change - load athletes for that team
+        async function onSuperAdminTeamChange() {
+            const teamUuid = document.getElementById('superAdminTeamFilter').value;
+            adminState.selectedTeamUuid = teamUuid;
+            adminState.selectedAthleteUuid = '';
+            
+            const athleteSelect = document.getElementById('superAdminAthleteFilter');
+            const viewBtn = document.getElementById('superAdminViewBtn');
+            
+            if (!teamUuid) {
+                athleteSelect.innerHTML = '<option value="">All Athletes</option>';
+                viewBtn.style.display = 'none';
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('athletes')
+                    .select('athlete_uuid, first_name, last_name')
+                    .eq('team_uuid', teamUuid)
+                    .order('last_name');
+                
+                if (error) throw error;
+                adminState.allAthletes = data || [];
+                
+                athleteSelect.innerHTML = '<option value="">All Athletes</option>' +
+                    adminState.allAthletes.map(a => 
+                        `<option value="${a.athlete_uuid}">${sanitizeForDisplay(a.first_name)} ${sanitizeForDisplay(a.last_name)}</option>`
+                    ).join('');
+            } catch (e) {
+                console.error('Error loading athletes:', e);
+            }
+        }
+
+        // On athlete change
+        function onSuperAdminAthleteChange() {
+            adminState.selectedAthleteUuid = document.getElementById('superAdminAthleteFilter').value;
+            const viewBtn = document.getElementById('superAdminViewBtn');
+            viewBtn.style.display = adminState.selectedAthleteUuid ? 'flex' : 'none';
+        }
+
+        // View dashboard as selected athlete
+        function viewAsSelectedAthlete() {
+            if (!adminState.selectedAthleteUuid) return;
+            
+            // Set the selected athlete and reload home
+            appState.selectedAthleteUuid = adminState.selectedAthleteUuid;
+            
+            // Find athlete name for display
+            const athlete = adminState.allAthletes.find(a => a.athlete_uuid === adminState.selectedAthleteUuid);
+            if (athlete) {
+                showToast(`Viewing as: ${athlete.first_name} ${athlete.last_name}`, 'info');
+            }
+            
+            navigateTo('home');
+            loadHomeData();
+        }
+
+        // Load admin page data
+        async function loadAdminPage() {
+            if (!adminState.isRaceAdmin) return;
+            
+            await loadAdminRequests();
+            updateAdminPendingBadge();
+        }
+
+        // Load all race requests for admin
+        async function loadAdminRequests() {
+            const tbody = document.getElementById('adminRequestsBody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '<tr><td colspan="8" class="loading-cell"><div class="loading-spinner"></div> Loading requests...</td></tr>';
+            
+            try {
+                // Build query
+                let query = supabaseClient
+                    .from('race_requests')
+                    .select(`
+                        *,
+                        athletes!inner(first_name, last_name, team_uuid, teams(team_name))
+                    `)
+                    .order('created_at', { ascending: false });
+                
+                // Apply status filter
+                if (adminState.currentFilter) {
+                    query = query.eq('status', adminState.currentFilter);
+                }
+                
+                const { data, error } = await query;
+                if (error) throw error;
+                
+                adminState.allRequests = data || [];
+                renderAdminRequests();
+                
+            } catch (e) {
+                console.error('Error loading admin requests:', e);
+                tbody.innerHTML = '<tr><td colspan="8" class="loading-cell">Error loading requests</td></tr>';
+            }
+        }
+
+        // Render admin requests table
+        function renderAdminRequests() {
+            const tbody = document.getElementById('adminRequestsBody');
+            const countEl = document.getElementById('adminRequestCount');
+            
+            if (!tbody) return;
+            
+            if (countEl) {
+                countEl.textContent = `${adminState.allRequests.length} request${adminState.allRequests.length !== 1 ? 's' : ''}`;
+            }
+            
+            if (!adminState.allRequests.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="loading-cell">No requests found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = adminState.allRequests.map(req => {
+                const athlete = req.athletes;
+                const athleteName = athlete ? `${athlete.first_name} ${athlete.last_name}` : 'Unknown';
+                const teamName = athlete?.teams?.team_name || 'No Team';
+                const date = new Date(req.created_at).toLocaleDateString();
+                const distance = req.distance_m || '-';
+                const stroke = req.style ? req.style.charAt(0).toUpperCase() + req.style.slice(1) : '-';
+                const course = req.course || '-';
+                const eventName = req.event_name || '-';
+                
+                return `<tr data-request-id="${req.request_uuid}">
+                    <td>
+                        <span class="admin-status-badge ${req.status}">
+                            <span class="admin-status-dot"></span>
+                            ${req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="font-weight:600;">${sanitizeForDisplay(athleteName)}</div>
+                        <div style="font-size:11px;color:var(--text-muted);">${sanitizeForDisplay(teamName)}</div>
+                    </td>
+                    <td>${sanitizeForDisplay(eventName)}</td>
+                    <td>${distance}</td>
+                    <td>${sanitizeForDisplay(stroke)}</td>
+                    <td>${course}</td>
+                    <td>${date}</td>
+                    <td>
+                        <div class="admin-actions">
+                            <button class="admin-action-btn" onclick="downloadVideo('${req.video_key}', '${req.video_filename}')" title="Download Video">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </button>
+                            <button class="admin-action-btn primary" onclick="openStatusModal('${req.request_uuid}', '${req.status}')" title="Update Status">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // Filter admin requests
+        function filterAdminRequests(status) {
+            adminState.currentFilter = status;
+            
+            // Update button states
+            document.querySelectorAll('.admin-filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.status === status);
+            });
+            
+            loadAdminRequests();
+        }
+
+        // Download video (generate signed URL)
+        async function downloadVideo(videoKey, filename) {
+            showToast('Preparing download...', 'info');
+            
+            // For now, construct the R2 URL directly (you may need a signed URL function)
+            // This assumes public access or you'll need another Edge Function
+            const r2Url = `https://c80df9a60c89898bf4258cbcae15ccee.r2.cloudflarestorage.com/peakathletes-videos/${videoKey}`;
+            
+            // Open in new tab (will prompt download if configured)
+            window.open(r2Url, '_blank');
+        }
+
+        // Status update modal
+        let currentEditingRequest = null;
+
+        function openStatusModal(requestUuid, currentStatus) {
+            currentEditingRequest = requestUuid;
+            
+            // Create modal if not exists
+            let modal = document.getElementById('adminStatusModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'adminStatusModal';
+                modal.className = 'admin-modal';
+                modal.innerHTML = `
+                    <div class="admin-modal-content">
+                        <div class="admin-modal-header">
+                            <h3>Update Request Status</h3>
+                            <button class="upload-modal-close" onclick="closeStatusModal()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        </div>
+                        <div class="admin-modal-body">
+                            <div class="admin-modal-field">
+                                <label>Status</label>
+                                <select id="adminStatusSelect">
+                                    <option value="pending">Pending</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="failed">Failed</option>
+                                </select>
+                            </div>
+                            <div class="admin-modal-field">
+                                <label>Admin Notes</label>
+                                <textarea id="adminNotesInput" placeholder="Optional notes about this request..."></textarea>
+                            </div>
+                        </div>
+                        <div class="admin-modal-footer">
+                            <button class="admin-modal-btn cancel" onclick="closeStatusModal()">Cancel</button>
+                            <button class="admin-modal-btn save" onclick="saveRequestStatus()">Save Changes</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            
+            // Set current value
+            document.getElementById('adminStatusSelect').value = currentStatus;
+            document.getElementById('adminNotesInput').value = '';
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeStatusModal() {
+            const modal = document.getElementById('adminStatusModal');
+            if (modal) modal.style.display = 'none';
+            currentEditingRequest = null;
+        }
+
+        async function saveRequestStatus() {
+            if (!currentEditingRequest) return;
+            
+            const newStatus = document.getElementById('adminStatusSelect').value;
+            const notes = document.getElementById('adminNotesInput').value;
+            
+            try {
+                const updateData = {
+                    status: newStatus,
+                    updated_at: new Date().toISOString()
+                };
+                
+                if (notes) updateData.admin_notes = notes;
+                if (newStatus === 'completed' || newStatus === 'failed') {
+                    updateData.processed_at = new Date().toISOString();
+                }
+                
+                const { error } = await supabaseClient
+                    .from('race_requests')
+                    .update(updateData)
+                    .eq('request_uuid', currentEditingRequest);
+                
+                if (error) throw error;
+                
+                showToast('Status updated successfully', 'success');
+                closeStatusModal();
+                loadAdminRequests();
+                updateAdminPendingBadge();
+                
+            } catch (e) {
+                console.error('Error updating status:', e);
+                showToast('Failed to update status', 'error');
+            }
+        }
+
+        // Update admin pending badge
+        async function updateAdminPendingBadge() {
+            const badge = document.getElementById('adminPendingBadge');
+            if (!badge || !adminState.isRaceAdmin) return;
+            
+            try {
+                const { count, error } = await supabaseClient
+                    .from('race_requests')
+                    .select('*', { count: 'exact', head: true })
+                    .in('status', ['pending', 'processing']);
+                
+                if (error) throw error;
+                
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            } catch (e) {
+                console.error('Error counting pending requests:', e);
+            }
+        }
+
+        // ============================================
+        // ATHLETE REQUEST HISTORY (v02.13)
+        // ============================================
+        async function loadAthleteRequestHistory() {
+            // Add request history section to home page if athlete
+            if (appState.role !== 'athlete' || !appState.athleteUuid) return;
+            
+            // Check if section exists, create if not
+            let section = document.getElementById('requestHistorySection');
+            if (!section) {
+                const goalsSection = document.querySelector('#goalsGrid')?.parentElement;
+                if (goalsSection) {
+                    section = document.createElement('div');
+                    section.id = 'requestHistorySection';
+                    section.className = 'request-history-section';
+                    section.innerHTML = `
+                        <div class="section-header">
+                            <h2>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                My Analysis Requests
+                            </h2>
+                        </div>
+                        <div id="requestHistoryList"></div>
+                    `;
+                    goalsSection.parentNode.insertBefore(section, goalsSection.nextSibling);
+                }
+            }
+            
+            const listEl = document.getElementById('requestHistoryList');
+            if (!listEl) return;
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('race_requests')
+                    .select('*')
+                    .eq('athlete_uuid', appState.athleteUuid)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+                
+                if (error) throw error;
+                
+                if (!data || data.length === 0) {
+                    section.style.display = 'none';
+                    return;
+                }
+                
+                section.style.display = 'block';
+                
+                listEl.innerHTML = data.map(req => {
+                    const date = new Date(req.created_at).toLocaleDateString();
+                    const title = `${req.distance_m || '?'} ${req.style || 'Unknown'}`;
+                    const event = req.event_name || 'Race Analysis';
+                    
+                    const statusIcons = {
+                        pending: '⏳',
+                        processing: '🔄',
+                        completed: '✅',
+                        failed: '❌'
+                    };
+                    
+                    const viewLink = req.status === 'completed' && req.race_raw_uuid 
+                        ? `<a href="#" class="request-history-link" onclick="viewAnalysisResult('${req.race_raw_uuid}');return false;">View Results</a>`
+                        : '';
+                    
+                    return `<div class="request-history-card">
+                        <div class="request-history-status">${statusIcons[req.status] || '❓'}</div>
+                        <div class="request-history-info">
+                            <div class="request-history-title">${sanitizeForDisplay(title)} - ${sanitizeForDisplay(event)}</div>
+                            <div class="request-history-sub">Submitted ${date}</div>
+                        </div>
+                        <span class="request-history-badge ${req.status}">${req.status.charAt(0).toUpperCase() + req.status.slice(1)}</span>
+                        ${viewLink}
+                    </div>`;
+                }).join('');
+                
+            } catch (e) {
+                console.error('Error loading request history:', e);
+                section.style.display = 'none';
+            }
+        }
+
+        // View analysis result (navigate to races page with specific race)
+        function viewAnalysisResult(raceRawUuid) {
+            // Navigate to races and potentially pre-select this race
+            navigateTo('races');
+            // Could add logic to auto-select the race
+        }
 
         // ============================================
         // INITIALIZATION

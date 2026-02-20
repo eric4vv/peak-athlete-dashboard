@@ -2687,19 +2687,29 @@
             bottom: 24px;
             right: 24px;
             width: 360px;
+            min-width: 280px;
+            max-width: 80vw;
             background: var(--bg-card);
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.4);
             border: 1px solid var(--border-color);
             z-index: 500;
             overflow: hidden;
-            transition: all 0.3s ease;
+            transition: box-shadow 0.3s ease;
+            resize: both;
+            overflow: auto;
+        }
+        .floating-video-player:active {
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
         }
         .floating-video-player.minimized {
-            width: 56px;
-            height: 56px;
+            width: 56px !important;
+            height: 56px !important;
+            min-width: 56px;
+            min-height: 56px;
             border-radius: 50%;
             cursor: pointer;
+            resize: none;
         }
         .floating-video-player.minimized .fvp-header,
         .floating-video-player.minimized .fvp-body {

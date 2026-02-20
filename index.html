@@ -15505,7 +15505,7 @@
                     <td>${date}</td>
                     <td>
                         <div class="admin-actions">
-                            <button class="admin-action-btn" onclick="downloadVideo('${req.video_key}', '${req.video_filename}')" title="Download Video">
+                            <button class="admin-action-btn" onclick="downloadVideo('${req.video_key}', '${req.video_filename}', '${req.request_uuid}')" title="Download Video">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                             </button>
                             <button class="admin-action-btn primary" onclick="openStatusModal('${req.request_uuid}', '${req.status}')" title="Update Status">
@@ -15529,16 +15529,44 @@
             loadAdminRequests();
         }
 
-        // Download video (generate signed URL)
-        async function downloadVideo(videoKey, filename) {
+        // Download video via signed URL
+        async function downloadVideo(videoKey, filename, requestUuid) {
             showToast('Preparing download...', 'info');
             
-            // For now, construct the R2 URL directly (you may need a signed URL function)
-            // This assumes public access or you'll need another Edge Function
-            const r2Url = `https://c80df9a60c89898bf4258cbcae15ccee.r2.cloudflarestorage.com/peakathletes-videos/${videoKey}`;
-            
-            // Open in new tab (will prompt download if configured)
-            window.open(r2Url, '_blank');
+            try {
+                const session = await supabaseClient.auth.getSession();
+                const token = session.data.session?.access_token;
+                
+                if (!token) {
+                    showToast('Not authenticated', 'error');
+                    return;
+                }
+                
+                const response = await fetch('https://wbqgshvbopfukwyqsndq.supabase.co/functions/v1/r2-download-url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        'apikey': SUPABASE_KEY
+                    },
+                    body: JSON.stringify({ videoKey, requestUuid })
+                });
+                
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Failed to get download URL');
+                }
+                
+                const { downloadUrl } = await response.json();
+                
+                // Open download in new tab
+                window.open(downloadUrl, '_blank');
+                showToast('Download started', 'success');
+                
+            } catch (e) {
+                console.error('Download error:', e);
+                showToast('Failed to download video: ' + e.message, 'error');
+            }
         }
 
         // Status update modal

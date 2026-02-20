@@ -13821,12 +13821,14 @@
                     return;
                 }
                 
-                const { signedUrl } = await response.json();
-                videoPlayerState.videoUrl = signedUrl;
+                const { downloadUrl } = await response.json();
+                videoPlayerState.videoUrl = downloadUrl;
+                
+                console.log('Video URL loaded:', downloadUrl); // Debug
                 
                 // Update video elements
-                updateVideoTabContent(signedUrl);
-                updateFloatingVideo(signedUrl);
+                updateVideoTabContent(downloadUrl);
+                updateFloatingVideo(downloadUrl);
                 
             } catch (e) {
                 console.error('Error loading video URL:', e);
@@ -16364,4 +16366,3 @@
     </script>
 </body>
 </html>
-

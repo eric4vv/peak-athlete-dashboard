@@ -15008,9 +15008,31 @@
             }
         }
 
+        // Build Stripe payment URL with user tracking
+        function buildStripeUrl(baseUrl) {
+            const params = new URLSearchParams();
+            
+            // Add client_reference_id (user's auth UUID) - this is the KEY for matching
+            if (appState.user?.id) {
+                params.set('client_reference_id', appState.user.id);
+            }
+            
+            // Prefill email (can be changed by parent paying for child)
+            const email = appState.user?.email || appState.athleteEmail || '';
+            if (email) {
+                params.set('prefilled_email', email);
+            }
+            
+            return params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+        }
+
         // Show/hide buy options dropdown
         function showBuyOptions(event) {
             if (event) event.preventDefault();
+            
+            // Build dynamic URLs with user tracking
+            const singleUrl = buildStripeUrl(STRIPE_EXTRA_ANALYSIS);
+            const bundleUrl = buildStripeUrl(STRIPE_BUNDLE_4PACK);
             
             let modal = document.getElementById('buyAnalysisModal');
             if (!modal) {
@@ -15018,36 +15040,42 @@
                 modal.id = 'buyAnalysisModal';
                 modal.className = 'upload-modal-overlay';
                 modal.onclick = (e) => { if (e.target === modal) closeBuyModal(); };
-                modal.innerHTML = `
-                    <div class="buy-analysis-modal">
-                        <button class="buy-modal-close" onclick="closeBuyModal()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </button>
-                        <div class="buy-modal-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        </div>
-                        <h3>Get More Race Analyses</h3>
-                        <p>Unlock additional video analyses to track your progress and improve your technique.</p>
-                        <div class="buy-modal-options">
-                            <a href="https://buy.stripe.com/3cI8wO9v7b9FaKF7JogjC02" target="_blank" class="buy-modal-option" onclick="closeBuyModal()">
-                                <div class="buy-option-price">$6.99</div>
-                                <div class="buy-option-label">1 Extra Analysis</div>
-                                <div class="buy-option-desc">Perfect for a single race</div>
-                            </a>
-                            <a href="https://buy.stripe.com/4gM6oG36J4Lh5ql3t8gjC03" target="_blank" class="buy-modal-option featured" onclick="closeBuyModal()">
-                                <span class="buy-option-badge">Best Value</span>
-                                <div class="buy-option-price">$19.99</div>
-                                <div class="buy-option-label">4-Pack Bundle</div>
-                                <div class="buy-option-desc">Save $8 - great for meets!</div>
-                            </a>
-                        </div>
-                        <div class="buy-modal-footer">
-                            <span>Purchased analyses never expire</span>
-                        </div>
+            }
+            
+            // Always update URLs in case user changed
+            modal.innerHTML = `
+                <div class="buy-analysis-modal">
+                    <button class="buy-modal-close" onclick="closeBuyModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                    <div class="buy-modal-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     </div>
-                `;
+                    <h3>Get More Race Analyses</h3>
+                    <p>Unlock additional video analyses to track your progress and improve your technique.</p>
+                    <div class="buy-modal-options">
+                        <a href="${singleUrl}" target="_blank" class="buy-modal-option" onclick="closeBuyModal()">
+                            <div class="buy-option-price">$6.99</div>
+                            <div class="buy-option-label">1 Extra Analysis</div>
+                            <div class="buy-option-desc">Perfect for a single race</div>
+                        </a>
+                        <a href="${bundleUrl}" target="_blank" class="buy-modal-option featured" onclick="closeBuyModal()">
+                            <span class="buy-option-badge">Best Value</span>
+                            <div class="buy-option-price">$19.99</div>
+                            <div class="buy-option-label">4-Pack Bundle</div>
+                            <div class="buy-option-desc">Save $8 - great for meets!</div>
+                        </a>
+                    </div>
+                    <div class="buy-modal-footer">
+                        <span>Purchased analyses never expire</span>
+                    </div>
+                </div>
+            `;
+            
+            if (!modal.parentNode) {
                 document.body.appendChild(modal);
             }
+            
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
@@ -15164,36 +15192,46 @@
 
         // Show quota exceeded modal (Option B)
         function showQuotaExceededModal() {
+            // Build dynamic URLs with user tracking
+            const singleUrl = buildStripeUrl(STRIPE_EXTRA_ANALYSIS);
+            const bundleUrl = buildStripeUrl(STRIPE_BUNDLE_4PACK);
+            
             let modal = document.getElementById('quotaExceededModal');
             if (!modal) {
                 modal = document.createElement('div');
                 modal.id = 'quotaExceededModal';
                 modal.className = 'upload-modal-overlay';
                 modal.onclick = (e) => { if (e.target === modal) closeQuotaExceededModal(); };
-                modal.innerHTML = `
-                    <div class="quota-exceeded-modal">
-                        <div class="quota-exceeded-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        </div>
-                        <h3>Analysis Quota Reached</h3>
-                        <p>You've used all your included analyses this month. Purchase additional analyses to continue.</p>
-                        <div class="quota-exceeded-options">
-                            <a href="https://buy.stripe.com/3cI8wO9v7b9FaKF7JogjC02" target="_blank" class="quota-exceeded-btn">
-                                <span class="qe-price">$6.99</span>
-                                <span class="qe-label">1 Extra Analysis</span>
-                            </a>
-                            <a href="https://buy.stripe.com/4gM6oG36J4Lh5ql3t8gjC03" target="_blank" class="quota-exceeded-btn featured">
-                                <span class="qe-save">Best Value</span>
-                                <span class="qe-price">$19.99</span>
-                                <span class="qe-label">4-Pack Bundle</span>
-                                <span class="qe-savings">Save $8!</span>
-                            </a>
-                        </div>
-                        <button class="quota-exceeded-cancel" onclick="closeQuotaExceededModal()">Maybe Later</button>
+            }
+            
+            // Always update URLs
+            modal.innerHTML = `
+                <div class="quota-exceeded-modal">
+                    <div class="quota-exceeded-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     </div>
-                `;
+                    <h3>Analysis Quota Reached</h3>
+                    <p>You've used all your included analyses this month. Purchase additional analyses to continue.</p>
+                    <div class="quota-exceeded-options">
+                        <a href="${singleUrl}" target="_blank" class="quota-exceeded-btn" onclick="closeQuotaExceededModal()">
+                            <span class="qe-price">$6.99</span>
+                            <span class="qe-label">1 Extra Analysis</span>
+                        </a>
+                        <a href="${bundleUrl}" target="_blank" class="quota-exceeded-btn featured" onclick="closeQuotaExceededModal()">
+                            <span class="qe-save">Best Value</span>
+                            <span class="qe-price">$19.99</span>
+                            <span class="qe-label">4-Pack Bundle</span>
+                            <span class="qe-savings">Save $8!</span>
+                        </a>
+                    </div>
+                    <button class="quota-exceeded-cancel" onclick="closeQuotaExceededModal()">Maybe Later</button>
+                </div>
+            `;
+            
+            if (!modal.parentNode) {
                 document.body.appendChild(modal);
             }
+            
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }

@@ -12967,8 +12967,8 @@
             
             // Check if selected race has video (v02.15)
             const primary = raceModuleState.filteredRaces[raceModuleState.primaryIdx];
-            if (primary && primary.race_raw_uuid) {
-                checkRaceVideo(primary.race_raw_uuid);
+            if (primary && primary.race_uuid) {
+                checkRaceVideo(primary.race_uuid);
             } else {
                 checkRaceVideo(null);
             }
@@ -13772,46 +13772,31 @@
         };
 
         // Check if selected race has video and update UI
-        async function checkRaceVideo(raceRawUuid) {
+        async function checkRaceVideo(raceUuid) {
             const videoTab = document.getElementById('raceVideoTab');
             const floatingPlayer = document.getElementById('floatingVideoPlayer');
             
-            if (!raceRawUuid) {
+            // Get the primary race from already loaded data
+            const primary = raceModuleState.filteredRaces[raceModuleState.primaryIdx];
+            const videoKey = primary?.video_key;
+            
+            console.log('checkRaceVideo:', { raceUuid, videoKey, primary }); // Debug
+            
+            if (!raceUuid || !videoKey) {
                 if (videoTab) videoTab.style.display = 'none';
                 if (floatingPlayer) floatingPlayer.style.display = 'none';
                 videoPlayerState.videoKey = null;
                 videoPlayerState.videoUrl = null;
+                updateVideoTabContent(null);
                 return;
             }
             
-            try {
-                // Check if race_raw has video_key
-                const { data: raceData, error } = await supabaseClient
-                    .from('race_raw')
-                    .select('video_key')
-                    .eq('race_raw_uuid', raceRawUuid)
-                    .single();
-                
-                if (error || !raceData?.video_key) {
-                    if (videoTab) videoTab.style.display = 'none';
-                    if (floatingPlayer) floatingPlayer.style.display = 'none';
-                    videoPlayerState.videoKey = null;
-                    videoPlayerState.videoUrl = null;
-                    updateVideoTabContent(null);
-                    return;
-                }
-                
-                // Race has video - show video tab
-                videoPlayerState.videoKey = raceData.video_key;
-                if (videoTab) videoTab.style.display = 'inline-flex';
-                
-                // Get signed URL for video
-                await loadVideoUrl(raceData.video_key);
-                
-            } catch (e) {
-                console.error('Error checking race video:', e);
-                if (videoTab) videoTab.style.display = 'none';
-            }
+            // Race has video - show video tab
+            videoPlayerState.videoKey = videoKey;
+            if (videoTab) videoTab.style.display = 'inline-flex';
+            
+            // Get signed URL for video
+            await loadVideoUrl(videoKey);
         }
 
         // Load signed URL for video

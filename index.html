@@ -4109,9 +4109,259 @@
             .comp-participant-count { margin-left: 0; }
         }
 
+        /* ============================================
+           CONSENT MODAL (v02.16)
+           ============================================ */
+        .consent-modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85); z-index: 10000;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .consent-modal {
+            background: var(--bg-card); border-radius: 16px;
+            max-width: 640px; width: 100%; max-height: 85vh;
+            display: flex; flex-direction: column;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .consent-modal-header {
+            padding: 24px 24px 16px; border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; gap: 12px;
+        }
+        .consent-modal-header svg { width: 28px; height: 28px; color: var(--accent-blue); }
+        .consent-modal-header h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0; }
+        .consent-modal-body {
+            flex: 1; overflow-y: auto; padding: 20px 24px;
+            font-size: 13px; line-height: 1.7; color: var(--text-secondary);
+        }
+        .consent-modal-body h3 {
+            font-size: 14px; font-weight: 700; color: var(--text-primary);
+            margin: 20px 0 10px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .consent-modal-body h3:first-child { margin-top: 0; }
+        .consent-modal-body ul { margin: 10px 0; padding-left: 20px; }
+        .consent-modal-body li { margin-bottom: 6px; }
+        .consent-modal-body strong { color: var(--text-primary); }
+        .consent-modal-body a { color: var(--accent-blue); text-decoration: none; }
+        .consent-modal-body a:hover { text-decoration: underline; }
+        .consent-modal-footer {
+            padding: 16px 24px; border-top: 1px solid var(--border-color);
+            display: flex; flex-direction: column; gap: 12px;
+        }
+        .consent-checkbox-row {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 12px; background: var(--bg-secondary); border-radius: 8px;
+        }
+        .consent-checkbox-row input[type="checkbox"] {
+            width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent-blue);
+        }
+        .consent-checkbox-row label {
+            font-size: 13px; color: var(--text-primary); line-height: 1.5; cursor: pointer;
+        }
+        .consent-accept-btn {
+            width: 100%; padding: 14px; background: var(--accent-blue);
+            border: none; border-radius: 8px; color: white;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            font-family: 'Montserrat', sans-serif; transition: all 0.2s;
+        }
+        .consent-accept-btn:hover:not(:disabled) { background: #00A8E0; }
+        .consent-accept-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .consent-version {
+            font-size: 11px; color: var(--text-muted); text-align: center;
+        }
+
+        /* ============================================
+           LOCKED DATA OVERLAY (v02.16)
+           ============================================ */
+        .race-card-locked {
+            opacity: 0.5; cursor: pointer; position: relative;
+        }
+        .race-card-locked::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.5));
+            border-radius: inherit; pointer-events: none;
+        }
+        .race-card-lock-icon {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 32px; height: 32px; color: var(--text-muted); z-index: 2;
+        }
+        .locked-tooltip {
+            position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 14px; width: 260px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 100;
+            opacity: 0; visibility: hidden; transition: all 0.2s;
+        }
+        .race-card-locked:hover .locked-tooltip { opacity: 1; visibility: visible; }
+        .locked-tooltip::after {
+            content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            border: 8px solid transparent; border-top-color: var(--border-color);
+        }
+        .locked-tooltip-title {
+            font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .locked-tooltip-title svg { width: 14px; height: 14px; color: var(--accent-orange); }
+        .locked-tooltip-text { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.5; }
+        .locked-tooltip-btn {
+            width: 100%; padding: 8px; background: var(--accent-purple);
+            border: none; border-radius: 6px; color: white;
+            font-size: 12px; font-weight: 600; cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .locked-tooltip-btn:hover { background: var(--accent-pink); }
+
+        /* Days remaining badge */
+        .race-card-expiry {
+            position: absolute; top: 8px; right: 8px;
+            background: rgba(245,166,35,0.15); color: var(--accent-orange);
+            font-size: 10px; font-weight: 600; padding: 3px 8px;
+            border-radius: 4px; display: flex; align-items: center; gap: 4px;
+        }
+        .race-card-expiry svg { width: 10px; height: 10px; }
+
+        /* ============================================
+           VIDEO DOWNLOAD BUTTON (v02.16)
+           ============================================ */
+        .video-download-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 14px; background: var(--bg-secondary);
+            border: 1px solid var(--border-color); border-radius: 6px;
+            color: var(--text-primary); font-size: 12px; font-weight: 500;
+            cursor: pointer; transition: all 0.2s;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .video-download-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+        .video-download-btn svg { width: 14px; height: 14px; }
+        .video-controls-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color);
+        }
+        .video-storage-note {
+            font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;
+        }
+        .video-storage-note svg { width: 12px; height: 12px; color: var(--accent-green); }
+
+        /* ============================================
+           PRO BENEFITS DISPLAY (v02.16)
+           ============================================ */
+        .pro-benefits-section {
+            margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);
+        }
+        .pro-benefits-title {
+            font-size: 12px; font-weight: 700; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+        }
+        .pro-benefits-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        }
+        .pro-benefit-item {
+            display: flex; align-items: flex-start; gap: 8px;
+            padding: 10px; background: var(--bg-secondary); border-radius: 8px;
+        }
+        .pro-benefit-item svg { width: 16px; height: 16px; color: var(--accent-green); flex-shrink: 0; margin-top: 1px; }
+        .pro-benefit-item span { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
+        .pro-benefit-item strong { color: var(--text-primary); }
+
+        @media (max-width: 600px) {
+            .consent-modal { max-height: 90vh; }
+            .consent-modal-header { padding: 16px; }
+            .consent-modal-body { padding: 16px; }
+            .pro-benefits-grid { grid-template-columns: 1fr; }
+        }
+
     </style>
 </head>
 <body>
+    <!-- Consent Modal (v02.16) - Shown to new and existing users who haven't accepted -->
+    <div class="consent-modal-overlay" id="consentModal" style="display:none;">
+        <div class="consent-modal">
+            <div class="consent-modal-header">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                <h2>Terms of Service & Data Use Agreement</h2>
+            </div>
+            <div class="consent-modal-body">
+                <h3>Welcome to Peak Athlete</h3>
+                <p>Before using our services, please review and accept our Terms of Service and Data Use Agreement. By using Peak Athlete, you agree to these terms.</p>
+                
+                <h3>1. Acceptance of Terms</h3>
+                <p>By accessing or using Peak Athlete services, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.</p>
+                
+                <h3>2. Service Description</h3>
+                <p>Peak Athlete provides swimming performance analysis services, including video analysis, split times, stroke metrics, and related analytics. Our services are intended for <strong>educational and performance improvement purposes only</strong>.</p>
+                
+                <h3>3. User Accounts</h3>
+                <ul>
+                    <li>You must provide accurate and complete information when creating an account</li>
+                    <li>You are responsible for maintaining the security of your account credentials</li>
+                    <li>Users of any age may use the service with parental or guardian consent if under 18</li>
+                    <li>You agree to notify us immediately of any unauthorized access to your account</li>
+                </ul>
+                
+                <h3>4. Data Collection & Use</h3>
+                <p>By using Peak Athlete, you authorize us to collect and process:</p>
+                <ul>
+                    <li>Video/imagery (above-water and underwater)</li>
+                    <li>Performance metrics (splits, start/turn metrics, stroke data, velocities)</li>
+                    <li>Session metadata (date/time, event type, equipment settings)</li>
+                    <li>Analysis notes and derived metrics</li>
+                </ul>
+                <p>We use this data to: (i) deliver analysis services; (ii) create anonymized benchmarks and comparisons; (iii) improve our software and algorithms; (iv) generate de-identified statistics and insights.</p>
+                
+                <h3>5. Data Sharing</h3>
+                <p>We may share your data with confidential, contract-bound service providers (cloud storage, video processing) and technology partners (including Contemplas) only as necessary to provide our services. Recipients may not use data for marketing, sell it, or disclose it except to perform their limited functions.</p>
+                
+                <h3>6. Payment Terms</h3>
+                <ul>
+                    <li><strong>All purchases are final and non-refundable</strong></li>
+                    <li>Subscription fees are billed in advance on a monthly basis</li>
+                    <li>You may cancel your subscription at any time; access continues until the end of the billing period</li>
+                    <li>Purchased analysis credits never expire</li>
+                </ul>
+                
+                <h3>7. Service Limitations</h3>
+                <ul>
+                    <li>Services are provided <strong>"as-is"</strong> without warranty of any kind</li>
+                    <li>We do not guarantee uptime, accuracy, or specific performance outcomes</li>
+                    <li>Our analysis is <strong>not medical advice</strong> and is <strong>not a substitute for professional coaching</strong></li>
+                    <li>We are not liable for training decisions made based on our analysis</li>
+                </ul>
+                
+                <h3>8. Account Termination</h3>
+                <p>Peak Athlete reserves the right to suspend or terminate accounts at our discretion. Upon termination, your data may be deleted. We recommend downloading any videos or data you wish to keep.</p>
+                
+                <h3>9. Intellectual Property</h3>
+                <p>Peak Athlete retains ownership of all software, analysis methods, algorithms, benchmarks, and derived datasets. You retain ownership of your original video content.</p>
+                
+                <h3>10. Indemnification</h3>
+                <p>You agree to indemnify and hold harmless Peak Athlete from any claims arising from your use of the service, violation of these terms, or infringement of any third-party rights.</p>
+                
+                <h3>11. Limitation of Liability</h3>
+                <p>To the maximum extent permitted by law, Peak Athlete shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the service.</p>
+                
+                <h3>12. Governing Law</h3>
+                <p>These terms are governed by the laws of the <strong>State of Florida, Broward County</strong>, without regard to conflict of law principles.</p>
+                
+                <h3>13. Changes to Terms</h3>
+                <p>We may modify these terms at any time. Continued use of the service after changes constitutes acceptance of the new terms.</p>
+                
+                <h3>14. Contact</h3>
+                <p>For questions about these terms, contact us at the email provided on our website.</p>
+            </div>
+            <div class="consent-modal-footer">
+                <div class="consent-checkbox-row">
+                    <input type="checkbox" id="consentCheckbox">
+                    <label for="consentCheckbox">I have read, understood, and agree to the <strong>Terms of Service</strong> and <strong>Data Use Agreement</strong>. If I am under 18, I confirm that my parent or guardian has reviewed and approved these terms.</label>
+                </div>
+                <button class="consent-accept-btn" id="consentAcceptBtn" disabled onclick="acceptConsent()">
+                    Accept & Continue
+                </button>
+                <div class="consent-version">Agreement Version 1.0 • Effective February 2026</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Login Screen -->
     <div class="login-container" id="loginScreen">
         <div class="login-card">
@@ -4313,7 +4563,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.15</span></span>
+                    <span>Analytics <span class="version-tag">v02.16</span></span>
                 </div>
             </div>
 
@@ -5484,6 +5734,17 @@
                                 <video id="raceVideoPlayer" controls style="display:none;">
                                     Your browser does not support the video tag.
                                 </video>
+                                <!-- Video Controls Bar (v02.16) -->
+                                <div class="video-controls-bar" id="videoControlsBar" style="display:none;">
+                                    <div class="video-storage-note">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                        Your videos are stored forever
+                                    </div>
+                                    <button class="video-download-btn" onclick="downloadCurrentVideo()">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                        Download Video
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -6862,6 +7123,161 @@
         }
 
         // ============================================
+        // CONSENT SYSTEM (v02.16)
+        // ============================================
+        const CONSENT_VERSION = 'v1.0';
+        
+        async function checkUserConsent() {
+            try {
+                const { data, error } = await supabaseClient.rpc('check_user_consent', {
+                    p_required_version: CONSENT_VERSION
+                });
+                
+                if (error) {
+                    console.log('Consent check error (may not exist yet):', error.message);
+                    // If function doesn't exist, check localStorage as fallback
+                    const localConsent = localStorage.getItem(`consent_${appState.user?.id}`);
+                    return localConsent === CONSENT_VERSION;
+                }
+                
+                return data && data.length > 0 && data[0].has_consent;
+            } catch (e) {
+                console.error('Error checking consent:', e);
+                // Fallback to localStorage
+                const localConsent = localStorage.getItem(`consent_${appState.user?.id}`);
+                return localConsent === CONSENT_VERSION;
+            }
+        }
+        
+        function showConsentModal() {
+            const modal = document.getElementById('consentModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                
+                // Setup checkbox handler
+                const checkbox = document.getElementById('consentCheckbox');
+                const btn = document.getElementById('consentAcceptBtn');
+                
+                if (checkbox && btn) {
+                    checkbox.checked = false;
+                    btn.disabled = true;
+                    
+                    checkbox.addEventListener('change', () => {
+                        btn.disabled = !checkbox.checked;
+                    });
+                }
+            }
+        }
+        
+        async function acceptConsent() {
+            const btn = document.getElementById('consentAcceptBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Saving...';
+            }
+            
+            try {
+                // Try to save to database
+                const { error } = await supabaseClient.rpc('record_user_consent', {
+                    p_consent_type: 'combined',
+                    p_version: CONSENT_VERSION,
+                    p_ip_address: null, // Could get from API if needed
+                    p_user_agent: navigator.userAgent
+                });
+                
+                if (error) {
+                    console.log('Could not save consent to DB (saving locally):', error.message);
+                }
+                
+                // Always save to localStorage as backup
+                localStorage.setItem(`consent_${appState.user?.id}`, CONSENT_VERSION);
+                
+                // Hide modal and show dashboard
+                document.getElementById('consentModal').style.display = 'none';
+                
+                // Now actually show dashboard
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').classList.add('active');
+                updateUserUI();
+                setupNavigation();
+                loadHomeData();
+                loadSubscription();
+                checkAdminStatus();
+                
+            } catch (e) {
+                console.error('Error saving consent:', e);
+                showToast('Error saving agreement. Please try again.', 'error');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Accept & Continue';
+                }
+            }
+        }
+
+        // ============================================
+        // VIDEO DOWNLOAD (v02.16)
+        // ============================================
+        async function downloadCurrentVideo() {
+            const videoPlayer = document.getElementById('raceVideoPlayer');
+            if (!videoPlayer || !videoPlayer.src) {
+                showToast('No video available to download', 'warning');
+                return;
+            }
+            
+            const btn = event?.target?.closest('.video-download-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `
+                    <svg class="animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"><animate attributeName="stroke-dashoffset" values="32;0" dur="1s" repeatCount="indefinite"/></circle></svg>
+                    Preparing...
+                `;
+            }
+            
+            try {
+                // Get the video URL
+                const videoUrl = videoPlayer.src;
+                
+                // Fetch the video as blob
+                const response = await fetch(videoUrl);
+                const blob = await response.blob();
+                
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                
+                // Generate filename from current race
+                const primary = raceModuleState.filteredRaces[raceModuleState.primaryIdx];
+                const filename = primary 
+                    ? `race_${primary.mj?.Distance || ''}_${primary.mj?.Style || ''}_${primary.source_date || 'video'}.mov`
+                    : 'race_video.mov';
+                
+                a.download = filename.replace(/\s+/g, '_');
+                document.body.appendChild(a);
+                a.click();
+                
+                // Cleanup
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                showToast('Video download started', 'success');
+                
+            } catch (e) {
+                console.error('Download error:', e);
+                showToast('Error downloading video. Try right-clicking the video instead.', 'error');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download Video
+                    `;
+                }
+            }
+        }
+
+        // ============================================
         // USER PROFILE & ROLE DETECTION
         // ============================================
         async function loadUserProfile() {
@@ -7021,38 +7437,46 @@
                         <div style="width:64px; height:64px; background:linear-gradient(135deg,var(--accent-green),#00B86B); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
                         </div>
-                        <h3 style="font-size:20px; font-weight:600; margin-bottom:8px;">Unlock Full Access</h3>
-                        <p style="color:var(--text-muted); margin-bottom:24px;">Get unlimited history, exports, goals, and more.</p>
+                        <h3 style="font-size:20px; font-weight:600; margin-bottom:8px;">Unlock Pro Access</h3>
+                        <p style="color:var(--text-muted); margin-bottom:24px;">Full performance analytics and video analysis tools</p>
                         
                         <div style="background:var(--bg-primary); border-radius:12px; padding:20px; text-align:left; margin-bottom:24px;">
                             <div style="display:flex; align-items:baseline; gap:4px; margin-bottom:16px;">
-                                <span style="font-size:32px; font-weight:700;">$14.99</span>
+                                <span style="font-size:32px; font-weight:700;">$19.99</span>
                                 <span style="color:var(--text-muted);">/month</span>
                             </div>
                             <ul style="list-style:none; padding:0; margin:0; display:grid; gap:10px;">
                                 <li style="display:flex; align-items:center; gap:8px;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    Unlimited session history
+                                    <strong>2 Race Video Analyses</strong> per month
                                 </li>
                                 <li style="display:flex; align-items:center; gap:8px;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    Full analysis & comparisons
+                                    Unlimited historical data access
                                 </li>
                                 <li style="display:flex; align-items:center; gap:8px;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    Export to CSV & PDF
+                                    Video playback with analysis overlay
                                 </li>
                                 <li style="display:flex; align-items:center; gap:8px;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    Goal tracking
+                                    Videos stored forever + download
                                 </li>
                                 <li style="display:flex; align-items:center; gap:8px;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    Video links & notes
+                                    Detailed split & stroke metrics
                                 </li>
                                 <li style="display:flex; align-items:center; gap:8px;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    Team management (coaches)
+                                    Race-to-race comparisons
+                                </li>
+                                <li style="display:flex; align-items:center; gap:8px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    Team leaderboards & rankings
+                                </li>
+                                <li style="display:flex; align-items:center; gap:8px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    Priority support
                                 </li>
                             </ul>
                         </div>
@@ -7061,6 +7485,13 @@
                             Start 14-Day Free Trial
                         </button>
                         <p style="color:var(--text-muted); font-size:12px; margin-top:12px;">Cancel anytime. No charge during trial.</p>
+                        
+                        <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border-color);">
+                            <p style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Just want to try a single analysis?</p>
+                            <button onclick="closeSubscriptionModal(); showBuyOptions(event);" class="btn" style="width:100%; padding:10px; background:var(--bg-secondary); border:1px solid var(--border-color); font-size:13px;">
+                                Buy Single Analysis - $6.99
+                            </button>
+                        </div>
                     </div>
                 `;
             } else if (sub.status === 'trialing') {
@@ -7336,7 +7767,14 @@
         // ============================================
         // DASHBOARD INITIALIZATION
         // ============================================
-        function showDashboard() {
+        async function showDashboard() {
+            // Check if user has accepted consent (v02.16)
+            const hasConsent = await checkUserConsent();
+            if (!hasConsent) {
+                showConsentModal();
+                return; // Don't show dashboard until consent accepted
+            }
+            
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('dashboard').classList.add('active');
 
@@ -13849,6 +14287,7 @@
         function updateVideoTabContent(url) {
             const videoPlayer = document.getElementById('raceVideoPlayer');
             const noVideoMsg = document.getElementById('noVideoMessage');
+            const controlsBar = document.getElementById('videoControlsBar');
             
             if (url) {
                 if (videoPlayer) {
@@ -13856,12 +14295,14 @@
                     videoPlayer.style.display = 'block';
                 }
                 if (noVideoMsg) noVideoMsg.style.display = 'none';
+                if (controlsBar) controlsBar.style.display = 'flex'; // Show download controls
             } else {
                 if (videoPlayer) {
                     videoPlayer.src = '';
                     videoPlayer.style.display = 'none';
                 }
                 if (noVideoMsg) noVideoMsg.style.display = 'block';
+                if (controlsBar) controlsBar.style.display = 'none'; // Hide download controls
             }
         }
 
@@ -15473,6 +15914,10 @@
             const singleUrl = buildStripeUrl(STRIPE_EXTRA_ANALYSIS);
             const bundleUrl = buildStripeUrl(STRIPE_BUNDLE_4PACK);
             
+            // Check if user is Pro (only Pro users see bundle option)
+            const sub = appState.subscription;
+            const isPro = sub && sub.plan_id === 'pro' && sub.is_active;
+            
             let modal = document.getElementById('buyAnalysisModal');
             if (!modal) {
                 modal = document.createElement('div');
@@ -15481,7 +15926,38 @@
                 modal.onclick = (e) => { if (e.target === modal) closeBuyModal(); };
             }
             
-            // Always update URLs in case user changed
+            // Build options HTML based on user type
+            const optionsHtml = isPro ? `
+                <div class="buy-modal-options">
+                    <a href="${singleUrl}" target="_blank" class="buy-modal-option" onclick="closeBuyModal()">
+                        <div class="buy-option-price">$6.99</div>
+                        <div class="buy-option-label">1 Extra Analysis</div>
+                        <div class="buy-option-desc">Perfect for a single race</div>
+                    </a>
+                    <a href="${bundleUrl}" target="_blank" class="buy-modal-option featured" onclick="closeBuyModal()">
+                        <span class="buy-option-badge">Best Value</span>
+                        <div class="buy-option-price">$19.99</div>
+                        <div class="buy-option-label">4-Pack Bundle</div>
+                        <div class="buy-option-desc">Save $8 - great for meets!</div>
+                    </a>
+                </div>
+            ` : `
+                <div class="buy-modal-options">
+                    <a href="${singleUrl}" target="_blank" class="buy-modal-option featured" onclick="closeBuyModal()">
+                        <div class="buy-option-price">$6.99</div>
+                        <div class="buy-option-label">1 Race Analysis</div>
+                        <div class="buy-option-desc">Try our professional video analysis</div>
+                    </a>
+                </div>
+                <div style="margin-top:16px; padding:12px; background:var(--bg-primary); border-radius:8px; text-align:center;">
+                    <p style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Want unlimited analyses and full access?</p>
+                    <button onclick="closeBuyModal(); openSubscriptionModal();" class="btn" style="padding:8px 16px; background:linear-gradient(135deg,var(--accent-green),#00B86B); border:none; color:white; font-size:12px; font-weight:600; border-radius:6px; cursor:pointer;">
+                        Subscribe to Pro - $19.99/mo
+                    </button>
+                </div>
+            `;
+            
+            // Always update content
             modal.innerHTML = `
                 <div class="buy-analysis-modal">
                     <button class="buy-modal-close" onclick="closeBuyModal()">
@@ -15490,23 +15966,11 @@
                     <div class="buy-modal-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     </div>
-                    <h3>Get More Race Analyses</h3>
-                    <p>Unlock additional video analyses to track your progress and improve your technique.</p>
-                    <div class="buy-modal-options">
-                        <a href="${singleUrl}" target="_blank" class="buy-modal-option" onclick="closeBuyModal()">
-                            <div class="buy-option-price">$6.99</div>
-                            <div class="buy-option-label">1 Extra Analysis</div>
-                            <div class="buy-option-desc">Perfect for a single race</div>
-                        </a>
-                        <a href="${bundleUrl}" target="_blank" class="buy-modal-option featured" onclick="closeBuyModal()">
-                            <span class="buy-option-badge">Best Value</span>
-                            <div class="buy-option-price">$19.99</div>
-                            <div class="buy-option-label">4-Pack Bundle</div>
-                            <div class="buy-option-desc">Save $8 - great for meets!</div>
-                        </a>
-                    </div>
+                    <h3>${isPro ? 'Get More Race Analyses' : 'Try a Race Analysis'}</h3>
+                    <p>${isPro ? 'Unlock additional video analyses to track your progress.' : 'Get professional video analysis of your race performance.'}</p>
+                    ${optionsHtml}
                     <div class="buy-modal-footer">
-                        <span>Purchased analyses never expire</span>
+                        <span>Purchased analyses never expire${isPro ? '' : ' • Data viewable for 2 weeks'}</span>
                     </div>
                 </div>
             `;
@@ -15611,15 +16075,20 @@
 
         // Open upload modal
         function openUploadModal() {
-            // Check if user has quota or subscription
-            if (uploadState.quota.status === 'none') {
-                showToast('You need a Pro subscription to request race analysis', 'warning');
-                openSubscriptionModal();
+            // Check if user has quota
+            // Free users can upload if they have purchased analyses
+            // Pro users have monthly included + purchased
+            const sub = appState.subscription;
+            const isPro = sub && sub.plan_id === 'pro' && sub.is_active;
+            
+            if (uploadState.quota.status === 'none' && !uploadState.quota.hasQuota) {
+                // No subscription AND no purchased analyses - show buy options
+                showBuyOptions();
                 return;
             }
             
             if (!uploadState.quota.hasQuota) {
-                // Show quota exceeded modal instead of toast
+                // Has subscription but used all quota - show quota exceeded
                 showQuotaExceededModal();
                 return;
             }

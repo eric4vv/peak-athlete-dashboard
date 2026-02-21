@@ -4563,7 +4563,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.16</span></span>
+                    <span>Analytics <span class="version-tag">v02.17</span></span>
                 </div>
             </div>
 
@@ -7488,7 +7488,7 @@
                         
                         <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border-color);">
                             <p style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Just want to try a single analysis?</p>
-                            <button onclick="closeSubscriptionModal(); showBuyOptions(event);" class="btn" style="width:100%; padding:10px; background:var(--bg-secondary); border:1px solid var(--border-color); font-size:13px;">
+                            <button onclick="closeSubscriptionModal(); showBuyOptions(event);" class="btn" style="width:100%; padding:10px; background:var(--bg-secondary); border:1px solid var(--border-color); font-size:13px; color:var(--text-primary);">
                                 Buy Single Analysis - $6.99
                             </button>
                         </div>
@@ -13397,9 +13397,46 @@
             if (ev) f = f.filter(r => String(r.mj.Distance||r.mj.distance) === ev);
             if (st) f = f.filter(r => (r.mj.Style||r.mj.style) === st);
             if (dt) { const c = new Date(); c.setDate(c.getDate()-parseInt(dt)); f = f.filter(r => new Date(r.source_date) >= c); }
+            
+            // Add visibility status for free users (v02.16)
+            f = addVisibilityStatus(f);
+            
             raceModuleState.filteredRaces = f;
             renderRaceSelectorCards();
             renderAllRaceVisuals();
+        }
+        
+        // Calculate visibility status for races (v02.16)
+        // Free users: data visible for 14 days after ingestion
+        // Pro users: all data visible
+        function addVisibilityStatus(races) {
+            const sub = appState.subscription;
+            const isPro = sub && sub.plan_id === 'pro' && (sub.status === 'active' || sub.status === 'trialing');
+            const isSample = raceModuleState._sampleMode;
+            
+            // If subscription not loaded yet, or Pro user, or sample data: everything visible
+            if (!sub || isPro || isSample) {
+                return races.map(r => ({ ...r, _isLocked: false, _daysRemaining: null }));
+            }
+            
+            // Free users: 14-day visibility window
+            const VISIBILITY_DAYS = 14;
+            const now = new Date();
+            
+            return races.map(r => {
+                // Use ingested_at if available, otherwise source_date
+                const ingestDate = r.ingested_at ? new Date(r.ingested_at) : new Date(r.source_date);
+                const daysSinceIngest = Math.floor((now - ingestDate) / (1000 * 60 * 60 * 24));
+                const daysRemaining = Math.max(0, VISIBILITY_DAYS - daysSinceIngest);
+                const isLocked = daysSinceIngest > VISIBILITY_DAYS;
+                
+                return {
+                    ...r,
+                    _isLocked: isLocked,
+                    _daysRemaining: isLocked ? 0 : daysRemaining,
+                    _expiresIn: daysRemaining
+                };
+            });
         }
 
         function renderAllRaceVisuals() {
@@ -13450,12 +13487,46 @@
                 const ev = raceLabel(r);
                 let cls = 'race-card-pick';
                 let badge = '';
+                let expiryBadge = '';
+                let lockOverlay = '';
+                
+                // Check if race is locked (v02.16)
+                const isLocked = r._isLocked === true;
+                const daysRemaining = r._daysRemaining;
+                
+                if (isLocked) {
+                    cls += ' race-card-locked';
+                    lockOverlay = `
+                        <svg class="race-card-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <div class="locked-tooltip">
+                            <div class="locked-tooltip-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                Data Access Expired
+                            </div>
+                            <div class="locked-tooltip-text">Free accounts can view analysis data for 14 days. Subscribe to Pro for unlimited access to all your historical data.</div>
+                            <button class="locked-tooltip-btn" onclick="event.stopPropagation(); openSubscriptionModal();">Upgrade to Pro</button>
+                        </div>
+                    `;
+                } else if (daysRemaining !== null && daysRemaining <= 5 && daysRemaining > 0) {
+                    // Show expiry warning for races expiring soon
+                    expiryBadge = `<div class="race-card-expiry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>${daysRemaining}d left</div>`;
+                }
+                
                 if (raceModuleState.primaryIdx === i) { cls += ' selected-primary'; badge = '<span class="rc-badge">Primary</span>'; }
                 else if (raceModuleState.compareIdx === i) { cls += ' selected-compare'; badge = '<span class="rc-badge">Compare</span>'; }
                 const athName = multi ? `<div class="rc-athlete">${nameMap[r.athlete_uuid]||'Unknown'}</div>` : '';
                 const cBadge = r.course ? `<span class="rc-course-tag">${r.course}</span>` : '';
                 const sBadge = isSample ? sampleBadgeHTML() : '';
-                return `<div class="${cls}" onclick="selectRaceCard(${i})">${badge}${athName}<div class="rc-event">${ev} ${cBadge}${sBadge}</div><div class="rc-time">${time ? formatTime(time) : '--'}</div><div class="rc-date">${formatDate(r.source_date)}</div></div>`;
+                
+                // Use different onclick for locked races
+                const clickHandler = isLocked 
+                    ? `onclick="handleLockedRaceClick(event)"` 
+                    : `onclick="selectRaceCard(${i})"`;
+                
+                return `<div class="${cls}" ${clickHandler} style="position:relative;">${lockOverlay}${expiryBadge}${badge}${athName}<div class="rc-event">${ev} ${cBadge}${sBadge}</div><div class="rc-time">${time ? formatTime(time) : '--'}</div><div class="rc-date">${formatDate(r.source_date)}</div></div>`;
             }).join('');
 
             const clearBtn = document.getElementById('raceSelectorClear');
@@ -13464,6 +13535,12 @@
             if (!hasSelection()) hint.textContent = 'Click a race to view details. Click a second to compare.';
             else if (!hasComparison()) hint.textContent = 'Race selected. Click another to compare, or click same to deselect.';
             else hint.textContent = 'Comparing two races. All tabs show both.';
+        }
+        
+        // Handle click on locked race card (v02.16)
+        function handleLockedRaceClick(event) {
+            event.stopPropagation();
+            openSubscriptionModal();
         }
 
         function selectRaceCard(idx) {

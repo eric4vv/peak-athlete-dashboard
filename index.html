@@ -4563,7 +4563,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.17</span></span>
+                    <span>Analytics <span class="version-tag">v02.18</span></span>
                 </div>
             </div>
 
@@ -5271,6 +5271,10 @@
                             <div class="start-tab" data-tab="underwater">Underwater</div>
                             <div class="start-tab" data-tab="velocity">Velocity</div>
                             <div class="start-tab" data-tab="summary">Start Summary</div>
+                            <div class="start-tab" data-tab="video" id="startVideoTab" style="display:none;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                                Video
+                            </div>
                         </div>
 
                         <!-- Block Phase Tab -->
@@ -5328,6 +5332,30 @@
                         <div class="start-tab-content" id="startTab-summary">
                             <div id="startSummaryContent">
                                 <div class="empty-state"><h3>Select a start trial to view summary</h3></div>
+                            </div>
+                        </div>
+
+                        <!-- Start Video Tab (v02.18) -->
+                        <div class="start-tab-content" id="startTab-video">
+                            <div class="race-video-tab-content">
+                                <div class="no-video-message" id="startNoVideoMessage">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect><line x1="1" y1="1" x2="23" y2="23" stroke-width="2"></line></svg>
+                                    <h3>No Video Available</h3>
+                                    <p>This start trial does not have a linked video.</p>
+                                </div>
+                                <video id="startVideoPlayer" controls style="display:none;">
+                                    Your browser does not support the video tag.
+                                </video>
+                                <div class="video-controls-bar" id="startVideoControlsBar" style="display:none;">
+                                    <div class="video-storage-note">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                        Your videos are stored forever
+                                    </div>
+                                    <button class="video-download-btn" onclick="downloadStartVideo()">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                        Download Video
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -5440,6 +5468,10 @@
                             <div class="turn-tab" data-tab="underwater">Underwater</div>
                             <div class="turn-tab" data-tab="velocity">Velocity Profile</div>
                             <div class="turn-tab" data-tab="summary">Turn Summary</div>
+                            <div class="turn-tab" data-tab="video" id="turnVideoTab" style="display:none;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                                Video
+                            </div>
                         </div>
 
                         <!-- Approach Tab -->
@@ -5493,6 +5525,30 @@
                         <div class="turn-tab-content" id="turnTab-summary">
                             <div id="turnSummaryContent">
                                 <div class="empty-state"><h3>Select a turn trial to view summary</h3></div>
+                            </div>
+                        </div>
+
+                        <!-- Turn Video Tab (v02.18) -->
+                        <div class="turn-tab-content" id="turnTab-video">
+                            <div class="race-video-tab-content">
+                                <div class="no-video-message" id="turnNoVideoMessage">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect><line x1="1" y1="1" x2="23" y2="23" stroke-width="2"></line></svg>
+                                    <h3>No Video Available</h3>
+                                    <p>This turn trial does not have a linked video.</p>
+                                </div>
+                                <video id="turnVideoPlayer" controls style="display:none;">
+                                    Your browser does not support the video tag.
+                                </video>
+                                <div class="video-controls-bar" id="turnVideoControlsBar" style="display:none;">
+                                    <div class="video-storage-note">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                        Your videos are stored forever
+                                    </div>
+                                    <button class="video-download-btn" onclick="downloadTurnVideo()">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                        Download Video
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -10964,6 +11020,10 @@
             else if (tab === 'underwater') renderUnderwaterTab();
             else if (tab === 'velocity') renderStartVelocityTab();
             else if (tab === 'summary') renderStartSummary();
+            else if (tab === 'video') updateStartVideoTab();
+            
+            // Check if selected start has video (v02.18)
+            checkStartVideo();
         }
 
         // Delta helper for start metrics (lower is better for time metrics)
@@ -12246,6 +12306,10 @@
             else if (tab === 'underwater') renderTurnUnderwater();
             else if (tab === 'velocity') renderTurnVelocityProfile();
             else if (tab === 'summary') renderTurnSummary();
+            else if (tab === 'video') updateTurnVideoTab();
+            
+            // Check if selected turn has video (v02.18)
+            checkTurnVideo();
         }
 
         // "" Turn KPIs ""
@@ -14434,6 +14498,196 @@
                     video.pause();
                     video.currentTime = 0;
                 }
+            }
+        }
+
+        // ============================================
+        // START VIDEO FUNCTIONS (v02.18)
+        // ============================================
+        let startVideoState = { videoKey: null, videoUrl: null };
+        
+        function checkStartVideo() {
+            const videoTab = document.getElementById('startVideoTab');
+            const primary = getStartPrimary();
+            const videoKey = primary?.video_key;
+            
+            if (!primary || !videoKey) {
+                if (videoTab) videoTab.style.display = 'none';
+                startVideoState.videoKey = null;
+                startVideoState.videoUrl = null;
+                return;
+            }
+            
+            // Start has video - show video tab
+            startVideoState.videoKey = videoKey;
+            if (videoTab) videoTab.style.display = 'inline-flex';
+        }
+        
+        async function updateStartVideoTab() {
+            const videoPlayer = document.getElementById('startVideoPlayer');
+            const noVideoMsg = document.getElementById('startNoVideoMessage');
+            const controlsBar = document.getElementById('startVideoControlsBar');
+            
+            const primary = getStartPrimary();
+            const videoKey = primary?.video_key;
+            
+            if (!videoKey) {
+                if (videoPlayer) { videoPlayer.src = ''; videoPlayer.style.display = 'none'; }
+                if (noVideoMsg) noVideoMsg.style.display = 'block';
+                if (controlsBar) controlsBar.style.display = 'none';
+                return;
+            }
+            
+            // Load video URL if not already loaded
+            if (startVideoState.videoKey !== videoKey || !startVideoState.videoUrl) {
+                try {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (!session) return;
+                    
+                    const response = await fetch(`${SUPABASE_URL}/functions/v1/r2-download-url`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${session.access_token}`
+                        },
+                        body: JSON.stringify({ videoKey })
+                    });
+                    
+                    if (response.ok) {
+                        const { downloadUrl } = await response.json();
+                        startVideoState.videoUrl = downloadUrl;
+                        startVideoState.videoKey = videoKey;
+                    }
+                } catch (e) {
+                    console.error('Error loading start video:', e);
+                }
+            }
+            
+            if (startVideoState.videoUrl) {
+                if (videoPlayer) { videoPlayer.src = startVideoState.videoUrl; videoPlayer.style.display = 'block'; }
+                if (noVideoMsg) noVideoMsg.style.display = 'none';
+                if (controlsBar) controlsBar.style.display = 'flex';
+            }
+        }
+        
+        async function downloadStartVideo() {
+            const videoPlayer = document.getElementById('startVideoPlayer');
+            if (!videoPlayer || !videoPlayer.src) {
+                showToast('No video available to download', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch(videoPlayer.src);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const primary = getStartPrimary();
+                a.download = `start_${primary?.style || 'analysis'}_${primary?.source_date || 'video'}.mov`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                showToast('Video download started', 'success');
+            } catch (e) {
+                console.error('Download error:', e);
+                showToast('Error downloading video', 'error');
+            }
+        }
+
+        // ============================================
+        // TURN VIDEO FUNCTIONS (v02.18)
+        // ============================================
+        let turnVideoState = { videoKey: null, videoUrl: null };
+        
+        function checkTurnVideo() {
+            const videoTab = document.getElementById('turnVideoTab');
+            const primary = getTurnPrimary();
+            const videoKey = primary?.video_key;
+            
+            if (!primary || !videoKey) {
+                if (videoTab) videoTab.style.display = 'none';
+                turnVideoState.videoKey = null;
+                turnVideoState.videoUrl = null;
+                return;
+            }
+            
+            // Turn has video - show video tab
+            turnVideoState.videoKey = videoKey;
+            if (videoTab) videoTab.style.display = 'inline-flex';
+        }
+        
+        async function updateTurnVideoTab() {
+            const videoPlayer = document.getElementById('turnVideoPlayer');
+            const noVideoMsg = document.getElementById('turnNoVideoMessage');
+            const controlsBar = document.getElementById('turnVideoControlsBar');
+            
+            const primary = getTurnPrimary();
+            const videoKey = primary?.video_key;
+            
+            if (!videoKey) {
+                if (videoPlayer) { videoPlayer.src = ''; videoPlayer.style.display = 'none'; }
+                if (noVideoMsg) noVideoMsg.style.display = 'block';
+                if (controlsBar) controlsBar.style.display = 'none';
+                return;
+            }
+            
+            // Load video URL if not already loaded
+            if (turnVideoState.videoKey !== videoKey || !turnVideoState.videoUrl) {
+                try {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (!session) return;
+                    
+                    const response = await fetch(`${SUPABASE_URL}/functions/v1/r2-download-url`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${session.access_token}`
+                        },
+                        body: JSON.stringify({ videoKey })
+                    });
+                    
+                    if (response.ok) {
+                        const { downloadUrl } = await response.json();
+                        turnVideoState.videoUrl = downloadUrl;
+                        turnVideoState.videoKey = videoKey;
+                    }
+                } catch (e) {
+                    console.error('Error loading turn video:', e);
+                }
+            }
+            
+            if (turnVideoState.videoUrl) {
+                if (videoPlayer) { videoPlayer.src = turnVideoState.videoUrl; videoPlayer.style.display = 'block'; }
+                if (noVideoMsg) noVideoMsg.style.display = 'none';
+                if (controlsBar) controlsBar.style.display = 'flex';
+            }
+        }
+        
+        async function downloadTurnVideo() {
+            const videoPlayer = document.getElementById('turnVideoPlayer');
+            if (!videoPlayer || !videoPlayer.src) {
+                showToast('No video available to download', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch(videoPlayer.src);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const primary = getTurnPrimary();
+                a.download = `turn_${primary?.style || 'analysis'}_${primary?.source_date || 'video'}.mov`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                showToast('Video download started', 'success');
+            } catch (e) {
+                console.error('Download error:', e);
+                showToast('Error downloading video', 'error');
             }
         }
 

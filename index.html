@@ -4565,7 +4565,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.22</span></span>
+                    <span>Analytics <span class="version-tag">v02.23</span></span>
                 </div>
             </div>
 
@@ -13918,6 +13918,8 @@
             id: 'customDataLabels',
             afterDatasetsDraw(chart) {
                 const ctx = chart.ctx;
+                const chartArea = chart.chartArea;
+                
                 chart.data.datasets.forEach((ds, di) => {
                     if (ds._hideLabels) return;
                     const meta = chart.getDatasetMeta(di);
@@ -13927,9 +13929,32 @@
                         ctx.save();
                         ctx.font = '600 11px JetBrains Mono, monospace';
                         ctx.fillStyle = ds.borderColor || getThemeColors().textSec;
-                        ctx.textAlign = 'center';
-                        const yOff = chart.config.type === 'bar' ? -8 : -12;
-                        ctx.fillText(typeof val === 'number' ? val.toFixed(2) : val, el.x, el.y + yOff);
+                        
+                        const text = typeof val === 'number' ? val.toFixed(2) : val;
+                        const textWidth = ctx.measureText(text).width;
+                        
+                        // Smart positioning to prevent cutoff (v02.22)
+                        let xPos = el.x;
+                        let yPos = el.y;
+                        let yOff = chart.config.type === 'bar' ? -8 : -14;
+                        
+                        // If label would go above chart area, place below point
+                        if (el.y + yOff - 10 < chartArea.top) {
+                            yOff = 16; // Place below the point
+                        }
+                        
+                        // Adjust horizontal position if near edges
+                        if (el.x - textWidth/2 < chartArea.left + 5) {
+                            ctx.textAlign = 'left';
+                            xPos = el.x + 4;
+                        } else if (el.x + textWidth/2 > chartArea.right - 5) {
+                            ctx.textAlign = 'right';
+                            xPos = el.x - 4;
+                        } else {
+                            ctx.textAlign = 'center';
+                        }
+                        
+                        ctx.fillText(text, xPos, yPos + yOff);
                         ctx.restore();
                     });
                 });
@@ -14163,6 +14188,7 @@
                 plugins: [dataLabelsPlugin],
                 options: {
                     responsive: true, maintainAspectRatio: false,
+                    layout: { padding: { top: 20, right: 15, left: 10 } }, // v02.22: padding for labels
                     scales: {
                         x: { grid: { color: 'rgba(128,140,160,0.10)' }, ticks: { color: getThemeColors().textSec } },
                         y: { grid: { color: 'rgba(128,140,160,0.10)' }, ticks: { color: getThemeColors().textSec }, title: { display:true, text: isSeg?'Segment Time (s)':'Cumulative Time (s)', color:getThemeColors().textSec } }
@@ -14270,6 +14296,7 @@
                 plugins: [dataLabelsPlugin],
                 options: {
                     responsive:true, maintainAspectRatio:false,
+                    layout: { padding: { top: 20, right: 10 } }, // v02.22: padding for labels
                     scales: {
                         x: { grid:{color:'rgba(148,163,184,0.1)'}, ticks:{color:getThemeColors().textSec} },
                         y: { grid:{color:'rgba(148,163,184,0.1)'}, ticks:{color:getThemeColors().textSec}, title:{display:true,text:'m/s',color:getThemeColors().textSec} }
@@ -14353,6 +14380,7 @@
                 plugins: [dataLabelsPlugin],
                 options: {
                     responsive:true, maintainAspectRatio:false,
+                    layout: { padding: { top: 20, right: 15, left: 10 } }, // v02.22: padding for labels
                     scales: {
                         x: { grid:{color:'rgba(148,163,184,0.1)'}, ticks:{color:getThemeColors().textSec,maxTicksLimit:12} },
                         y: { grid:{color:'rgba(148,163,184,0.1)'}, ticks:{color:getThemeColors().textSec}, title:{display:true,text:'Strokes/min',color:getThemeColors().textSec} }

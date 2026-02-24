@@ -4174,15 +4174,15 @@
         /* ============================================
            LOCKED DATA OVERLAY (v02.16)
            ============================================ */
-        .race-card-locked {
+        .race-card-locked, .start-card-locked, .turn-card-locked {
             opacity: 0.5; cursor: pointer; position: relative;
         }
-        .race-card-locked::after {
+        .race-card-locked::after, .start-card-locked::after, .turn-card-locked::after {
             content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.5));
             border-radius: inherit; pointer-events: none;
         }
-        .race-card-lock-icon {
+        .race-card-lock-icon, .start-card-lock-icon, .turn-card-lock-icon {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 32px; height: 32px; color: var(--text-muted); z-index: 2;
         }
@@ -4193,7 +4193,9 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 100;
             opacity: 0; visibility: hidden; transition: all 0.2s;
         }
-        .race-card-locked:hover .locked-tooltip { opacity: 1; visibility: visible; }
+        .race-card-locked:hover .locked-tooltip, 
+        .start-card-locked:hover .locked-tooltip,
+        .turn-card-locked:hover .locked-tooltip { opacity: 1; visibility: visible; }
         .locked-tooltip::after {
             content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
             border: 8px solid transparent; border-top-color: var(--border-color);
@@ -4563,7 +4565,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.19</span></span>
+                    <span>Analytics <span class="version-tag">v02.22</span></span>
                 </div>
             </div>
 
@@ -7478,6 +7480,47 @@
             if (!sub || !sub.features) return false;
             return sub.features.includes(featureName);
         }
+
+        // Check if user has Pro subscription (v02.20)
+        function isProUser() {
+            const sub = appState.subscription;
+            return sub && sub.plan_id === 'pro' && (sub.status === 'active' || sub.status === 'trialing');
+        }
+
+        // Show upgrade prompt for locked features (v02.20)
+        function showUpgradePrompt(featureName) {
+            const messages = {
+                'comparison': 'Compare trials side-by-side to track your progress.',
+                'video_download': 'Download your videos to review offline.',
+                'video_access': 'Access all your training videos.'
+            };
+            const modal = document.getElementById('subscriptionModal');
+            const title = document.getElementById('subscriptionModalTitle');
+            const body = document.getElementById('subscriptionModalBody');
+            
+            title.textContent = 'Upgrade to Pro';
+            body.innerHTML = `
+                <div style="text-align:center; padding: 20px 0;">
+                    <div style="width:60px; height:60px; margin:0 auto 16px; background:rgba(167,139,250,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    <h3 style="margin-bottom:8px; color:var(--text-primary);">Pro Feature</h3>
+                    <p style="color:var(--text-secondary); margin-bottom:20px;">${messages[featureName] || 'This feature requires a Pro subscription.'}</p>
+                    <div style="display:flex; flex-direction:column; gap:10px; max-width:280px; margin:0 auto;">
+                        <button onclick="initiateCheckout()" style="padding:12px 24px; background:linear-gradient(135deg, var(--accent-purple), var(--accent-pink)); color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                            Upgrade to Pro - $19.99/mo
+                        </button>
+                        <button onclick="closeSubscriptionModal()" style="padding:8px 16px; background:transparent; color:var(--text-muted); border:none; cursor:pointer;">
+                            Maybe later
+                        </button>
+                    </div>
+                </div>
+            `;
+            modal.classList.add('active');
+        }
         
         function openSubscriptionModal() {
             const sub = appState.subscription;
@@ -7545,7 +7588,7 @@
                         <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border-color);">
                             <p style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Just want to try a single analysis?</p>
                             <button onclick="closeSubscriptionModal(); showBuyOptions(event);" class="btn" style="width:100%; padding:10px; background:var(--bg-secondary); border:1px solid var(--border-color); font-size:13px; color:var(--text-primary);">
-                                Buy Single Analysis - $6.99
+                                Buy Single Analysis - $9.99
                             </button>
                         </div>
                     </div>
@@ -8091,7 +8134,8 @@
                         type: 'info',
                         title: `${recentRaces.length} recent race${recentRaces.length > 1 ? 's' : ''} on file`,
                         message: `Latest: ${latest.distance_m} ${lu} ${latest.style || ''} (${lc}) - ${formatTime(latest.race_time_s)}`,
-                        time: daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo}d ago`
+                        time: daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo}d ago`,
+                        ageInDays: daysAgo // v02.21: track age for dismissal logic
                     });
                 }
 
@@ -8111,7 +8155,8 @@
                                     type: 'success',
                                     title: 'Goal almost reached!',
                                     message: `${g.event_name || g.goal_type}: ${formatTime(g.current_best)} / ${formatTime(g.target_value)}`,
-                                    time: 'Active'
+                                    time: 'Active',
+                                    ageInDays: 0 // Active goals are always recent
                                 });
                             }
                         }
@@ -8129,15 +8174,15 @@
                 info: '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>'
             };
 
-            // Filter out recently dismissed alerts
-            const visibleAlerts = alerts.filter((a, idx) => !isAlertDismissed('alert-' + a.title.replace(/\s+/g, '_')));
+            // Filter out dismissed alerts (v02.21: updated dismissal logic)
+            const visibleAlerts = alerts.filter((a, idx) => !isAlertDismissed('alert-' + a.title.replace(/\s+/g, '_'), a.ageInDays));
 
             if (!visibleAlerts.length) { container.innerHTML = ''; return; }
 
             container.innerHTML = visibleAlerts.map((a, idx) => {
                 const alertId = 'alert-' + a.title.replace(/\s+/g, '_');
                 return `
-                <div class="alert-item ${a.type}" id="${alertId}">
+                <div class="alert-item ${a.type}" id="${alertId}" data-age="${a.ageInDays || 0}">
                     <div class="alert-icon ${a.type}">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${iconSvg[a.type]}</svg>
                     </div>
@@ -8146,12 +8191,12 @@
                         <p>${a.message}</p>
                     </div>
                     <span class="alert-time">${a.time}</span>
-                    <button class="alert-dismiss" onclick="dismissAlert('${alertId}')" title="Dismiss">&#x2715;</button>
+                    <button class="alert-dismiss" onclick="dismissAlert('${alertId}', ${a.ageInDays || 0})" title="Dismiss">&#x2715;</button>
                 </div>
             `}).join('');
         }
 
-        function dismissAlert(alertId) {
+        function dismissAlert(alertId, ageInDays) {
             const el = document.getElementById(alertId);
             if (el) {
                 el.style.transition = 'opacity 0.2s, transform 0.2s';
@@ -8159,27 +8204,47 @@
                 el.style.transform = 'translateX(20px)';
                 setTimeout(() => el.remove(), 200);
 
-                // Store dismiss timestamp - suppress for 8 hours
+                // v02.21: Store dismiss with age info
+                // - If notification is >= 30 days old: permanent dismissal
+                // - If notification is < 30 days old: comes back after 5 days
                 try {
                     const dismissed = JSON.parse(localStorage.getItem('pa_dismissed_alerts') || '{}');
-                    dismissed[alertId] = Date.now();
+                    dismissed[alertId] = {
+                        timestamp: Date.now(),
+                        ageInDays: ageInDays || 0,
+                        permanent: (ageInDays || 0) >= 30
+                    };
                     localStorage.setItem('pa_dismissed_alerts', JSON.stringify(dismissed));
                 } catch (e) { /* storage unavailable */ }
             }
         }
 
-        function isAlertDismissed(alertId) {
+        function isAlertDismissed(alertId, currentAgeInDays) {
             try {
                 const dismissed = JSON.parse(localStorage.getItem('pa_dismissed_alerts') || '{}');
-                const ts = dismissed[alertId];
-                if (!ts) return false;
-                const eightHours = 8 * 60 * 60 * 1000;
-                if (Date.now() - ts > eightHours) {
-                    // Expired - remove from storage
+                const entry = dismissed[alertId];
+                if (!entry) return false;
+                
+                // v02.21: New dismissal logic
+                // If permanently dismissed (was >= 30 days old when dismissed)
+                if (entry.permanent) return true;
+                
+                // If notification is now >= 30 days old, permanently dismiss it
+                if ((currentAgeInDays || 0) >= 30) {
+                    dismissed[alertId] = { ...entry, permanent: true };
+                    localStorage.setItem('pa_dismissed_alerts', JSON.stringify(dismissed));
+                    return true;
+                }
+                
+                // Otherwise, check if 5 days have passed since dismissal
+                const fiveDays = 5 * 24 * 60 * 60 * 1000;
+                if (Date.now() - entry.timestamp > fiveDays) {
+                    // Expired - remove from storage so it shows again
                     delete dismissed[alertId];
                     localStorage.setItem('pa_dismissed_alerts', JSON.stringify(dismissed));
                     return false;
                 }
+                
                 return true;
             } catch (e) { return false; }
         }
@@ -10955,6 +11020,21 @@
                 cutoff.setDate(cutoff.getDate() - parseInt(dateVal));
                 filtered = filtered.filter(s => new Date(s.source_date) >= cutoff);
             }
+            
+            // Mark sessions as locked for free users (last 2 visible) - v02.21
+            const isSample = startModuleState._sampleMode;
+            if (!isProUser() && !isSample) {
+                // Sort by date descending to identify most recent
+                const sorted = [...filtered].sort((a, b) => new Date(b.source_date) - new Date(a.source_date));
+                const recentSessionIds = new Set(sorted.slice(0, 2).map(s => s.start_uuid || s.id));
+                filtered = filtered.map(s => ({
+                    ...s,
+                    _isLocked: !recentSessionIds.has(s.start_uuid || s.id)
+                }));
+            } else {
+                filtered = filtered.map(s => ({ ...s, _isLocked: false }));
+            }
+            
             startModuleState.filteredStarts = filtered;
             startModuleState.primaryIdx = null;
             startModuleState.compareIdx = null;
@@ -10984,14 +11064,43 @@
             container.innerHTML = topHtml + starts.map((s, i) => {
                 let cls = 'start-card-pick';
                 let badge = '';
-                if (i === startModuleState.primaryIdx) { cls += ' selected-primary'; badge = '<span class="sc-badge">Primary</span>'; }
-                else if (i === startModuleState.compareIdx) { cls += ' selected-compare'; badge = '<span class="sc-badge">Compare</span>'; }
+                let lockOverlay = '';
+                
+                // Check if session is locked (v02.21)
+                const isLocked = s._isLocked === true;
+                
+                if (isLocked) {
+                    cls += ' start-card-locked';
+                    lockOverlay = `
+                        <svg class="start-card-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <div class="locked-tooltip">
+                            <div class="locked-tooltip-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                Session Locked
+                            </div>
+                            <div class="locked-tooltip-text">Free accounts can view the 2 most recent sessions. Upgrade to Pro for full history access.</div>
+                            <button class="locked-tooltip-btn" onclick="event.stopPropagation(); openSubscriptionModal();">Upgrade to Pro</button>
+                        </div>
+                    `;
+                } else {
+                    if (i === startModuleState.primaryIdx) { cls += ' selected-primary'; badge = '<span class="sc-badge">Primary</span>'; }
+                    else if (i === startModuleState.compareIdx) { cls += ' selected-compare'; badge = '<span class="sc-badge">Compare</span>'; }
+                }
+                
                 const reaction = parseFloat(s.reaction_time_s);
                 const reactionStr = !isNaN(reaction) ? reaction.toFixed(3) + 's' : '--';
                 const t15 = parseFloat(s.split_15m_s);
                 const t15Str = !isNaN(t15) ? t15.toFixed(2) + 's to 15m' : '';
                 const athName = multi ? `<div class="rc-athlete">${nameMap[s.athlete_uuid]||'Unknown'}</div>` : '';
-                return `<div class="${cls}" onclick="selectStartCard(${i})">${badge}${athName}
+                
+                const clickHandler = isLocked 
+                    ? `onclick="handleLockedStartClick(event)"` 
+                    : `onclick="selectStartCard(${i})"`;
+                
+                return `<div class="${cls}" ${clickHandler} style="position:relative;">${lockOverlay}${badge}${athName}
                     <div class="sc-style">${s.style || 'Start'}${isSample ? sampleBadgeHTML() : ''}</div>
                     <div class="sc-reaction">${reactionStr}</div>
                     <div class="sc-sub">${t15Str}</div>
@@ -11007,6 +11116,12 @@
                 else hint.textContent = 'Two trials selected for comparison. Click a selected trial to deselect.';
             }
         }
+        
+        // Handle click on locked start card (v02.21)
+        function handleLockedStartClick(event) {
+            event.stopPropagation();
+            openSubscriptionModal();
+        }
 
         function selectStartCard(idx) {
             if (startModuleState.primaryIdx === idx) {
@@ -11017,8 +11132,18 @@
             } else if (startModuleState.primaryIdx === null) {
                 startModuleState.primaryIdx = idx;
             } else if (startModuleState.compareIdx === null) {
+                // Check if user can compare (Pro only, except sample mode) - v02.20
+                if (!isProUser() && !startModuleState._sampleMode) {
+                    showUpgradePrompt('comparison');
+                    return;
+                }
                 startModuleState.compareIdx = idx;
             } else {
+                // Check if user can compare (Pro only, except sample mode) - v02.20
+                if (!isProUser() && !startModuleState._sampleMode) {
+                    showUpgradePrompt('comparison');
+                    return;
+                }
                 startModuleState.compareIdx = idx;
             }
             renderStartSelectorCards();
@@ -12252,6 +12377,21 @@
                 cutoff.setDate(cutoff.getDate() - parseInt(dateVal));
                 filtered = filtered.filter(t => new Date(t.source_date) >= cutoff);
             }
+            
+            // Mark sessions as locked for free users (last 2 visible) - v02.21
+            const isSample = turnModuleState._sampleMode;
+            if (!isProUser() && !isSample) {
+                // Sort by date descending to identify most recent
+                const sorted = [...filtered].sort((a, b) => new Date(b.source_date) - new Date(a.source_date));
+                const recentSessionIds = new Set(sorted.slice(0, 2).map(t => t.turn_uuid || t.id));
+                filtered = filtered.map(t => ({
+                    ...t,
+                    _isLocked: !recentSessionIds.has(t.turn_uuid || t.id)
+                }));
+            } else {
+                filtered = filtered.map(t => ({ ...t, _isLocked: false }));
+            }
+            
             turnModuleState.filteredTurns = filtered;
             turnModuleState.primaryIdx = null;
             turnModuleState.compareIdx = null;
@@ -12281,14 +12421,43 @@
             container.innerHTML = topHtml + turns.map((t, i) => {
                 let cls = 'turn-card-pick';
                 let badge = '';
-                if (i === turnModuleState.primaryIdx) { cls += ' selected-primary'; badge = '<span class="tc-badge">Primary</span>'; }
-                else if (i === turnModuleState.compareIdx) { cls += ' selected-compare'; badge = '<span class="tc-badge">Compare</span>'; }
+                let lockOverlay = '';
+                
+                // Check if session is locked (v02.21)
+                const isLocked = t._isLocked === true;
+                
+                if (isLocked) {
+                    cls += ' turn-card-locked';
+                    lockOverlay = `
+                        <svg class="turn-card-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <div class="locked-tooltip">
+                            <div class="locked-tooltip-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                Session Locked
+                            </div>
+                            <div class="locked-tooltip-text">Free accounts can view the 2 most recent sessions. Upgrade to Pro for full history access.</div>
+                            <button class="locked-tooltip-btn" onclick="event.stopPropagation(); openSubscriptionModal();">Upgrade to Pro</button>
+                        </div>
+                    `;
+                } else {
+                    if (i === turnModuleState.primaryIdx) { cls += ' selected-primary'; badge = '<span class="tc-badge">Primary</span>'; }
+                    else if (i === turnModuleState.compareIdx) { cls += ' selected-compare'; badge = '<span class="tc-badge">Compare</span>'; }
+                }
+                
                 const totalTime = parseFloat(t.time_15in_15out_s);
                 const timeStr = !isNaN(totalTime) ? totalTime.toFixed(2) + 's' : '--';
                 const rotation = parseFloat(t.rotation_time_s);
                 const rotStr = !isNaN(rotation) ? 'Rot ' + rotation.toFixed(2) + 's' : '';
                 const athName = multi ? `<div class="rc-athlete">${nameMap[t.athlete_uuid]||'Unknown'}</div>` : '';
-                return `<div class="${cls}" onclick="selectTurnCard(${i})">${badge}${athName}
+                
+                const clickHandler = isLocked 
+                    ? `onclick="handleLockedTurnClick(event)"` 
+                    : `onclick="selectTurnCard(${i})"`;
+                
+                return `<div class="${cls}" ${clickHandler} style="position:relative;">${lockOverlay}${badge}${athName}
                     <div class="tc-style">${t.style || 'Turn'}${isSample ? sampleBadgeHTML() : ''}</div>
                     <div class="tc-time">${timeStr}</div>
                     <div class="tc-sub">${rotStr}</div>
@@ -12304,6 +12473,12 @@
                 else hint.textContent = 'Two trials selected for comparison.';
             }
         }
+        
+        // Handle click on locked turn card (v02.21)
+        function handleLockedTurnClick(event) {
+            event.stopPropagation();
+            openSubscriptionModal();
+        }
 
         function selectTurnCard(idx) {
             if (turnModuleState.primaryIdx === idx) {
@@ -12314,8 +12489,18 @@
             } else if (turnModuleState.primaryIdx === null) {
                 turnModuleState.primaryIdx = idx;
             } else if (turnModuleState.compareIdx === null) {
+                // Check if user can compare (Pro only, except sample mode) - v02.20
+                if (!isProUser() && !turnModuleState._sampleMode) {
+                    showUpgradePrompt('comparison');
+                    return;
+                }
                 turnModuleState.compareIdx = idx;
             } else {
+                // Check if user can compare (Pro only, except sample mode) - v02.20
+                if (!isProUser() && !turnModuleState._sampleMode) {
+                    showUpgradePrompt('comparison');
+                    return;
+                }
                 turnModuleState.compareIdx = idx;
             }
             renderTurnSelectorCards();
@@ -13649,8 +13834,18 @@
             } else if (st.primaryIdx === null) {
                 st.primaryIdx = idx;
             } else if (st.compareIdx === null) {
+                // Check if user can compare (Pro only, except sample mode) - v02.20
+                if (!isProUser() && !st._sampleMode) {
+                    showUpgradePrompt('comparison');
+                    return;
+                }
                 st.compareIdx = idx;
             } else {
+                // Check if user can compare (Pro only, except sample mode) - v02.20
+                if (!isProUser() && !st._sampleMode) {
+                    showUpgradePrompt('comparison');
+                    return;
+                }
                 // Already have 2 -- replace compare
                 st.compareIdx = idx;
             }
@@ -14560,7 +14755,7 @@
         // ============================================
         // START VIDEO FUNCTIONS (v02.18)
         // ============================================
-        let startVideoState = { videoKey: null, videoUrl: null };
+        let startVideoState = { videoKey: null, videoUrl: null, isLocked: false };
         
         function checkStartVideo() {
             const videoTab = document.getElementById('startVideoTab');
@@ -14571,11 +14766,32 @@
                 if (videoTab) videoTab.style.display = 'none';
                 startVideoState.videoKey = null;
                 startVideoState.videoUrl = null;
+                startVideoState.isLocked = false;
                 return;
             }
             
-            // Start has video - show video tab
+            // Check video access for free users (last 3 videos only) - v02.20
+            if (!isProUser()) {
+                // Get all starts with videos, sorted by date (most recent first)
+                const startsWithVideos = (startModuleState.allStarts || [])
+                    .filter(s => s.video_key)
+                    .sort((a, b) => new Date(b.source_date) - new Date(a.source_date));
+                
+                // Find position of current video in the list
+                const videoIndex = startsWithVideos.findIndex(s => s.video_key === videoKey);
+                
+                // If not in first 3, video is locked
+                if (videoIndex >= 3) {
+                    if (videoTab) videoTab.style.display = 'inline-flex';
+                    startVideoState.videoKey = videoKey;
+                    startVideoState.isLocked = true;
+                    return;
+                }
+            }
+            
+            // Start has video and is accessible - show video tab
             startVideoState.videoKey = videoKey;
+            startVideoState.isLocked = false;
             if (videoTab) videoTab.style.display = 'inline-flex';
         }
         
@@ -14591,6 +14807,27 @@
                 if (videoPlayer) { videoPlayer.src = ''; videoPlayer.style.display = 'none'; }
                 if (noVideoMsg) noVideoMsg.style.display = 'block';
                 if (controlsBar) controlsBar.style.display = 'none';
+                return;
+            }
+            
+            // Check if video is locked for free users (v02.20)
+            if (startVideoState.isLocked) {
+                if (videoPlayer) { videoPlayer.src = ''; videoPlayer.style.display = 'none'; }
+                if (controlsBar) controlsBar.style.display = 'none';
+                if (noVideoMsg) {
+                    noVideoMsg.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <h3>Pro Feature</h3>
+                        <p>Free accounts can view the 3 most recent videos. Upgrade to Pro for unlimited access.</p>
+                        <button class="locked-tooltip-btn" onclick="openSubscriptionModal()" style="margin-top:12px; padding:8px 20px; background:linear-gradient(135deg, var(--accent-purple), var(--accent-pink)); color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">
+                            Upgrade to Pro
+                        </button>
+                    `;
+                    noVideoMsg.style.display = 'block';
+                }
                 return;
             }
             
@@ -14627,6 +14864,12 @@
         }
         
         async function downloadStartVideo() {
+            // Check if user can download (Pro only) - v02.20
+            if (!isProUser()) {
+                showUpgradePrompt('video_download');
+                return;
+            }
+            
             const videoPlayer = document.getElementById('startVideoPlayer');
             if (!videoPlayer || !videoPlayer.src) {
                 showToast('No video available to download', 'warning');
@@ -14655,7 +14898,7 @@
         // ============================================
         // TURN VIDEO FUNCTIONS (v02.18)
         // ============================================
-        let turnVideoState = { videoKey: null, videoUrl: null };
+        let turnVideoState = { videoKey: null, videoUrl: null, isLocked: false };
         
         function checkTurnVideo() {
             const videoTab = document.getElementById('turnVideoTab');
@@ -14666,11 +14909,32 @@
                 if (videoTab) videoTab.style.display = 'none';
                 turnVideoState.videoKey = null;
                 turnVideoState.videoUrl = null;
+                turnVideoState.isLocked = false;
                 return;
             }
             
-            // Turn has video - show video tab
+            // Check video access for free users (last 3 videos only) - v02.20
+            if (!isProUser()) {
+                // Get all turns with videos, sorted by date (most recent first)
+                const turnsWithVideos = (turnModuleState.allTurns || [])
+                    .filter(t => t.video_key)
+                    .sort((a, b) => new Date(b.source_date) - new Date(a.source_date));
+                
+                // Find position of current video in the list
+                const videoIndex = turnsWithVideos.findIndex(t => t.video_key === videoKey);
+                
+                // If not in first 3, video is locked
+                if (videoIndex >= 3) {
+                    if (videoTab) videoTab.style.display = 'inline-flex';
+                    turnVideoState.videoKey = videoKey;
+                    turnVideoState.isLocked = true;
+                    return;
+                }
+            }
+            
+            // Turn has video and is accessible - show video tab
             turnVideoState.videoKey = videoKey;
+            turnVideoState.isLocked = false;
             if (videoTab) videoTab.style.display = 'inline-flex';
         }
         
@@ -14686,6 +14950,27 @@
                 if (videoPlayer) { videoPlayer.src = ''; videoPlayer.style.display = 'none'; }
                 if (noVideoMsg) noVideoMsg.style.display = 'block';
                 if (controlsBar) controlsBar.style.display = 'none';
+                return;
+            }
+            
+            // Check if video is locked for free users (v02.20)
+            if (turnVideoState.isLocked) {
+                if (videoPlayer) { videoPlayer.src = ''; videoPlayer.style.display = 'none'; }
+                if (controlsBar) controlsBar.style.display = 'none';
+                if (noVideoMsg) {
+                    noVideoMsg.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <h3>Pro Feature</h3>
+                        <p>Free accounts can view the 3 most recent videos. Upgrade to Pro for unlimited access.</p>
+                        <button class="locked-tooltip-btn" onclick="openSubscriptionModal()" style="margin-top:12px; padding:8px 20px; background:linear-gradient(135deg, var(--accent-purple), var(--accent-pink)); color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">
+                            Upgrade to Pro
+                        </button>
+                    `;
+                    noVideoMsg.style.display = 'block';
+                }
                 return;
             }
             
@@ -14722,6 +15007,12 @@
         }
         
         async function downloadTurnVideo() {
+            // Check if user can download (Pro only) - v02.20
+            if (!isProUser()) {
+                showUpgradePrompt('video_download');
+                return;
+            }
+            
             const videoPlayer = document.getElementById('turnVideoPlayer');
             if (!videoPlayer || !videoPlayer.src) {
                 showToast('No video available to download', 'warning');
@@ -16317,21 +16608,21 @@
             const optionsHtml = isPro ? `
                 <div class="buy-modal-options">
                     <a href="${singleUrl}" target="_blank" class="buy-modal-option" onclick="closeBuyModal()">
-                        <div class="buy-option-price">$6.99</div>
+                        <div class="buy-option-price">$9.99</div>
                         <div class="buy-option-label">1 Extra Analysis</div>
                         <div class="buy-option-desc">Perfect for a single race</div>
                     </a>
                     <a href="${bundleUrl}" target="_blank" class="buy-modal-option featured" onclick="closeBuyModal()">
                         <span class="buy-option-badge">Best Value</span>
-                        <div class="buy-option-price">$19.99</div>
+                        <div class="buy-option-price">$34.99</div>
                         <div class="buy-option-label">4-Pack Bundle</div>
-                        <div class="buy-option-desc">Save $8 - great for meets!</div>
+                        <div class="buy-option-desc">Save $5 - great for meets!</div>
                     </a>
                 </div>
             ` : `
                 <div class="buy-modal-options">
                     <a href="${singleUrl}" target="_blank" class="buy-modal-option featured" onclick="closeBuyModal()">
-                        <div class="buy-option-price">$6.99</div>
+                        <div class="buy-option-price">$9.99</div>
                         <div class="buy-option-label">1 Race Analysis</div>
                         <div class="buy-option-desc">Try our professional video analysis</div>
                     </a>
@@ -16509,14 +16800,14 @@
                     <p>You've used all your included analyses this month. Purchase additional analyses to continue.</p>
                     <div class="quota-exceeded-options">
                         <a href="${singleUrl}" target="_blank" class="quota-exceeded-btn" onclick="closeQuotaExceededModal()">
-                            <span class="qe-price">$6.99</span>
+                            <span class="qe-price">$9.99</span>
                             <span class="qe-label">1 Extra Analysis</span>
                         </a>
                         <a href="${bundleUrl}" target="_blank" class="quota-exceeded-btn featured" onclick="closeQuotaExceededModal()">
                             <span class="qe-save">Best Value</span>
-                            <span class="qe-price">$19.99</span>
+                            <span class="qe-price">$34.99</span>
                             <span class="qe-label">4-Pack Bundle</span>
-                            <span class="qe-savings">Save $8!</span>
+                            <span class="qe-savings">Save $5!</span>
                         </a>
                     </div>
                     <button class="quota-exceeded-cancel" onclick="closeQuotaExceededModal()">Maybe Later</button>

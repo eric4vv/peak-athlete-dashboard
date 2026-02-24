@@ -4563,7 +4563,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.18</span></span>
+                    <span>Analytics <span class="version-tag">v02.19</span></span>
                 </div>
             </div>
 
@@ -7894,6 +7894,16 @@
             // Close mobile sidebar if open
             closeMobileSidebar();
 
+            // Hide floating video player when navigating away (v02.19)
+            const floatingPlayer = document.getElementById('floatingVideoPlayer');
+            if (floatingPlayer) {
+                floatingPlayer.style.display = 'none';
+                const floatingVideo = document.getElementById('floatingVideo');
+                if (floatingVideo) {
+                    floatingVideo.pause();
+                }
+            }
+
             // Track current page
             appState.currentPage = page;
 
@@ -10794,6 +10804,17 @@
                     const content = document.getElementById('startTab-' + tab.dataset.tab);
                     if (content) content.classList.add('active');
                     renderAllStartVisuals();
+                    
+                    // Floating video player logic (v02.19)
+                    const floatingPlayer = document.getElementById('floatingVideoPlayer');
+                    if (tab.dataset.tab === 'video') {
+                        // Hide floating player when viewing video tab
+                        if (floatingPlayer) floatingPlayer.style.display = 'none';
+                    } else if (startVideoState.videoUrl && floatingPlayer) {
+                        // Show floating player on other tabs if video is available
+                        updateFloatingVideoForStart();
+                        floatingPlayer.style.display = 'block';
+                    }
                 };
             });
 
@@ -12093,6 +12114,17 @@
                     const content = document.getElementById('turnTab-' + tab.dataset.tab);
                     if (content) content.classList.add('active');
                     renderAllTurnVisuals();
+                    
+                    // Floating video player logic (v02.19)
+                    const floatingPlayer = document.getElementById('floatingVideoPlayer');
+                    if (tab.dataset.tab === 'video') {
+                        // Hide floating player when viewing video tab
+                        if (floatingPlayer) floatingPlayer.style.display = 'none';
+                    } else if (turnVideoState.videoUrl && floatingPlayer) {
+                        // Show floating player on other tabs if video is available
+                        updateFloatingVideoForTurn();
+                        floatingPlayer.style.display = 'block';
+                    }
                 };
             });
 
@@ -14485,6 +14517,30 @@
             if (player && player.classList.contains('minimized')) {
                 player.classList.remove('minimized');
                 videoPlayerState.isMinimized = false;
+            }
+        }
+
+        // Update floating video for Start analysis (v02.19)
+        function updateFloatingVideoForStart() {
+            const floatingVideo = document.getElementById('floatingVideo');
+            const fvpTitle = document.getElementById('fvpTitle');
+            if (floatingVideo && startVideoState.videoUrl) {
+                floatingVideo.src = startVideoState.videoUrl;
+            }
+            if (fvpTitle) {
+                fvpTitle.textContent = 'Start Video';
+            }
+        }
+
+        // Update floating video for Turn analysis (v02.19)
+        function updateFloatingVideoForTurn() {
+            const floatingVideo = document.getElementById('floatingVideo');
+            const fvpTitle = document.getElementById('fvpTitle');
+            if (floatingVideo && turnVideoState.videoUrl) {
+                floatingVideo.src = turnVideoState.videoUrl;
+            }
+            if (fvpTitle) {
+                fvpTitle.textContent = 'Turn Video';
             }
         }
 

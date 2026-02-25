@@ -2554,6 +2554,32 @@
             background: rgba(0,0,0,0.8); z-index: 1000; display: flex;
             align-items: center; justify-content: center; padding: 20px;
         }
+        /* Generic Modal (v02.24) */
+        .generic-modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); z-index: 2000; display: flex;
+            align-items: center; justify-content: center; padding: 20px;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .generic-modal-overlay.active { opacity: 1; }
+        .generic-modal {
+            background: var(--bg-card); border-radius: 16px; width: 100%; max-width: 450px;
+            max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            transform: scale(0.95); transition: transform 0.3s ease;
+        }
+        .generic-modal-overlay.active .generic-modal { transform: scale(1); }
+        .generic-modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px; border-bottom: 1px solid var(--border-color);
+        }
+        .generic-modal-header h3 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; }
+        .generic-modal-close {
+            width: 32px; height: 32px; border-radius: 8px; border: none;
+            background: var(--bg-secondary); color: var(--text-muted); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        .generic-modal-close:hover { background: var(--accent-red); color: white; }
+        .generic-modal-body { padding: 20px; }
         .upload-modal {
             background: var(--bg-card); border-radius: 16px; width: 100%; max-width: 500px;
             max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
@@ -4273,6 +4299,246 @@
             .pro-benefits-grid { grid-template-columns: 1fr; }
         }
 
+        /* ============================================
+           WELCOME TOUR (v02.24)
+           ============================================ */
+        .tour-overlay {
+            position: fixed !important;
+            top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+            background: rgba(0, 0, 0, 0.4) !important;
+            z-index: 2147483646 !important;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            isolation: isolate;
+        }
+        .tour-overlay.active {
+            opacity: 1;
+            pointer-events: none;
+        }
+        .tour-highlight {
+            position: fixed !important;
+            box-shadow: 0 0 0 4px var(--accent-blue), 0 0 0 9999px rgba(0, 0, 0, 0.4) !important;
+            border-radius: 12px;
+            z-index: 2147483646 !important;
+            transition: all 0.4s ease;
+            pointer-events: none;
+            isolation: isolate;
+        }
+        #tourTooltip {
+            position: fixed !important;
+            z-index: 2147483647 !important;
+            pointer-events: auto !important;
+            isolation: isolate;
+        }
+        .tour-tooltip {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--accent-blue) !important;
+            border-radius: 12px !important;
+            padding: 20px !important;
+            max-width: 340px;
+            min-width: 280px;
+            box-shadow: 0 8px 32px rgba(0, 194, 255, 0.3) !important;
+            animation: tourFadeIn 0.3s ease;
+        }
+        @keyframes tourFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tour-tooltip::before {
+            content: '';
+            position: absolute;
+            width: 12px; height: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--accent-blue);
+            transform: rotate(45deg);
+        }
+        .tour-tooltip.arrow-top::before {
+            top: -7px; left: 24px;
+            border-right: none; border-bottom: none;
+        }
+        .tour-tooltip.arrow-bottom::before {
+            bottom: -7px; left: 24px;
+            border-left: none; border-top: none;
+        }
+        .tour-tooltip.arrow-left::before {
+            left: -7px; top: 24px;
+            border-right: none; border-top: none;
+        }
+        .tour-tooltip.arrow-right::before {
+            right: -7px; top: 24px;
+            border-left: none; border-bottom: none;
+        }
+        .tour-step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .tour-step-dots {
+            display: flex;
+            gap: 6px;
+        }
+        .tour-step-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--border-color);
+            transition: all 0.2s;
+        }
+        .tour-step-dot.active {
+            background: var(--accent-blue);
+            transform: scale(1.2);
+        }
+        .tour-step-dot.completed {
+            background: var(--accent-green);
+        }
+        .tour-step-number {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+        .tour-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tour-title svg {
+            width: 20px; height: 20px;
+            color: var(--accent-blue);
+        }
+        .tour-content {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        .tour-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .tour-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Montserrat', sans-serif;
+            border: none;
+        }
+        .tour-btn-skip {
+            background: transparent;
+            color: var(--text-muted);
+            padding: 10px 12px;
+        }
+        .tour-btn-skip:hover {
+            color: var(--text-secondary);
+        }
+        .tour-btn-next {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            flex: 1;
+            max-width: 140px;
+        }
+        .tour-btn-next:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 194, 255, 0.3);
+        }
+        .tour-btn-back {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+        .tour-btn-back:hover {
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+        }
+        .tour-welcome-icon {
+            width: 60px; height: 60px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, rgba(0,194,255,0.15), rgba(167,139,250,0.15));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tour-welcome-icon svg {
+            width: 32px; height: 32px;
+            color: var(--accent-blue);
+        }
+        .tour-center-modal {
+            position: fixed !important;
+            top: 50% !important; left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            background: var(--bg-card) !important;
+            border: 1px solid var(--accent-blue) !important;
+            border-radius: 16px !important;
+            padding: 32px !important;
+            max-width: 420px;
+            width: 90%;
+            z-index: 2147483647 !important;
+            text-align: center;
+            box-shadow: 0 16px 48px rgba(0, 194, 255, 0.3) !important;
+            animation: tourFadeIn 0.3s ease;
+            pointer-events: auto !important;
+            isolation: isolate;
+        }
+        .tour-center-modal .tour-title {
+            justify-content: center;
+            font-size: 20px;
+            display: block;
+        }
+        .tour-center-modal .tour-content {
+            text-align: center;
+        }
+        .tour-center-modal .tour-actions {
+            justify-content: center;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        .tour-center-modal .tour-btn-next {
+            max-width: 200px;
+            width: 100%;
+        }
+        .tour-restart-btn {
+            padding: 6px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 11px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Montserrat', sans-serif;
+            transition: all 0.2s;
+        }
+        .tour-restart-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+        .tour-restart-btn svg {
+            width: 14px; height: 14px;
+        }
+        @media (max-width: 768px) {
+            .tour-tooltip {
+                max-width: 300px;
+                min-width: 260px;
+                padding: 16px;
+            }
+            .tour-center-modal {
+                padding: 24px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -4565,7 +4831,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.23</span></span>
+                    <span>Analytics <span class="version-tag">v02.25</span></span>
                 </div>
             </div>
 
@@ -4674,7 +4940,14 @@
                             <h1 id="welcomeMessage">Welcome back!</h1>
                             <div class="wb-sub" id="greetingTime"></div>
                         </div>
-                        <div class="wb-right">
+                        <div class="wb-right" style="display:flex; align-items:center; gap:12px;">
+                            <button class="tour-restart-btn" id="tourRestartBtn" onclick="startWelcomeTour()" title="Take the tour again">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                    <path d="M3 3v5h5"/>
+                                </svg>
+                                Tour
+                            </button>
                             <span class="wb-badge" id="userRoleBadge"></span>
                         </div>
                     </div>
@@ -7262,6 +7535,9 @@
                 loadSubscription();
                 checkAdminStatus();
                 
+                // Check if we should start welcome tour (v02.24)
+                checkAndStartTour();
+                
             } catch (e) {
                 console.error('Error saving consent:', e);
                 showToast('Error saving agreement. Please try again.', 'error');
@@ -7693,24 +7969,24 @@
                 const linkModal = document.createElement('div');
                 linkModal.id = 'checkoutLinkModal';
                 linkModal.innerHTML = `
-                    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;">
-                        <div style="background:var(--card-bg, #1a1a2e);padding:32px;border-radius:16px;max-width:420px;text-align:center;margin:20px;">
+                    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10000;">
+                        <div style="background:var(--bg-card);padding:32px;border-radius:16px;max-width:420px;text-align:center;margin:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
                             <div style="width:64px;height:64px;background:linear-gradient(135deg,#00C896,#00B86B);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
                             </div>
-                            <h3 style="margin-bottom:12px;font-size:20px;color:var(--text-primary, #fff);">Start Your Free Trial</h3>
-                            <p style="margin-bottom:24px;color:var(--text-muted, #888);font-size:14px;">Click below to open secure Stripe checkout.</p>
+                            <h3 style="margin-bottom:12px;font-size:20px;color:var(--text-primary);">Start Your Free Trial</h3>
+                            <p style="margin-bottom:24px;color:var(--text-muted);font-size:14px;">Click below to open secure Stripe checkout.</p>
                             <a href="${paymentUrl}" target="_blank" rel="noopener noreferrer" onclick="startSubscriptionPolling()" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#00C896,#00B86B);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
                                 Continue to Checkout
                             </a>
                             <div id="pollingStatus" style="margin-top:20px;display:none;">
-                                <div style="display:flex;align-items:center;justify-content:center;gap:8px;color:var(--text-muted, #888);font-size:13px;">
+                                <div style="display:flex;align-items:center;justify-content:center;gap:8px;color:var(--text-muted);font-size:13px;">
                                     <svg class="spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                                     <span>Waiting for payment confirmation...</span>
                                 </div>
                             </div>
-                            <p style="margin-top:16px;font-size:12px;color:var(--text-muted, #666);">14-day free trial • Cancel anytime</p>
-                            <button onclick="stopSubscriptionPolling(); document.getElementById('checkoutLinkModal').remove()" style="margin-top:16px;padding:8px 20px;background:transparent;border:1px solid var(--border-color, #333);border-radius:8px;cursor:pointer;color:var(--text-muted, #888);font-size:13px;">Cancel</button>
+                            <p style="margin-top:16px;font-size:12px;color:var(--text-muted);">14-day free trial • Cancel anytime</p>
+                            <button onclick="stopSubscriptionPolling(); document.getElementById('checkoutLinkModal').remove()" style="margin-top:16px;padding:8px 20px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;cursor:pointer;color:var(--text-muted);font-size:13px;">Cancel</button>
                         </div>
                     </div>
                 `;
@@ -7882,6 +8158,9 @@
             loadHomeData();
             loadSubscription(); // Load subscription status
             checkAdminStatus(); // Check if user is admin (v02.14)
+            
+            // Check if we should start welcome tour (v02.24)
+            checkAndStartTour();
         }
 
         function updateUserUI() {
@@ -7909,9 +8188,10 @@
                 loadTeamAthletes();
             }
 
-            // Show leaderboard section if user has a team
+            // Show leaderboard section for all users (v02.24 fix)
+            // Free users can view leaderboards, they just can't opt into competition
             const lbSec = document.getElementById('leaderboardSection');
-            if (lbSec) lbSec.style.display = appState.teamUuid ? 'block' : 'none';
+            if (lbSec) lbSec.style.display = 'block';
         }
 
         // ============================================
@@ -8066,7 +8346,7 @@
                 banner.style.display = 'block';
                 const isCoach = appState.role === 'coach';
                 banner.innerHTML = `
-                    <div class="pending-banner" style="border-color: rgba(0,194,255,0.25); background: rgba(0,194,255,0.06);">
+                    <div class="pending-banner" id="noTeamBanner" style="border-color: rgba(0,194,255,0.25); background: rgba(0,194,255,0.06);">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent-blue);">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                         </svg>
@@ -8075,7 +8355,7 @@
                             <p>Join an existing team with a team code${isCoach ? ' or create a new one' : ''}. Your coach or admin can provide the code.</p>
                         </div>
                         <div style="display:flex; gap:8px; flex-shrink:0;">
-                            <button class="btn btn-primary" style="padding:8px 20px; font-size:13px; white-space:nowrap;" onclick="openTeamModal('join')">
+                            <button class="btn btn-primary" id="joinTeamBtn" style="padding:8px 20px; font-size:13px; white-space:nowrap;" onclick="openTeamModal('join')">
                                 Join Team
                             </button>
                             ${isCoach ? '<button class="btn btn-primary" style="padding:8px 20px; font-size:13px; white-space:nowrap; background:linear-gradient(135deg,var(--accent-green),#00B86B);" onclick="openTeamModal(\'create\')">Create Team</button>' : ''}
@@ -16161,6 +16441,13 @@
 
         async function toggleCompetitionOptIn() {
             if (appState.role !== 'athlete' || !appState.athleteUuid) return;
+            
+            // Check if user has Pro subscription (v02.24)
+            if (!compState.optedIn && appState.planId !== 'pro') {
+                showCompetitionProModal();
+                return;
+            }
+            
             const newVal = !compState.optedIn;
 
             try {
@@ -16199,6 +16486,65 @@
             } catch (e) {
                 console.error('[Comp] opt-in toggle error:', e);
                 showToast('Could not update competition status. The database table may not exist yet — please run the SQL migration first.', 'error', 8000);
+            }
+        }
+
+        // Competition Pro Upgrade Modal (v02.24)
+        function showCompetitionProModal() {
+            const modal = document.createElement('div');
+            modal.className = 'generic-modal-overlay';
+            modal.id = 'competitionProModal';
+            modal.innerHTML = `
+                <div class="generic-modal" style="max-width: 420px;">
+                    <div class="generic-modal-header">
+                        <h3 style="display:flex; align-items:center; gap:10px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2">
+                                <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+                            </svg>
+                            Unlock Competition
+                        </h3>
+                        <button class="generic-modal-close" onclick="closeCompetitionProModal()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+                    <div class="generic-modal-body" style="text-align:center; padding: 24px;">
+                        <div style="width:64px; height:64px; margin:0 auto 16px; background:linear-gradient(135deg, var(--accent-purple), var(--accent-blue)); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                                <path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                            </svg>
+                        </div>
+                        <h4 style="font-size:18px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">Competition is a Pro Feature</h4>
+                        <p style="font-size:14px; color:var(--text-muted); line-height:1.6; margin-bottom:20px;">
+                            Upgrade to Pro to compete against athletes worldwide and see how you rank on the universal leaderboard!
+                        </p>
+                        <div style="background:var(--bg-light); border-radius:12px; padding:16px; margin-bottom:20px; text-align:left;">
+                            <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:8px;">Pro includes:</div>
+                            <ul style="font-size:13px; color:var(--text-muted); margin:0; padding-left:20px; line-height:1.8;">
+                                <li>Universal Competition Leaderboards</li>
+                                <li>2 Race Analyses per month</li>
+                                <li>Priority support</li>
+                                <li>Advanced performance insights</li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-primary" style="width:100%; padding:14px; font-size:15px; background:linear-gradient(135deg, var(--accent-purple), var(--accent-blue));" onclick="closeCompetitionProModal(); openSubscriptionModal();">
+                            Upgrade to Pro - $9.99/month
+                        </button>
+                        <button class="btn" style="width:100%; padding:12px; font-size:13px; margin-top:10px; background:transparent; border:1px solid var(--border-color); color:var(--text-muted);" onclick="closeCompetitionProModal()">
+                            Maybe Later
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            requestAnimationFrame(() => modal.classList.add('active'));
+        }
+
+        function closeCompetitionProModal() {
+            const modal = document.getElementById('competitionProModal');
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
             }
         }
 
@@ -17539,6 +17885,335 @@
         }
 
         // ============================================
+        // WELCOME TOUR (v02.24)
+        // ============================================
+        const tourSteps = [
+            {
+                type: 'modal',
+                title: 'Welcome to Peak Athlete!',
+                content: 'Your personal swim analytics dashboard. Let me show you around in about 60 seconds.',
+                icon: '<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg"><polygon points="50,2 95,72 78,72 50,22 22,72 5,72" fill="url(#tourGrad)"/><defs><linearGradient id="tourGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00c2ff"/><stop offset="100%" stop-color="#a78bfa"/></linearGradient></defs></svg>'
+            },
+            {
+                type: 'highlight',
+                target: '#welcomeMessage',
+                title: 'Your Performance Snapshot',
+                content: 'This is your home base. See your recent activity, goals progress, and performance trends at a glance.',
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+                position: 'bottom',
+                navigateTo: 'home'
+            },
+            {
+                type: 'highlight',
+                target: '#startSelectorList',
+                title: 'Explore Start Analysis',
+                content: 'Click on any trial card to view detailed start metrics including reaction time, block phase, and underwater analysis.',
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>',
+                position: 'bottom',
+                navigateTo: 'starts'
+            },
+            {
+                type: 'highlight',
+                target: '.analysis-upload-btn',
+                fallbackTarget: '#raceSelectorList',
+                title: 'Upload Race Video',
+                content: 'Click here to upload your race video for analysis. Our team will process it within 24-48 hours!',
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+                position: 'right',
+                navigateTo: 'home'
+            },
+            {
+                type: 'highlight',
+                target: '#addGoalBtn',
+                title: 'Set Your Goals',
+                content: 'Click here to add a personal goal. Set target times for your events and track your improvement over time.',
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+                position: 'left',
+                navigateTo: 'home',
+                scrollTo: true
+            },
+            {
+                type: 'highlight',
+                target: '#joinTeamBtn',
+                fallbackTarget: '#noTeamBanner',
+                title: 'Join Your Team',
+                content: 'Click "Join Team" and enter the code from your coach to connect with your team and appear on team leaderboards.',
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+                position: 'left',
+                navigateTo: 'home',
+                scrollTo: true
+            },
+            {
+                type: 'highlight',
+                target: '[data-lbmode="team"]',
+                title: 'Team Rankings',
+                content: 'View how you rank against your teammates in races, starts, and turns. Join a team to see your rankings here!',
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+                position: 'bottom',
+                navigateTo: 'leaderboards'
+            },
+            {
+                type: 'highlight',
+                target: '[data-lbmode="competition"]',
+                title: 'Compete on Leaderboards',
+                content: 'Click the Competition tab to opt-in and see how you rank against all athletes. Great motivation to push your limits!',
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>',
+                position: 'bottom',
+                navigateTo: 'leaderboards'
+            },
+            {
+                type: 'modal',
+                title: 'You\'re All Set!',
+                content: 'Explore the dashboard and discover insights about your swimming. Click the Tour button anytime to take the tour again.',
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+                isLast: true
+            }
+        ];
+        
+        let currentTourStep = 0;
+        let tourActive = false;
+        
+        function startWelcomeTour() {
+            currentTourStep = 0;
+            tourActive = true;
+            document.getElementById('tourOverlay').classList.add('active');
+            showTourStep(0);
+        }
+        
+        function endWelcomeTour(completed = true) {
+            tourActive = false;
+            document.getElementById('tourOverlay').classList.remove('active');
+            document.getElementById('tourHighlight').style.display = 'none';
+            document.getElementById('tourTooltip').style.display = 'none';
+            
+            // Mark tour as completed
+            if (completed) {
+                try {
+                    localStorage.setItem('pa_tour_completed', 'true');
+                    localStorage.setItem('pa_tour_completed_at', Date.now().toString());
+                } catch(e) {}
+            }
+            
+            // Show restart button
+            document.getElementById('tourRestartBtn').style.display = 'flex';
+        }
+        
+        let tourScrolling = false;
+        
+        function showTourStep(stepIndex) {
+            const step = tourSteps[stepIndex];
+            const highlight = document.getElementById('tourHighlight');
+            const tooltip = document.getElementById('tourTooltip');
+            
+            // Navigate to the correct page if specified
+            if (step.navigateTo && appState.currentPage !== step.navigateTo) {
+                navigateTo(step.navigateTo);
+                // Wait for navigation and content to load (longer for dynamic content)
+                setTimeout(() => showTourStep(stepIndex), 600);
+                return;
+            }
+            
+            // Scroll to element if needed before showing
+            if (step.scrollTo && step.target) {
+                const scrollTarget = document.querySelector(step.target);
+                if (scrollTarget) {
+                    // Use scrollIntoView which works better across different layouts
+                    scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Wait for scroll to finish then show step
+                    setTimeout(() => showTourStepHighlight(stepIndex, step, highlight, tooltip), 500);
+                    return;
+                } else {
+                    // Element not found yet, might be dynamic - try again after delay
+                    console.log('[Tour] Scroll target not found, retrying:', step.target);
+                    setTimeout(() => {
+                        const retryTarget = document.querySelector(step.target);
+                        if (retryTarget) {
+                            retryTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            setTimeout(() => showTourStepHighlight(stepIndex, step, highlight, tooltip), 500);
+                        } else {
+                            // Still not found, show without scroll
+                            showTourStepHighlight(stepIndex, step, highlight, tooltip);
+                        }
+                    }, 500);
+                    return;
+                }
+            }
+            
+            showTourStepHighlight(stepIndex, step, highlight, tooltip);
+        }
+        
+        function showTourStepHighlight(stepIndex, step, highlight, tooltip) {
+            if (step.type === 'modal') {
+                // Center modal step
+                highlight.style.display = 'none';
+                
+                const modalHtml = `
+                    <div class="tour-center-modal">
+                        <div class="tour-welcome-icon">${step.icon}</div>
+                        <div class="tour-title">${step.title}</div>
+                        <div class="tour-content">${step.content}</div>
+                        <div class="tour-step-indicator">
+                            <div class="tour-step-dots">
+                                ${tourSteps.map((_, i) => `<div class="tour-step-dot ${i < stepIndex ? 'completed' : ''} ${i === stepIndex ? 'active' : ''}"></div>`).join('')}
+                            </div>
+                            <span class="tour-step-number">${stepIndex + 1} of ${tourSteps.length}</span>
+                        </div>
+                        <div class="tour-actions">
+                            ${step.isLast ? `
+                                <button class="tour-btn tour-btn-next" onclick="endWelcomeTour(true)">Let's Go!</button>
+                            ` : `
+                                <button class="tour-btn tour-btn-next" onclick="nextTourStep()">Get Started</button>
+                                <button class="tour-btn tour-btn-skip" onclick="endWelcomeTour(true)">Skip Tour</button>
+                            `}
+                        </div>
+                    </div>
+                `;
+                tooltip.innerHTML = modalHtml;
+                tooltip.style.cssText = 'display: block; position: static; top: auto; left: auto; transform: none;';
+                
+            } else if (step.type === 'highlight') {
+                // Highlight element step
+                let target = document.querySelector(step.target);
+                
+                // Try fallback target if main target not found
+                if (!target && step.fallbackTarget) {
+                    target = document.querySelector(step.fallbackTarget);
+                }
+                
+                // If element not found, show a simplified version without highlight
+                if (!target) {
+                    console.log('[Tour] Element not found:', step.target);
+                    highlight.style.display = 'none';
+                    
+                    const tooltipHtml = `
+                        <div class="tour-tooltip">
+                            <div class="tour-step-indicator">
+                                <div class="tour-step-dots">
+                                    ${tourSteps.map((_, i) => `<div class="tour-step-dot ${i < stepIndex ? 'completed' : ''} ${i === stepIndex ? 'active' : ''}"></div>`).join('')}
+                                </div>
+                                <span class="tour-step-number">${stepIndex + 1} of ${tourSteps.length}</span>
+                            </div>
+                            <div class="tour-title">${step.icon}${step.title}</div>
+                            <div class="tour-content">${step.content}</div>
+                            <div class="tour-actions">
+                                ${stepIndex > 0 ? '<button class="tour-btn tour-btn-back" onclick="prevTourStep()">Back</button>' : ''}
+                                <button class="tour-btn tour-btn-skip" onclick="endWelcomeTour(true)">Skip</button>
+                                <button class="tour-btn tour-btn-next" onclick="nextTourStep()">${stepIndex === tourSteps.length - 2 ? 'Finish' : 'Next'}</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    tooltip.innerHTML = tooltipHtml;
+                    tooltip.style.cssText = 'display:block; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2147483647; pointer-events:auto;';
+                    return;
+                }
+                
+                const rect = target.getBoundingClientRect();
+                const padding = 8;
+                
+                // Position highlight
+                highlight.style.display = 'block';
+                highlight.style.top = (rect.top - padding) + 'px';
+                highlight.style.left = (rect.left - padding) + 'px';
+                highlight.style.width = (rect.width + padding * 2) + 'px';
+                highlight.style.height = (rect.height + padding * 2) + 'px';
+                
+                // Build tooltip HTML
+                const tooltipHtml = `
+                    <div class="tour-tooltip arrow-${step.position === 'top' ? 'bottom' : step.position === 'bottom' ? 'top' : step.position === 'left' ? 'right' : 'left'}">
+                        <div class="tour-step-indicator">
+                            <div class="tour-step-dots">
+                                ${tourSteps.map((_, i) => `<div class="tour-step-dot ${i < stepIndex ? 'completed' : ''} ${i === stepIndex ? 'active' : ''}"></div>`).join('')}
+                            </div>
+                            <span class="tour-step-number">${stepIndex + 1} of ${tourSteps.length}</span>
+                        </div>
+                        <div class="tour-title">${step.icon}${step.title}</div>
+                        <div class="tour-content">${step.content}</div>
+                        <div class="tour-actions">
+                            ${stepIndex > 0 ? '<button class="tour-btn tour-btn-back" onclick="prevTourStep()">Back</button>' : ''}
+                            <button class="tour-btn tour-btn-skip" onclick="endWelcomeTour(true)">Skip</button>
+                            <button class="tour-btn tour-btn-next" onclick="nextTourStep()">${stepIndex === tourSteps.length - 2 ? 'Finish' : 'Next'}</button>
+                        </div>
+                    </div>
+                `;
+                
+                tooltip.innerHTML = tooltipHtml;
+                
+                // Get tooltip dimensions after inserting HTML
+                const tooltipEl = tooltip.querySelector('.tour-tooltip');
+                tooltip.style.cssText = 'display:block; position:fixed; z-index:2147483647; pointer-events:auto;';
+                const tooltipRect = tooltipEl.getBoundingClientRect();
+                
+                // Calculate position based on step.position
+                let tooltipTop, tooltipLeft;
+                
+                switch(step.position) {
+                    case 'bottom':
+                        tooltipTop = rect.bottom + 16;
+                        tooltipLeft = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+                        break;
+                    case 'top':
+                        tooltipTop = rect.top - tooltipRect.height - 16;
+                        tooltipLeft = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+                        break;
+                    case 'right':
+                        tooltipTop = rect.top + (rect.height / 2) - (tooltipRect.height / 2);
+                        tooltipLeft = rect.right + 16;
+                        break;
+                    case 'left':
+                        tooltipTop = rect.top + (rect.height / 2) - (tooltipRect.height / 2);
+                        tooltipLeft = rect.left - tooltipRect.width - 16;
+                        break;
+                    default:
+                        tooltipTop = rect.bottom + 16;
+                        tooltipLeft = rect.left;
+                }
+                
+                // Keep tooltip on screen
+                tooltipLeft = Math.max(16, Math.min(tooltipLeft, window.innerWidth - tooltipRect.width - 16));
+                tooltipTop = Math.max(16, Math.min(tooltipTop, window.innerHeight - tooltipRect.height - 16));
+                
+                tooltip.style.top = tooltipTop + 'px';
+                tooltip.style.left = tooltipLeft + 'px';
+            }
+        }
+        
+        function nextTourStep() {
+            currentTourStep++;
+            if (currentTourStep >= tourSteps.length) {
+                endWelcomeTour(true);
+            } else {
+                showTourStep(currentTourStep);
+            }
+        }
+        
+        function prevTourStep() {
+            if (currentTourStep > 0) {
+                currentTourStep--;
+                showTourStep(currentTourStep);
+            }
+        }
+        
+        function checkAndStartTour() {
+            try {
+                const tourCompleted = localStorage.getItem('pa_tour_completed');
+                if (!tourCompleted) {
+                    // First time user - start tour after a short delay
+                    setTimeout(() => {
+                        if (appState.currentPage === 'home') {
+                            startWelcomeTour();
+                        }
+                    }, 1500);
+                } else {
+                    // Show restart button for returning users
+                    document.getElementById('tourRestartBtn').style.display = 'flex';
+                }
+            } catch(e) {
+                // localStorage not available
+            }
+        }
+
+        // ============================================
         // INITIALIZATION
         // ============================================
         async function init() {
@@ -17549,5 +18224,10 @@
 
         init();
     </script>
+    
+    <!-- Welcome Tour Overlay (v02.24) - At end of body to be on top of everything -->
+    <div class="tour-overlay" id="tourOverlay"></div>
+    <div id="tourHighlight" class="tour-highlight" style="display:none;"></div>
+    <div id="tourTooltip" style="display:none;"></div>
 </body>
 </html>

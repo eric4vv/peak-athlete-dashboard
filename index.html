@@ -4539,6 +4539,202 @@
             }
         }
 
+        /* ============================================
+           PAGE HELP GUIDE (v02.25)
+           ============================================ */
+        .page-help-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .page-help-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            background: rgba(0, 194, 255, 0.1);
+        }
+        .page-help-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+        .help-drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1500;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .help-drawer-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .help-drawer {
+            position: fixed;
+            top: 0;
+            right: -420px;
+            width: 400px;
+            max-width: 90vw;
+            height: 100%;
+            background: var(--bg-card);
+            box-shadow: -4px 0 30px rgba(0, 0, 0, 0.2);
+            z-index: 1501;
+            display: flex;
+            flex-direction: column;
+            transition: right 0.3s ease;
+        }
+        .help-drawer-overlay.active .help-drawer {
+            right: 0;
+        }
+        .help-drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(135deg, rgba(0, 194, 255, 0.1), rgba(167, 139, 250, 0.1));
+        }
+        .help-drawer-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .help-drawer-title svg {
+            width: 22px;
+            height: 22px;
+            color: var(--accent-blue);
+        }
+        .help-drawer-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .help-drawer-close:hover {
+            background: var(--accent-red);
+            color: white;
+        }
+        .help-drawer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .help-section {
+            margin-bottom: 24px;
+        }
+        .help-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .help-section-title svg {
+            width: 16px;
+            height: 16px;
+            color: var(--accent-purple);
+        }
+        .help-section-content {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .help-metric-list {
+            margin: 12px 0;
+            padding: 0;
+            list-style: none;
+        }
+        .help-metric-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .help-metric-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .help-metric-icon.blue { background: rgba(0, 194, 255, 0.15); color: var(--accent-blue); }
+        .help-metric-icon.purple { background: rgba(167, 139, 250, 0.15); color: var(--accent-purple); }
+        .help-metric-icon.green { background: rgba(0, 230, 138, 0.15); color: var(--accent-green); }
+        .help-metric-icon.orange { background: rgba(255, 159, 67, 0.15); color: #FF9F43; }
+        .help-metric-icon svg { width: 16px; height: 16px; }
+        .help-metric-info { flex: 1; }
+        .help-metric-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+        .help-metric-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        .help-tip-box {
+            padding: 14px;
+            background: linear-gradient(135deg, rgba(0, 194, 255, 0.08), rgba(167, 139, 250, 0.08));
+            border: 1px solid rgba(0, 194, 255, 0.2);
+            border-radius: 10px;
+            margin-top: 16px;
+        }
+        .help-tip-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .help-tip-title svg { width: 14px; height: 14px; }
+        .help-tip-content {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        @media (max-width: 768px) {
+            .help-drawer {
+                width: 100%;
+                max-width: 100%;
+                right: -100%;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -4748,6 +4944,26 @@
                     <span class="status-dot"></span>
                     <span>Checking connection...</span>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Help Drawer (v02.25) -->
+    <div class="help-drawer-overlay" id="helpDrawerOverlay" onclick="closeHelpDrawer()">
+        <div class="help-drawer" onclick="event.stopPropagation()">
+            <div class="help-drawer-header">
+                <div class="help-drawer-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <span id="helpDrawerTitle">Page Help</span>
+                </div>
+                <button class="help-drawer-close" onclick="closeHelpDrawer()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="help-drawer-body" id="helpDrawerBody">
+                <!-- Content loaded dynamically -->
             </div>
         </div>
     </div>
@@ -5455,9 +5671,17 @@
 
             <!-- Starts Page -->
             <section class="page-section" id="page-starts">
-                <div class="page-header">
-                    <h1>Start Analysis</h1>
-                    <p>Dive start performance metrics and trends</p>
+                <div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between;">
+                    <div>
+                        <h1>Start Analysis</h1>
+                        <p>Dive start performance metrics and trends</p>
+                    </div>
+                    <button class="page-help-btn" onclick="openHelpDrawer('starts')" title="Page Help">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        Help
+                    </button>
                 </div>
 
                 <!-- Unified Filter Bar (same design as Race page) -->
@@ -5652,9 +5876,17 @@
 
             <!-- Turns Page -->
             <section class="page-section" id="page-turns">
-                <div class="page-header">
-                    <h1>Turn Analysis</h1>
-                    <p>Wall turn performance, approach, and underwater metrics</p>
+                <div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between;">
+                    <div>
+                        <h1>Turn Analysis</h1>
+                        <p>Wall turn performance, approach, and underwater metrics</p>
+                    </div>
+                    <button class="page-help-btn" onclick="openHelpDrawer('turns')" title="Page Help">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        Help
+                    </button>
                 </div>
 
                 <!-- Unified Filter Bar -->
@@ -5845,9 +6077,17 @@
 
             <!-- Races Page -->
             <section class="page-section" id="page-races">
-                <div class="page-header">
-                    <h1>Race Analysis</h1>
-                    <p>Race performance, splits, pacing, and stroke analysis</p>
+                <div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between;">
+                    <div>
+                        <h1>Race Analysis</h1>
+                        <p>Race performance, splits, pacing, and stroke analysis</p>
+                    </div>
+                    <button class="page-help-btn" onclick="openHelpDrawer('races')" title="Page Help">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        Help
+                    </button>
                 </div>
 
                 <!-- Unified Filter Bar -->
@@ -6121,9 +6361,17 @@
 
             <!-- Leaderboards Page (v02.08) -->
             <section class="page-section" id="page-leaderboards">
-                <div class="page-header">
-                    <h1>Leaderboards</h1>
-                    <p>Team rankings and universal competition boards</p>
+                <div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between;">
+                    <div>
+                        <h1>Leaderboards</h1>
+                        <p>Team rankings and universal competition boards</p>
+                    </div>
+                    <button class="page-help-btn" onclick="openHelpDrawer('leaderboards')" title="Page Help">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        Help
+                    </button>
                 </div>
 
                 <!-- Top-level mode tabs: Team vs Competition -->
@@ -17969,6 +18217,176 @@
                 isLast: true
             }
         ];
+        
+        // ============================================
+        // PAGE HELP GUIDE (v02.25)
+        // ============================================
+        const helpContent = {
+            starts: {
+                title: 'Start Analysis Help',
+                sections: [
+                    {
+                        title: 'What This Page Shows',
+                        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+                        content: 'This page displays detailed metrics from your dive starts captured by underwater cameras and timing systems. Select a trial from the list to view its breakdown.'
+                    }
+                ],
+                metrics: [
+                    { name: 'Reaction Time', desc: 'Time from the start signal to your first movement on the block. A key indicator of alertness and start technique.', icon: 'blue' },
+                    { name: 'Block Phase', desc: 'Time spent on the block from first movement until your feet leave. Includes grab release and push-off.', icon: 'purple' },
+                    { name: 'Flight Phase', desc: 'Time in the air from leaving the block until your hands enter the water.', icon: 'green' },
+                    { name: 'Entry Angle', desc: 'The angle at which you enter the water. Optimal angles reduce drag and maximize underwater speed.', icon: 'orange' },
+                    { name: 'Underwater Phase', desc: 'From water entry to breakout (when your head surfaces). Includes dolphin kicks and streamline.', icon: 'blue' },
+                    { name: '15m Split', desc: 'Total time to reach the 15m mark - the key benchmark for start performance in competitive swimming.', icon: 'purple' }
+                ],
+                tip: {
+                    title: 'Pro Tip',
+                    content: 'Compare two trials by selecting them to see exactly what changed. Track your progress over time to identify improvements!'
+                }
+            },
+            turns: {
+                title: 'Turn Analysis Help',
+                sections: [
+                    {
+                        title: 'What This Page Shows',
+                        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+                        content: 'This page breaks down your wall turns into approach, wall contact, and departure phases. Great turns maintain speed through the wall and can save significant time.'
+                    }
+                ],
+                metrics: [
+                    { name: 'Approach Velocity', desc: 'Your speed in the final 5m before the wall. Faster approach means more momentum to carry through the turn.', icon: 'blue' },
+                    { name: 'Wall Time', desc: 'Total time spent in contact with the wall. Includes rotation, tuck, and push-off preparation.', icon: 'purple' },
+                    { name: 'Push-Off Velocity', desc: 'Speed leaving the wall. Higher push-off velocity means faster underwater phase.', icon: 'green' },
+                    { name: 'Underwater Phase', desc: 'Time from wall push-off to breakout. Includes streamline and dolphin kicks (or pullout for breaststroke).', icon: 'orange' },
+                    { name: 'Breakout Distance', desc: 'How far underwater you travel before surfacing. Maximum legal distance is 15m.', icon: 'blue' },
+                    { name: '15m Out Split', desc: 'Time from wall contact to reaching 15m on the departure side - key turn efficiency metric.', icon: 'purple' }
+                ],
+                tip: {
+                    title: 'Pro Tip',
+                    content: 'The velocity profile chart shows your speed throughout the turn. Look for velocity changes at the wall to identify areas for improvement!'
+                }
+            },
+            races: {
+                title: 'Race Analysis Help',
+                sections: [
+                    {
+                        title: 'What This Page Shows',
+                        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+                        content: 'View complete race breakdowns including splits, pacing, and stroke data for each lap. Request video analysis to get your races added here.'
+                    }
+                ],
+                metrics: [
+                    { name: 'Split Times', desc: 'Cumulative time at each distance marker. Shows your pacing throughout the race.', icon: 'blue' },
+                    { name: 'Lap Times', desc: 'Time for each individual lap. Helps identify where you\'re gaining or losing time.', icon: 'purple' },
+                    { name: 'Stroke Rate', desc: 'Strokes per minute for each segment. Consistent stroke rate often indicates good pacing.', icon: 'green' },
+                    { name: 'Stroke Count', desc: 'Number of strokes per lap. Helps track efficiency and distance-per-stroke.', icon: 'orange' }
+                ],
+                tip: {
+                    title: 'Pro Tip',
+                    content: 'Compare two races of the same event to see your improvement. The overlay chart shows exactly where you gained or lost time!'
+                }
+            },
+            leaderboards: {
+                title: 'Leaderboards Help',
+                sections: [
+                    {
+                        title: 'Team Rankings',
+                        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+                        content: 'See how you rank against your teammates in various categories. Only visible to team members. Your coach can view everyone\'s data.'
+                    },
+                    {
+                        title: 'Universal Competition',
+                        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>',
+                        content: 'Compete against athletes from all teams! Opt-in to have your best performances ranked globally. Pro subscription required.'
+                    }
+                ],
+                metrics: [
+                    { name: 'Race Times', desc: 'Rankings based on your best times in each event (distance + stroke combination).', icon: 'blue' },
+                    { name: 'Start Performance', desc: 'Rankings for fastest 15m splits from dive starts.', icon: 'purple' },
+                    { name: 'Turn Performance', desc: 'Rankings for fastest turn times (5m in to 15m out).', icon: 'green' },
+                    { name: 'Filters', desc: 'Filter by event, stroke, course (SCY/SCM/LCM), and gender to find relevant comparisons.', icon: 'orange' }
+                ],
+                tip: {
+                    title: 'Pro Tip',
+                    content: 'Competition leaderboards update automatically when you add new data. Your name and team are visible to other participants!'
+                }
+            }
+        };
+        
+        function openHelpDrawer(page) {
+            const content = helpContent[page];
+            if (!content) return;
+            
+            document.getElementById('helpDrawerTitle').textContent = content.title;
+            
+            let html = '';
+            
+            // Sections
+            content.sections.forEach(section => {
+                html += `
+                    <div class="help-section">
+                        <div class="help-section-title">
+                            ${section.icon}
+                            ${section.title}
+                        </div>
+                        <div class="help-section-content">${section.content}</div>
+                    </div>
+                `;
+            });
+            
+            // Metrics
+            if (content.metrics && content.metrics.length > 0) {
+                html += `
+                    <div class="help-section">
+                        <div class="help-section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+                            Key Metrics Explained
+                        </div>
+                        <ul class="help-metric-list">
+                `;
+                
+                const iconSvgs = {
+                    blue: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+                    purple: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>',
+                    green: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+                    orange: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+                };
+                
+                content.metrics.forEach(metric => {
+                    html += `
+                        <li class="help-metric-item">
+                            <div class="help-metric-icon ${metric.icon}">${iconSvgs[metric.icon]}</div>
+                            <div class="help-metric-info">
+                                <div class="help-metric-name">${metric.name}</div>
+                                <div class="help-metric-desc">${metric.desc}</div>
+                            </div>
+                        </li>
+                    `;
+                });
+                
+                html += '</ul></div>';
+            }
+            
+            // Tip
+            if (content.tip) {
+                html += `
+                    <div class="help-tip-box">
+                        <div class="help-tip-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4"/><path d="m6.34 6.34 2.83 2.83"/><path d="M2 12h4"/><path d="m6.34 17.66 2.83-2.83"/><path d="M12 18v4"/><path d="m17.66 17.66-2.83-2.83"/><path d="M18 12h4"/><path d="m17.66 6.34-2.83 2.83"/></svg>
+                            ${content.tip.title}
+                        </div>
+                        <div class="help-tip-content">${content.tip.content}</div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('helpDrawerBody').innerHTML = html;
+            document.getElementById('helpDrawerOverlay').classList.add('active');
+        }
+        
+        function closeHelpDrawer() {
+            document.getElementById('helpDrawerOverlay').classList.remove('active');
+        }
         
         let currentTourStep = 0;
         let tourActive = false;

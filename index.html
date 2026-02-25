@@ -3966,7 +3966,7 @@
             top: calc(100% + 8px);
             left: 50%;
             transform: translateX(-50%);
-            background: #1a2e44;
+            background: var(--bg-card);
             border: 1px solid var(--border-hover);
             color: var(--text-primary);
             padding: 10px 14px;
@@ -3975,7 +3975,7 @@
             font-weight: 400;
             white-space: nowrap;
             z-index: 1000;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.2s, visibility 0.2s;
@@ -3988,7 +3988,7 @@
             left: 50%;
             transform: translateX(-50%);
             border: 6px solid transparent;
-            border-bottom-color: #1a2e44;
+            border-bottom-color: var(--border-hover);
             z-index: 1001;
             opacity: 0;
             visibility: hidden;
@@ -6567,6 +6567,15 @@
                         <div class="lb-filter-field" id="compStrokeFilterWrap" style="display:none;">
                             <label>Stroke</label>
                             <select id="compStrokeFilter" onchange="loadCompetitionBoard()"><option value="">All Strokes</option></select>
+                        </div>
+                        <div class="lb-filter-field" id="compCourseFilterWrap" style="display:none;">
+                            <label>Course</label>
+                            <select id="compCourseFilter" onchange="loadCompetitionBoard()">
+                                <option value="">All Courses</option>
+                                <option value="SCY">SCY</option>
+                                <option value="SCM">SCM</option>
+                                <option value="LCM">LCM</option>
+                            </select>
                         </div>
                         <div class="comp-participant-count" id="compParticipantCount"></div>
                     </div>
@@ -16447,18 +16456,25 @@
             const strokeFilter = document.getElementById('lbStrokeFilter')?.value || '';
             const courseFilter = document.getElementById('lbCourseFilter')?.value || '';
             const distanceFilter = document.getElementById('lbDistanceFilter')?.value || '';
-            let query = supabaseClient.from('v_race_kpis').select('athlete_uuid, race_time_s, style, distance_m, source_date, course');
-            const { query: q1, clientFilter: cf1 } = safeInFilter(query, 'athlete_uuid', athleteUuids);
-            query = q1;
-            if (strokeFilter) query = query.eq('style', strokeFilter);
-            if (courseFilter) query = query.eq('course', courseFilter);
-            if (distanceFilter) query = query.eq('distance_m', parseInt(distanceFilter));
-            query = query.not('race_time_s', 'is', null);
-            const { data, error } = await query;
-            if (error) throw error;
-            let rows = cf1(data || []);
-            populateLbDistanceOptions(rows);
-            populateLbStrokeOptions(rows);
+            
+            // First, load all data to populate filter options
+            let allQuery = supabaseClient.from('v_race_kpis').select('athlete_uuid, race_time_s, style, distance_m, source_date, course');
+            const { query: q0, clientFilter: cf0 } = safeInFilter(allQuery, 'athlete_uuid', athleteUuids);
+            allQuery = q0.not('race_time_s', 'is', null);
+            const { data: allData, error: allError } = await allQuery;
+            if (allError) throw allError;
+            const allRows = cf0(allData || []);
+            
+            // Populate filters with ALL available options
+            populateLbDistanceOptions(allRows);
+            populateLbStrokeOptions(allRows);
+            
+            // Now apply filters for display
+            let rows = allRows;
+            if (strokeFilter) rows = rows.filter(r => r.style === strokeFilter);
+            if (courseFilter) rows = rows.filter(r => r.course === courseFilter);
+            if (distanceFilter) rows = rows.filter(r => r.distance_m == parseInt(distanceFilter));
+            
             const bestMap = {};
             rows.forEach(r => {
                 const ek = r.distance_m + '_' + (r.style || 'unknown');
@@ -16473,14 +16489,21 @@
         async function loadLbStartRankings(metricDef, athleteUuids) {
             const styleFilter = document.getElementById('lbStrokeFilter')?.value || '';
             const key = metricDef.key;
-            let query = supabaseClient.from('v_start_kpis').select('athlete_uuid, ' + key + ', style, source_date').not(key, 'is', null);
-            const { query: q1, clientFilter: cf1 } = safeInFilter(query, 'athlete_uuid', athleteUuids);
-            query = q1;
-            if (styleFilter) query = query.eq('style', styleFilter);
-            const { data, error } = await query;
-            if (error) throw error;
-            let rows = cf1(data || []);
-            populateLbStrokeOptions(rows);
+            
+            // First, load all data to populate filter options
+            let allQuery = supabaseClient.from('v_start_kpis').select('athlete_uuid, ' + key + ', style, source_date').not(key, 'is', null);
+            const { query: q0, clientFilter: cf0 } = safeInFilter(allQuery, 'athlete_uuid', athleteUuids);
+            const { data: allData, error: allError } = await q0;
+            if (allError) throw allError;
+            const allRows = cf0(allData || []);
+            
+            // Populate filters with ALL available options
+            populateLbStrokeOptions(allRows);
+            
+            // Now apply filters for display
+            let rows = allRows;
+            if (styleFilter) rows = rows.filter(r => r.style === styleFilter);
+            
             const bestMap = {};
             rows.forEach(r => {
                 const val = parseFloat(r[key]); if (isNaN(val)) return;
@@ -16495,14 +16518,21 @@
         async function loadLbTurnRankings(metricDef, athleteUuids) {
             const styleFilter = document.getElementById('lbStrokeFilter')?.value || '';
             const key = metricDef.key;
-            let query = supabaseClient.from('v_turn_kpis').select('athlete_uuid, ' + key + ', style, source_date').not(key, 'is', null);
-            const { query: q1, clientFilter: cf1 } = safeInFilter(query, 'athlete_uuid', athleteUuids);
-            query = q1;
-            if (styleFilter) query = query.eq('style', styleFilter);
-            const { data, error } = await query;
-            if (error) throw error;
-            let rows = cf1(data || []);
-            populateLbStrokeOptions(rows);
+            
+            // First, load all data to populate filter options
+            let allQuery = supabaseClient.from('v_turn_kpis').select('athlete_uuid, ' + key + ', style, source_date').not(key, 'is', null);
+            const { query: q0, clientFilter: cf0 } = safeInFilter(allQuery, 'athlete_uuid', athleteUuids);
+            const { data: allData, error: allError } = await q0;
+            if (allError) throw allError;
+            const allRows = cf0(allData || []);
+            
+            // Populate filters with ALL available options
+            populateLbStrokeOptions(allRows);
+            
+            // Now apply filters for display
+            let rows = allRows;
+            if (styleFilter) rows = rows.filter(r => r.style === styleFilter);
+            
             const bestMap = {};
             rows.forEach(r => {
                 const val = parseFloat(r[key]); if (isNaN(val)) return;
@@ -16517,16 +16547,14 @@
         function populateLbDistanceOptions(rows) {
             const sel = document.getElementById('lbDistanceFilter'); if (!sel) return;
             const prev = sel.value;
-            const distances = new Map();
+            const distances = new Set();
             (rows || []).forEach(r => { 
                 if (r.distance_m) { 
-                    const c = (r.course || 'SCY').toUpperCase(); 
-                    const u = c === 'SCY' ? 'Yds' : 'm'; 
-                    distances.set(r.distance_m, r.distance_m + ' ' + u); 
+                    distances.add(r.distance_m); 
                 }
             });
-            const sorted = [...distances.entries()].sort((a, b) => a[0] - b[0]);
-            sel.innerHTML = '<option value="">All Distances</option>' + sorted.map(([k, v]) => '<option value="' + k + '"' + (k == prev ? ' selected' : '') + '>' + v + '</option>').join('');
+            const sorted = [...distances].sort((a, b) => a - b);
+            sel.innerHTML = '<option value="">All Distances</option>' + sorted.map(d => '<option value="' + d + '"' + (d == prev ? ' selected' : '') + '>' + d + '</option>').join('');
         }
 
         function populateLbStrokeOptions(rows) {
@@ -16827,10 +16855,13 @@
 
         function updateCompFilterVisibility() {
             const isRace = compState.board === 'best_race_pb';
+            const isStart = compState.board === 'fastest_start_15m';
             const ew = document.getElementById('compDistanceFilterWrap');
             const sw = document.getElementById('compStrokeFilterWrap');
+            const cw = document.getElementById('compCourseFilterWrap');
             if (ew) ew.style.display = isRace ? '' : 'none';
-            if (sw) sw.style.display = isRace ? '' : 'none';
+            if (sw) sw.style.display = (isRace || isStart) ? '' : 'none';
+            if (cw) cw.style.display = isRace ? '' : 'none';
         }
 
         // ---- Load competition board data ----
@@ -16874,45 +16905,59 @@
             const athleteUuids = compState.athletes.map(a => a.athlete_uuid);
 
             try {
-                let query = supabaseClient.from(boardDef.view).select(boardDef.cols).not(boardDef.key, 'is', null);
-                const { query: q1, clientFilter: cf1 } = safeInFilter(query, 'athlete_uuid', athleteUuids);
-                query = q1;
+                // First, load ALL data to populate filter options
+                let allQuery = supabaseClient.from(boardDef.view).select(boardDef.cols).not(boardDef.key, 'is', null);
+                const { query: q0, clientFilter: cf0 } = safeInFilter(allQuery, 'athlete_uuid', athleteUuids);
+                const { data: allData, error: allError } = await q0;
+                if (allError) throw allError;
+                let allRows = cf0(allData || []);
 
-                // Extra filters for race PB
+                // Populate race-specific filters with ALL available options
                 if (compState.board === 'best_race_pb') {
-                    const distFilter = document.getElementById('compDistanceFilter')?.value || '';
-                    const strokeFilter = document.getElementById('compStrokeFilter')?.value || '';
-                    if (distFilter) query = query.eq('distance_m', parseInt(distFilter));
-                    if (strokeFilter) query = query.eq('style', strokeFilter);
-                }
-
-                const { data, error } = await query;
-                if (error) throw error;
-                let rows = cf1(data || []);
-
-                // Populate race-specific filters
-                if (compState.board === 'best_race_pb') {
-                    // Populate distance filter
+                    // Populate distance filter (just numbers)
                     const distSel = document.getElementById('compDistanceFilter');
                     if (distSel) {
                         const prev = distSel.value;
-                        const dists = new Map();
-                        rows.forEach(r => { 
-                            if (r.distance_m) { 
-                                const c = (r.course || 'SCY').toUpperCase(); 
-                                dists.set(r.distance_m, r.distance_m + (c === 'SCY' ? ' Yds' : 'm')); 
-                            }
-                        });
-                        distSel.innerHTML = '<option value="">All Distances</option>' + [...dists.entries()].sort((a,b) => a[0] - b[0]).map(([k,v]) => '<option value="' + k + '"' + (k == prev ? ' selected' : '') + '>' + v + '</option>').join('');
+                        const dists = new Set();
+                        allRows.forEach(r => { if (r.distance_m) dists.add(r.distance_m); });
+                        distSel.innerHTML = '<option value="">All Distances</option>' + [...dists].sort((a,b) => a - b).map(d => '<option value="' + d + '"' + (d == prev ? ' selected' : '') + '>' + d + '</option>').join('');
                     }
                     // Populate stroke filter
                     const strokeSel = document.getElementById('compStrokeFilter');
                     if (strokeSel) {
                         const prev = strokeSel.value;
                         const strokes = new Set();
-                        rows.forEach(r => { if (r.style) strokes.add(r.style); });
+                        allRows.forEach(r => { if (r.style) strokes.add(r.style); });
                         strokeSel.innerHTML = '<option value="">All Strokes</option>' + [...strokes].sort().map(s => '<option value="' + s + '"' + (s === prev ? ' selected' : '') + '>' + s.charAt(0).toUpperCase() + s.slice(1) + '</option>').join('');
                     }
+                }
+
+                // Populate stroke filter for starts
+                if (compState.board === 'fastest_start_15m') {
+                    const strokeSel = document.getElementById('compStrokeFilter');
+                    if (strokeSel) {
+                        const prev = strokeSel.value;
+                        const strokes = new Set();
+                        allRows.forEach(r => { if (r.style) strokes.add(r.style); });
+                        strokeSel.innerHTML = '<option value="">All Strokes</option>' + [...strokes].sort().map(s => '<option value="' + s + '"' + (s === prev ? ' selected' : '') + '>' + s.charAt(0).toUpperCase() + s.slice(1) + '</option>').join('');
+                    }
+                }
+
+                // Now apply filters for display
+                let rows = allRows;
+                if (compState.board === 'best_race_pb') {
+                    const distFilter = document.getElementById('compDistanceFilter')?.value || '';
+                    const strokeFilter = document.getElementById('compStrokeFilter')?.value || '';
+                    const courseFilter = document.getElementById('compCourseFilter')?.value || '';
+                    if (distFilter) rows = rows.filter(r => r.distance_m == parseInt(distFilter));
+                    if (strokeFilter) rows = rows.filter(r => r.style === strokeFilter);
+                    if (courseFilter) rows = rows.filter(r => r.course === courseFilter);
+                }
+
+                // Apply stroke filter for starts
+                if (compState.board === 'fastest_start_15m') {
+                    const strokeFilter = document.getElementById('compStrokeFilter')?.value || '';
+                    if (strokeFilter) rows = rows.filter(r => r.style === strokeFilter);
                 }
 
                 // Best per athlete

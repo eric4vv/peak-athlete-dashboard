@@ -5047,7 +5047,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.26</span></span>
+                    <span>Analytics <span class="version-tag">v02.27</span></span>
                 </div>
             </div>
 
@@ -15152,6 +15152,34 @@
             dragOffset: { x: 0, y: 0 }
         };
 
+        // ---- v02.27: Resolve request_uuid for video authorization ----
+        // The Edge Function needs requestUuid OR athleteUuid to authorize non-admin video access.
+        // requestUuid comes from race_requests (if video was uploaded via request workflow).
+        // athleteUuid is sent as fallback for videos linked directly by admins.
+        const _requestUuidCache = {};
+        async function resolveRequestUuid(videoKey) {
+            if (!videoKey) return null;
+            if (_requestUuidCache[videoKey] !== undefined) return _requestUuidCache[videoKey];
+            try {
+                const athleteUuid = appState.selectedAthleteUuid || appState.athleteUuid;
+                const { data, error } = await supabaseClient
+                    .from('race_requests')
+                    .select('request_uuid')
+                    .eq('video_key', videoKey)
+                    .eq('athlete_uuid', athleteUuid)
+                    .limit(1)
+                    .maybeSingle();
+                if (data?.request_uuid) {
+                    _requestUuidCache[videoKey] = data.request_uuid;
+                    return data.request_uuid;
+                }
+            } catch (e) {
+                console.warn('[v02.27] resolveRequestUuid error:', e);
+            }
+            _requestUuidCache[videoKey] = null;
+            return null;
+        }
+
         // Check if selected race has video and update UI
         async function checkRaceVideo(raceUuid) {
             const videoTab = document.getElementById('raceVideoTab');
@@ -15180,7 +15208,7 @@
             await loadVideoUrl(videoKey);
         }
 
-        // Load signed URL for video
+        // Load signed URL for video (v02.27: sends requestUuid + athleteUuid for auth)
         async function loadVideoUrl(videoKey) {
             if (!videoKey) return;
             
@@ -15188,13 +15216,20 @@
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (!session) return;
                 
+                // v02.27: Resolve requestUuid (may be null if video wasn't from a request)
+                const requestUuid = await resolveRequestUuid(videoKey);
+                // v02.27: Always send athleteUuid as fallback for direct-linked videos
+                const athleteUuid = appState.selectedAthleteUuid || appState.athleteUuid;
+                
+                console.log('[v02.27] loadVideoUrl sending:', { videoKey, requestUuid, athleteUuid });
+                
                 const response = await fetch(`${SUPABASE_URL}/functions/v1/r2-download-url`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${session.access_token}`
                     },
-                    body: JSON.stringify({ videoKey })
+                    body: JSON.stringify({ videoKey, requestUuid, athleteUuid })
                 });
                 
                 if (!response.ok) {
@@ -15402,13 +15437,17 @@
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (!session) return;
                     
+                    // v02.27: Send requestUuid + athleteUuid for non-admin auth
+                    const requestUuid = await resolveRequestUuid(videoKey);
+                    const athleteUuid = appState.selectedAthleteUuid || appState.athleteUuid;
+                    
                     const response = await fetch(`${SUPABASE_URL}/functions/v1/r2-download-url`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${session.access_token}`
                         },
-                        body: JSON.stringify({ videoKey })
+                        body: JSON.stringify({ videoKey, requestUuid, athleteUuid })
                     });
                     
                     if (response.ok) {
@@ -15545,13 +15584,17 @@
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (!session) return;
                     
+                    // v02.27: Send requestUuid + athleteUuid for non-admin auth
+                    const requestUuid = await resolveRequestUuid(videoKey);
+                    const athleteUuid = appState.selectedAthleteUuid || appState.athleteUuid;
+                    
                     const response = await fetch(`${SUPABASE_URL}/functions/v1/r2-download-url`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${session.access_token}`
                         },
-                        body: JSON.stringify({ videoKey })
+                        body: JSON.stringify({ videoKey, requestUuid, athleteUuid })
                     });
                     
                     if (response.ok) {

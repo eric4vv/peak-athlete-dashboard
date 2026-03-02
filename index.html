@@ -7461,7 +7461,7 @@
 
             try {
                 const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: 'https://wbqgshvbopfukwyqsndq.supabase.co/functions/v1/password-reset-page'
+                    redirectTo: window.location.origin + window.location.pathname
                 });
                 if (error) throw error;
                 successEl.textContent = 'Password reset link sent! Check your email inbox (and spam folder).';
@@ -7702,46 +7702,6 @@
         }
 
         async function checkSession() {
-            // Check if this is a password recovery redirect
-            // Supabase redirects with hash fragments: #access_token=...&type=recovery
-            const hash = window.location.hash || '';
-            const search = window.location.search || '';
-            const isRecovery = hash.includes('type=recovery') || search.includes('type=recovery');
-            
-            if (isRecovery) {
-                // Keep login screen visible - onAuthStateChange will handle PASSWORD_RECOVERY
-                document.getElementById('loginScreen').style.display = 'flex';
-                console.log('[checkSession] Recovery redirect detected, waiting for PASSWORD_RECOVERY event');
-                
-                // Fallback: if PASSWORD_RECOVERY doesn't fire within 3 seconds,
-                // try to get the session and show the modal manually
-                setTimeout(async () => {
-                    if (!_passwordRecoverySession) {
-                        console.log('[checkSession] PASSWORD_RECOVERY event did not fire, attempting manual recovery');
-                        const { data: { session } } = await supabaseClient.auth.getSession();
-                        if (session) {
-                            _passwordRecoverySession = session;
-                            document.getElementById('passwordResetModal').classList.add('active');
-                            document.getElementById('loginForm').style.display = 'none';
-                            document.getElementById('signupForm').style.display = 'none';
-                            document.getElementById('forgotForm').style.display = 'none';
-                            document.getElementById('resetNewPassword').value = '';
-                            document.getElementById('resetConfirmPassword').value = '';
-                            document.getElementById('resetPasswordError').style.display = 'none';
-                            document.getElementById('resetPasswordSuccess').style.display = 'none';
-                            document.getElementById('resetPasswordSubmitBtn').disabled = false;
-                            document.getElementById('resetPasswordSubmitBtn').textContent = 'Update Password';
-                            document.getElementById('resetPasswordSubmitBtn').style.display = '';
-                        }
-                        // Clean up the URL
-                        if (window.location.hash) {
-                            history.replaceState(null, '', window.location.pathname + window.location.search);
-                        }
-                    }
-                }, 3000);
-                return;
-            }
-            
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 appState.user = session.user;

@@ -7310,7 +7310,7 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndicWdzaHZib3BmdWt3eXFzbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMDk4OTAsImV4cCI6MjA4NDU4NTg5MH0.lmbqvVTyfmlkgkUCo8dAGZuK7Z9tGXUA4Fq9FAsmvhU';
         
         // Auth email redirects — always use the Wix-hosted page, not the raw iframe URL
-        const AUTH_REDIRECT_URL = 'https://www.mypeakathlete.com/blank-2';
+        const AUTH_REDIRECT_URL = 'https://www.mypeakathlete.com/blank-3';
         
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -7461,7 +7461,7 @@
 
             try {
                 const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: AUTH_REDIRECT_URL
+                    redirectTo: 'https://wbqgshvbopfukwyqsndq.supabase.co/functions/v1/password-reset-page'
                 });
                 if (error) throw error;
                 successEl.textContent = 'Password reset link sent! Check your email inbox (and spam folder).';
@@ -16887,7 +16887,7 @@
                             </ul>
                         </div>
                         <button class="btn btn-primary" style="width:100%; padding:14px; font-size:15px; background:linear-gradient(135deg, var(--accent-purple), var(--accent-blue));" onclick="closeCompetitionProModal(); openSubscriptionModal();">
-                            Upgrade to Pro - $9.99/month
+                            Upgrade to Pro - $19.99/month
                         </button>
                         <button class="btn" style="width:100%; padding:12px; font-size:13px; margin-top:10px; background:transparent; border:1px solid var(--border-color); color:var(--text-muted);" onclick="closeCompetitionProModal()">
                             Maybe Later

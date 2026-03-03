@@ -7540,17 +7540,11 @@
                 successEl.style.display = 'block';
                 btn.style.display = 'none';
 
-                // Sign out the recovery session and redirect to login after a short delay
+                // Sign out the recovery session and redirect to Wix login
                 setTimeout(async () => {
                     await supabaseClient.auth.signOut();
                     _passwordRecoverySession = null;
-                    document.getElementById('passwordResetModal').classList.remove('active');
-                    toggleAuthMode('login');
-                    // Show success message on login form
-                    const loginSuccess = document.getElementById('signupSuccess');
-                    loginSuccess.textContent = 'Password updated! Sign in with your new password.';
-                    loginSuccess.classList.add('show');
-                    loginSuccess.style.display = 'block';
+                    window.location.href = 'https://www.mypeakathlete.com/blank-3';
                 }, 2000);
 
             } catch (err) {
@@ -7564,8 +7558,11 @@
         // Close reset modal on overlay click
         document.getElementById('passwordResetModal')?.addEventListener('click', (e) => {
             if (e.target.id === 'passwordResetModal') {
-                document.getElementById('passwordResetModal').classList.remove('active');
-                toggleAuthMode('login');
+                // Sign out recovery session and redirect to Wix login
+                supabaseClient.auth.signOut().then(() => {
+                    _passwordRecoverySession = null;
+                    window.location.href = 'https://www.mypeakathlete.com/blank-3';
+                });
             }
         });
 

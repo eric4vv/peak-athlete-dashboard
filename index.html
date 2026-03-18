@@ -19365,16 +19365,16 @@
             const page = appState.currentPage;
             let ctx = { module: null, primary: null, compare: null, label: '' };
 
-            if (page === 'race' || page === 'raceAnalysis') {
+            if (page === 'races' || page === 'raceAnalysis') {
                 ctx.module = 'race';
                 ctx.primary = pulseGetRaceData('primary');
                 ctx.compare = pulseGetRaceData('compare');
                 ctx.label = ctx.primary ? ('Race: ' + (ctx.primary.event || 'Selected trial')) : 'Race module (no trial selected)';
-            } else if (page === 'start' || page === 'startAnalysis') {
+            } else if (page === 'starts' || page === 'startAnalysis') {
                 ctx.module = 'start';
                 ctx.primary = pulseGetStartData();
                 ctx.label = ctx.primary ? ('Start: ' + (ctx.primary.event || 'Selected trial')) : 'Start module (no trial selected)';
-            } else if (page === 'turn' || page === 'turnAnalysis') {
+            } else if (page === 'turns' || page === 'turnAnalysis') {
                 ctx.module = 'turn';
                 ctx.primary = pulseGetTurnData();
                 ctx.label = ctx.primary ? ('Turn: ' + (ctx.primary.event || 'Selected trial')) : 'Turn module (no trial selected)';
@@ -19398,19 +19398,33 @@
         function pulseGetRaceData(type) {
             try {
                 if (typeof raceModuleState === 'undefined') return null;
-                if (type === 'primary') {
-                    const r = getPrimaryRace();
-                    if (!r) return null;
-                    return { event: raceLabel(r), date: r.source_date, data: r, splits: r.splits || [] };
-                } else if (type === 'compare') {
-                    const r = getCompareRace();
-                    if (!r) return null;
-                    return { event: raceLabel(r), date: r.source_date, data: r, splits: r.splits || [] };
-                }
+                const r = type === 'primary' ? getPrimaryRace() : type === 'compare' ? getCompareRace() : null;
+                if (!r) return null;
+                const mj = r.metrics_json || r.mj || {};
+                return {
+                    event: raceLabel(r),
+                    date: r.source_date,
+                    course: r.course || mj.course || 'SCY',
+                    runtime: mj.Runtime || mj.runtime || '',
+                    distance: mj.Distance || mj.distance || '',
+                    style: mj.Style || mj.style || '',
+                    start: {
+                        onBlock: parseFloat(mj['On-block phase']) || null,
+                        flight: parseFloat(mj['Flight phase']) || null,
+                        underwater: parseFloat(mj['Underwater phase']) || null,
+                        surfaceBreak: parseFloat(mj['Surface break']) || null,
+                        leavingBlock: parseFloat(mj['Leaving block']) || null,
+                        dip: parseFloat(mj['Dip']) || null,
+                    },
+                    splits: pulseParseSplits(mj),
+                    strokeRates: pulseParseStrokeRates(mj),
+                    strokeCounts: pulseParseStrokeCounts(mj),
+                    derived: pulseDeriveMetrics(r),
+                };
             } catch (e) {
                 console.log('[Pulse] Race data gather error:', e);
+                return null;
             }
-            return null;
         }
 
         function pulseGetStartData() {
@@ -19418,7 +19432,8 @@
                 if (typeof startModuleState === 'undefined') return null;
                 const s = getStartPrimary();
                 if (!s) return null;
-                return { event: startLabel(s), date: s.source_date, data: s };
+                const mj = s.metrics_json || s.mj || {};
+                return { event: startLabel(s), date: s.source_date, data: mj };
             } catch (e) { return null; }
         }
 
@@ -19427,8 +19442,149 @@
                 if (typeof turnModuleState === 'undefined') return null;
                 const t = getTurnPrimary();
                 if (!t) return null;
-                return { event: turnLabel(t), date: t.source_date, data: t };
+                const mj = t.metrics_json || t.mj || {};
+                return { event: turnLabel(t), date: t.source_date, data: mj };
             } catch (e) { return null; }
+        }
+
+        // --- Parse raw metrics_json into structured arrays ---
+        function pulseParseSplits(mj) {
+            const splits = [];
+            for (let d = 5; d <= 1500; d += 5) {
+                const v = parseFloat(mj[`Split ${d} m`]);
+                if (!isNaN(v) && v > 0) splits.push({ distance: d, time: v });
+            }
+            return splits;
+        }
+
+        function pulseParseStrokeRates(mj) {
+            const rates = [];
+            for (let d = 5; d <= 1500; d += 5) {
+                const v = parseFloat(mj[`Stroke rate ${d} m`]);
+                if (!isNaN(v) && v > 0) rates.push({ distance: d, rate: v });
+            }
+            return rates;
+        }
+
+        function pulseParseStrokeCounts(mj) {
+            const counts = [];
+            for (let l = 1; l <= 60; l++) {
+                const v = parseInt(mj[`Stroke count lap ${l}`]);
+                if (!isNaN(v) && v > 0) counts.push({ lap: l, count: v });
+            }
+            return counts;
+        }
+
+        // --- Calculate derived metrics from raw data ---
+        function pulseDeriveMetrics(r) {
+            const mj = r.metrics_json || r.mj || {};
+            const derived = {};
+            try {
+                const splits = pulseParseSplits(mj);
+                const counts = pulseParseStrokeCounts(mj);
+                const lapLen = parseInt(mj['Lap length'] || mj.lap_length) || 25;
+
+                // Lap splits
+                if (splits.length > 0) {
+                    const lapSplits = [];
+                    let prevTime = 0;
+                    for (const s of splits) {
+                        if (s.distance % lapLen === 0) {
+                            lapSplits.push({ lap: lapSplits.length + 1, distance: s.distance, cumulative: s.time, split: parseFloat((s.time - prevTime).toFixed(2)) });
+                            prevTime = s.time;
+                        }
+                    }
+                    derived.lapSplits = lapSplits;
+
+                    // Half split
+                    const totalDist = parseInt(mj.Distance || mj.distance) || 0;
+                    if (totalDist > 0 && lapSplits.length >= 2) {
+                        const halfDist = totalDist / 2;
+                        const halfLap = lapSplits.find(l => l.distance === halfDist);
+                        const lastLap = lapSplits[lapSplits.length - 1];
+                        if (halfLap && lastLap) {
+                            const first = halfLap.cumulative;
+                            const second = parseFloat((lastLap.cumulative - halfLap.cumulative).toFixed(2));
+                            derived.halfSplit = { first, second, diff: parseFloat((second - first).toFixed(2)), type: second > first ? 'positive' : second < first ? 'negative' : 'even' };
+                        }
+                    }
+                }
+
+                // DPS per lap
+                if (derived.lapSplits && counts.length > 0) {
+                    derived.dpsPerLap = counts.map((c, i) => ({
+                        lap: c.lap,
+                        strokes: c.count,
+                        dps: parseFloat((lapLen / c.count).toFixed(2))
+                    }));
+                }
+
+                // Velocity per segment (using lap splits)
+                if (derived.lapSplits) {
+                    derived.velocityPerLap = derived.lapSplits.map(l => ({
+                        lap: l.lap,
+                        velocity: parseFloat((lapLen / l.split).toFixed(2)),
+                        time: l.split
+                    }));
+                }
+
+            } catch (e) {
+                console.log('[Pulse] Derived metrics error:', e);
+            }
+            return derived;
+        }
+
+        // --- Fetch last 3 trials for trending (same event, same course) ---
+        async function pulseFetchTrendData() {
+            try {
+                const r = getPrimaryRace ? getPrimaryRace() : null;
+                if (!r) return null;
+                const mj = r.metrics_json || r.mj || {};
+                const dist = mj.Distance || mj.distance;
+                const style = mj.Style || mj.style;
+                const course = r.course || 'SCY';
+
+                if (!dist || !style) return null;
+
+                // Query last 3 races for this athlete, same event, same course
+                const athleteUuid = appState.role === 'coach' && appState.selectedAthleteUuid
+                    ? appState.selectedAthleteUuid
+                    : appState.athleteUuid;
+
+                const { data, error } = await supabaseClient
+                    .from('race_raw')
+                    .select('*')
+                    .eq('athlete_uuid', athleteUuid)
+                    .eq('course', course)
+                    .order('source_date', { ascending: false })
+                    .limit(10); // fetch more then filter client-side
+
+                if (error || !data) return null;
+
+                // Filter to matching distance + style
+                const matching = data.filter(race => {
+                    const rmj = race.metrics_json || {};
+                    return String(rmj.Distance || rmj.distance) === String(dist)
+                        && String(rmj.Style || rmj.style).toLowerCase() === String(style).toLowerCase();
+                }).slice(0, 3);
+
+                if (matching.length < 2) return null; // need at least 2 to show trend
+
+                return matching.map(race => {
+                    const rmj = race.metrics_json || {};
+                    return {
+                        date: race.source_date,
+                        runtime: rmj.Runtime || rmj.runtime || '',
+                        splits: pulseParseSplits(rmj),
+                        strokeRates: pulseParseStrokeRates(rmj),
+                        strokeCounts: pulseParseStrokeCounts(rmj),
+                        derived: pulseDeriveMetrics(race),
+                    };
+                });
+            } catch (e) {
+                console.log('[Pulse] Trend fetch error:', e);
+                return null;
+            }
         }
 
         // --- Prompt State Management ---
@@ -19498,12 +19654,26 @@
 
                 if (!token) throw new Error('Not authenticated');
 
+                // Fetch trend data if needed (last 3 same-event trials)
+                let trendData = null;
+                if (promptType === 'trend') {
+                    trendData = await pulseFetchTrendData();
+                    if (!trendData) {
+                        pulseRemoveTyping(typingId);
+                        pulseAddMessage('ai', 'Not enough data to show trends. I need at least 2 races of the same event and course to analyze trends. Try selecting a race first, then click "How am I trending?"');
+                        pulseState.loading = false;
+                        pulseUpdatePromptStates();
+                        return;
+                    }
+                }
+
                 const payload = {
                     prompt_type: promptType,
                     context: {
                         module: ctx.module,
                         primary: ctx.primary,
                         compare: ctx.compare,
+                        trend: trendData,
                         role: appState.role,
                         athlete_name: appState.userProfile?.first_name || 'Athlete',
                     },

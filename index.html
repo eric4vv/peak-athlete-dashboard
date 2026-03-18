@@ -4735,6 +4735,395 @@
             }
         }
 
+        /* ============================================
+           PULSE AI COACH (v02.29)
+           ============================================ */
+        
+        /* Floating Button */
+        .pulse-fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7C3AED, #A78BFA);
+            border: none;
+            cursor: pointer;
+            z-index: 1550;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4), 0 0 0 0 rgba(124, 58, 237, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+        .pulse-fab:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 28px rgba(124, 58, 237, 0.55);
+        }
+        .pulse-fab:active { transform: scale(0.95); }
+        .pulse-fab svg { width: 26px; height: 26px; color: #fff; fill: none; stroke: currentColor; stroke-width: 1.8; }
+        .pulse-fab.is-open { transform: rotate(90deg) scale(1); }
+        .pulse-fab.is-open:hover { transform: rotate(90deg) scale(1.08); }
+        
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4), 0 0 0 0 rgba(124, 58, 237, 0.3); }
+            50% { box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4), 0 0 0 10px rgba(124, 58, 237, 0); }
+        }
+
+        /* Quota badge on FAB */
+        .pulse-fab-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            background: var(--accent-green);
+            color: #000;
+            font-size: 10px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+            line-height: 1;
+        }
+        .pulse-fab-badge.exhausted { background: var(--accent-red); color: #fff; }
+        .pulse-fab-badge.locked { background: var(--text-muted); color: #fff; }
+
+        /* Drawer Overlay */
+        .pulse-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1600;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .pulse-overlay.open { opacity: 1; visibility: visible; }
+
+        /* Drawer */
+        .pulse-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 420px;
+            max-width: 100vw;
+            background: var(--bg-secondary);
+            z-index: 1700;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 1px solid var(--border-color);
+        }
+        .pulse-drawer.open { transform: translateX(0); }
+
+        /* Drawer Header */
+        .pulse-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            flex-shrink: 0;
+        }
+        .pulse-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .pulse-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #7C3AED, #A78BFA);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pulse-logo svg { width: 18px; height: 18px; color: #fff; fill: none; stroke: currentColor; stroke-width: 2; }
+        .pulse-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: 0.5px;
+        }
+        .pulse-quota-tag {
+            font-size: 11px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-green);
+            background: rgba(0, 230, 138, 0.1);
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 230, 138, 0.2);
+        }
+        .pulse-quota-tag.low { color: var(--accent-orange); background: rgba(245,166,35,0.1); border-color: rgba(245,166,35,0.2); }
+        .pulse-quota-tag.exhausted { color: var(--accent-red); background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.2); }
+        .pulse-close-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .pulse-close-btn:hover { background: var(--bg-input); color: var(--text-primary); }
+
+        /* Messages Area */
+        .pulse-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+        .pulse-messages::-webkit-scrollbar { width: 4px; }
+        .pulse-messages::-webkit-scrollbar-track { background: transparent; }
+        .pulse-messages::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+        /* Welcome State */
+        .pulse-welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            text-align: center;
+            padding: 40px 24px;
+            gap: 12px;
+        }
+        .pulse-welcome-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(167,139,250,0.1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+        .pulse-welcome-icon svg { width: 32px; height: 32px; color: var(--accent-purple); fill: none; stroke: currentColor; stroke-width: 1.5; }
+        .pulse-welcome h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        .pulse-welcome p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 0;
+            line-height: 1.5;
+            max-width: 300px;
+        }
+
+        /* Message Bubbles */
+        .pulse-msg {
+            display: flex;
+            gap: 10px;
+            max-width: 100%;
+        }
+        .pulse-msg.user { flex-direction: row-reverse; }
+        .pulse-msg-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .pulse-msg.ai .pulse-msg-avatar {
+            background: linear-gradient(135deg, #7C3AED, #A78BFA);
+            color: #fff;
+        }
+        .pulse-msg.ai .pulse-msg-avatar svg { width: 16px; height: 16px; color: #fff; fill: none; stroke: currentColor; stroke-width: 2; }
+        .pulse-msg.user .pulse-msg-avatar {
+            background: var(--accent-blue);
+            color: #000;
+        }
+        .pulse-msg-bubble {
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            max-width: 85%;
+        }
+        .pulse-msg.ai .pulse-msg-bubble {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-top-left-radius: 4px;
+        }
+        .pulse-msg.user .pulse-msg-bubble {
+            background: rgba(124, 58, 237, 0.15);
+            border: 1px solid rgba(124, 58, 237, 0.25);
+            border-top-right-radius: 4px;
+        }
+        .pulse-msg-bubble strong { color: var(--accent-blue); font-weight: 600; }
+        .pulse-msg-bubble em { color: var(--accent-purple); }
+
+        /* Typing indicator */
+        .pulse-typing {
+            display: flex;
+            gap: 4px;
+            padding: 4px 0;
+        }
+        .pulse-typing span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            animation: pulse-dot 1.4s ease-in-out infinite;
+        }
+        .pulse-typing span:nth-child(2) { animation-delay: 0.2s; }
+        .pulse-typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes pulse-dot {
+            0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+            40% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Prompts Area */
+        .pulse-prompts {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            flex-shrink: 0;
+        }
+        .pulse-prompts-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+        .pulse-prompts-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .pulse-prompt-btn {
+            padding: 7px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .pulse-prompt-btn:hover {
+            background: rgba(124, 58, 237, 0.1);
+            border-color: rgba(124, 58, 237, 0.3);
+            color: var(--accent-purple);
+        }
+        .pulse-prompt-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+        .pulse-prompt-btn:disabled:hover {
+            background: var(--bg-card);
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+        .pulse-prompt-btn svg { width: 14px; height: 14px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; }
+
+        /* Context indicator */
+        .pulse-context-bar {
+            padding: 8px 20px;
+            background: rgba(124, 58, 237, 0.06);
+            border-top: 1px solid rgba(124, 58, 237, 0.12);
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .pulse-context-bar svg { width: 12px; height: 12px; flex-shrink: 0; color: var(--accent-purple); fill: none; stroke: currentColor; stroke-width: 2; }
+        .pulse-context-bar span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Locked state */
+        .pulse-locked {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            text-align: center;
+            padding: 40px 24px;
+            gap: 16px;
+        }
+        .pulse-locked-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            background: rgba(85, 94, 114, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pulse-locked-icon svg { width: 32px; height: 32px; color: var(--text-muted); fill: none; stroke: currentColor; stroke-width: 1.5; }
+        .pulse-locked h3 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0; }
+        .pulse-locked p { font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.5; max-width: 280px; }
+        .pulse-upgrade-btn {
+            padding: 10px 28px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-green), #00B86B);
+            border: none;
+            color: #000;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pulse-upgrade-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,230,138,0.3); }
+
+        /* Disclaimer */
+        .pulse-disclaimer {
+            padding: 12px 20px;
+            font-size: 10px;
+            color: var(--text-muted);
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+            flex-shrink: 0;
+            line-height: 1.4;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .pulse-fab { bottom: 16px; right: 16px; width: 50px; height: 50px; }
+            .pulse-fab svg { width: 22px; height: 22px; }
+            .pulse-drawer { width: 100vw; }
+            .pulse-prompt-btn { font-size: 11px; padding: 6px 12px; }
+        }
+        @media (max-width: 480px) {
+            .pulse-fab { bottom: 12px; right: 12px; }
+        }
+
     </style>
 </head>
 <body>
@@ -5047,7 +5436,7 @@
                 </svg>
                 <div class="sidebar-logo-text">
                     <h2>Peak Athlete</h2>
-                    <span>Analytics <span class="version-tag">v02.28</span></span>
+                    <span>Analytics <span class="version-tag">v02.29</span></span>
                 </div>
             </div>
 
@@ -5113,7 +5502,7 @@
                         <div class="theme-toggle-knob"></div>
                     </button>
                 </div>
-                <div class="user-info">
+                <div class="user-info" style="position:relative;">
                     <div class="user-avatar" id="userAvatar">--</div>
                     <div class="user-details">
                         <h4 id="userName">Loading...</h4>
@@ -5122,6 +5511,9 @@
                             <span class="role-badge" id="subscriptionBadge" style="display:none; background:linear-gradient(135deg,var(--accent-green),#00B86B); color:#fff;">Pro</span>
                         </div>
                     </div>
+                    <button onclick="openSubscriptionModal()" title="Account & Subscription" style="position:absolute; right:0; top:50%; transform:translateY(-50%); width:30px; height:30px; border-radius:8px; border:1px solid var(--border-color); background:transparent; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;" onmouseover="this.style.color='var(--text-primary)';this.style.borderColor='var(--border-hover)'" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border-color)'">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    </button>
                 </div>
                 <!-- Analysis Usage (Pro users only) -->
                 <div class="sidebar-usage" id="sidebarUsage" style="display:none;">
@@ -5133,13 +5525,19 @@
                         <a href="#" onclick="showBuyOptions(event)" class="sidebar-usage-buy">+ Buy</a>
                     </div>
                 </div>
+                <!-- Subscription button: visible for free/trial, hidden for Pro (gear handles Manage) -->
                 <div class="nav-item" id="subscriptionBtn" onclick="openSubscriptionModal()" style="background:linear-gradient(135deg,var(--accent-green),#00B86B); color:#fff; font-weight:500;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
                     <span id="subscriptionBtnText">Upgrade</span>
                 </div>
-                <div class="nav-item" id="logoutBtn">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                    Sign Out
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <div class="nav-item" id="logoutBtn" style="flex:1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        Sign Out
+                    </div>
+                    <a href="mailto:support@mypeakathlete.com" title="Contact Support" style="width:36px; height:36px; border-radius:8px; border:1px solid var(--border-color); display:flex; align-items:center; justify-content:center; color:var(--text-muted); text-decoration:none; transition:all 0.2s; flex-shrink:0;" onmouseover="this.style.color='var(--accent-blue)';this.style.borderColor='var(--border-hover)'" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border-color)'">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    </a>
                 </div>
             </div>
         </nav>
@@ -7788,8 +8186,7 @@
                 loadHomeData();
                 loadSubscription();
                 checkAdminStatus();
-                
-                // Check if we should start welcome tour (v02.24)
+                setTimeout(initPulse, 500); // Initialize Pulse after subscription loads (v02.29)
                 checkAndStartTour();
                 
             } catch (e) {
@@ -7984,24 +8381,29 @@
             if (!sub || sub.plan_id === 'free' || !sub.is_active) {
                 // Free user - show upgrade button
                 badge.style.display = 'none';
+                btn.style.display = 'flex';
                 btn.style.background = 'linear-gradient(135deg, var(--accent-green), #00B86B)';
+                btn.style.color = '#fff';
+                btn.style.fontWeight = '500';
                 btnText.textContent = 'Upgrade';
             } else if (sub.status === 'trialing') {
-                // Trial user
+                // Trial user - show compact trial badge
                 badge.textContent = 'Trial';
                 badge.style.display = 'inline-block';
                 badge.style.background = 'linear-gradient(135deg, var(--accent-orange), #F5A623)';
+                btn.style.display = 'flex';
                 btn.style.background = 'var(--card-bg)';
+                btn.style.color = '';
+                btn.style.fontWeight = '';
                 const trialEndDate = sub.trial_end ? new Date(sub.trial_end) : null;
                 const daysRemaining = trialEndDate ? Math.max(0, Math.ceil((trialEndDate - new Date()) / (1000 * 60 * 60 * 24))) : 0;
                 btnText.textContent = daysRemaining + 'd left';
             } else {
-                // Paid user
+                // Paid user - hide button (gear icon handles Manage)
                 badge.textContent = 'Pro';
                 badge.style.display = 'inline-block';
                 badge.style.background = 'linear-gradient(135deg, var(--accent-green), #00B86B)';
-                btn.style.background = 'var(--card-bg)';
-                btnText.textContent = 'Manage';
+                btn.style.display = 'none';
             }
         }
         
@@ -8412,6 +8814,7 @@
             loadHomeData();
             loadSubscription(); // Load subscription status
             checkAdminStatus(); // Check if user is admin (v02.14)
+            initPulse(); // Initialize Pulse AI Coach (v02.29)
             
             // Check if we should start welcome tour (v02.24)
             checkAndStartTour();
@@ -17972,7 +18375,7 @@
                     .from('race_requests')
                     .select(`
                         *,
-                        athletes!inner(first_name, last_name, team_uuid, teams(team_name))
+                        athletes!inner(first_name, last_name, email, team_uuid, teams(team_name))
                     `)
                     .order('created_at', { ascending: false });
                 
@@ -18161,6 +18564,7 @@
         async function saveRequestStatus() {
             if (!currentEditingRequest) return;
             
+            const requestUuid = currentEditingRequest; // capture before modal close
             const newStatus = document.getElementById('adminStatusSelect').value;
             const notes = document.getElementById('adminNotesInput').value;
             
@@ -18178,7 +18582,7 @@
                 const { error } = await supabaseClient
                     .from('race_requests')
                     .update(updateData)
-                    .eq('request_uuid', currentEditingRequest);
+                    .eq('request_uuid', requestUuid);
                 
                 if (error) throw error;
                 
@@ -18186,6 +18590,47 @@
                 closeStatusModal();
                 loadAdminRequests();
                 updateAdminPendingBadge();
+                
+                // v02.29: Send email notification when completed
+                if (newStatus === 'completed') {
+                    try {
+                        // Find the request details from cached admin data
+                        const req = adminState.allRequests?.find(r => r.request_uuid === requestUuid);
+                        if (req && req.athletes) {
+                            const emailTo = req.athletes.email;
+                            
+                            if (emailTo) {
+                                const session = await supabaseClient.auth.getSession();
+                                const token = session.data.session?.access_token;
+                                fetch(SUPABASE_URL + '/functions/v1/notify-analysis-complete', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': 'Bearer ' + token,
+                                        'apikey': SUPABASE_KEY
+                                    },
+                                    body: JSON.stringify({
+                                        athleteEmail: emailTo,
+                                        athleteName: (req.athletes.first_name + ' ' + req.athletes.last_name).trim(),
+                                        eventName: req.event_name || '',
+                                        distance: req.distance_m,
+                                        stroke: req.style,
+                                        course: req.course,
+                                        adminNotes: notes || '',
+                                        requestId: req.request_uuid
+                                    })
+                                }).then(r => {
+                                    if (r.ok) console.log('[v02.29] Completion email sent to', emailTo);
+                                    else console.warn('[v02.29] Completion email failed:', r.status);
+                                }).catch(e => console.warn('[v02.29] Completion email error:', e));
+                            } else {
+                                console.warn('[v02.29] No email on file for athlete:', req.athlete_uuid);
+                            }
+                        }
+                    } catch (notifyErr) {
+                        console.warn('[v02.29] Notification error (non-fatal):', notifyErr);
+                    }
+                }
                 
             } catch (e) {
                 console.error('Error updating status:', e);
@@ -18770,6 +19215,453 @@
         }
 
         // ============================================
+        // PULSE AI COACH (v02.29)
+        // ============================================
+        let pulseState = {
+            open: false,
+            loading: false,
+            messages: [],          // { role: 'user'|'ai', text: '' }
+            quota: { allowed: false, used: 0, limit: 0, remaining: 0, reason: 'unknown' },
+            hasAccess: false,      // feature flag OR pro user
+            context: null,         // gathered from active module
+            activeModule: null,    // 'race', 'start', 'turn'
+        };
+
+        // --- Initialization (called from showDashboard) ---
+        async function initPulse() {
+            try {
+                // Check feature flag first (soft launch)
+                const { data: flagData } = await supabaseClient
+                    .from('ai_coach_access')
+                    .select('user_id')
+                    .eq('user_id', appState.user.id)
+                    .single();
+
+                const hasFlagAccess = !!flagData;
+
+                // Check if Pro user
+                const isPro = isProUser();
+
+                // Access = feature flag ONLY during soft launch
+                // PUBLIC LAUNCH: change to hasFlagAccess || isPro
+                pulseState.hasAccess = hasFlagAccess;
+
+                // Load quota if has access
+                if (pulseState.hasAccess) {
+                    await pulseLoadQuota();
+                }
+
+                // Show FAB only for flagged users during soft launch
+                // PUBLIC LAUNCH: show for all users (move outside if block)
+                if (pulseState.hasAccess) {
+                    const fab = document.getElementById('pulseFab');
+                    if (fab) fab.style.display = 'flex';
+                }
+
+                pulseUpdateFabBadge();
+                pulseUpdateDrawerState();
+
+            } catch (e) {
+                console.log('[Pulse] Init error:', e.message);
+            }
+        }
+
+        async function pulseLoadQuota() {
+            try {
+                const { data, error } = await supabaseClient.rpc('check_ai_quota', {
+                    p_user_id: appState.user.id
+                });
+                if (error) throw error;
+                if (data) {
+                    pulseState.quota = data;
+                }
+            } catch (e) {
+                console.error('[Pulse] Quota load error:', e);
+            }
+        }
+
+        // --- Toggle / Open / Close ---
+        function pulseToggle() {
+            if (pulseState.open) pulseClose();
+            else pulseOpen();
+        }
+
+        function pulseOpen() {
+            pulseState.open = true;
+            document.getElementById('pulseOverlay').classList.add('open');
+            document.getElementById('pulseDrawer').classList.add('open');
+            document.getElementById('pulseFab').classList.add('is-open');
+            pulseGatherContext();
+            pulseUpdatePromptStates();
+        }
+
+        function pulseClose() {
+            pulseState.open = false;
+            document.getElementById('pulseOverlay').classList.remove('open');
+            document.getElementById('pulseDrawer').classList.remove('open');
+            document.getElementById('pulseFab').classList.remove('is-open');
+        }
+
+        // --- FAB Badge ---
+        function pulseUpdateFabBadge() {
+            const badge = document.getElementById('pulseFabBadge');
+            if (!badge) return;
+
+            if (!pulseState.hasAccess) {
+                badge.textContent = '';
+                badge.className = 'pulse-fab-badge locked';
+                badge.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+                badge.style.display = 'flex';
+                return;
+            }
+
+            const rem = pulseState.quota.remaining || 0;
+            badge.innerHTML = '';
+            badge.textContent = rem;
+            badge.className = 'pulse-fab-badge' + (rem <= 0 ? ' exhausted' : '');
+            badge.style.display = 'flex';
+        }
+
+        // --- Drawer State ---
+        function pulseUpdateDrawerState() {
+            const welcome = document.getElementById('pulseWelcome');
+            const locked = document.getElementById('pulseLocked');
+            const prompts = document.getElementById('pulsePrompts');
+            const contextBar = document.getElementById('pulseContextBar');
+            const msgs = document.getElementById('pulseMessages');
+            const quotaTag = document.getElementById('pulseQuotaTag');
+
+            if (!pulseState.hasAccess) {
+                // Locked
+                if (welcome) welcome.style.display = 'none';
+                if (locked) locked.style.display = 'flex';
+                if (prompts) prompts.style.display = 'none';
+                if (contextBar) contextBar.style.display = 'none';
+                if (quotaTag) { quotaTag.textContent = 'Pro'; quotaTag.className = 'pulse-quota-tag exhausted'; }
+                return;
+            }
+
+            if (locked) locked.style.display = 'none';
+            if (prompts) prompts.style.display = 'block';
+
+            // Quota tag
+            const rem = pulseState.quota.remaining || 0;
+            const lim = pulseState.quota.limit || 50;
+            if (quotaTag) {
+                quotaTag.textContent = rem + ' / ' + lim;
+                quotaTag.className = 'pulse-quota-tag' + (rem <= 5 ? (rem <= 0 ? ' exhausted' : ' low') : '');
+            }
+
+            // Welcome vs messages
+            if (pulseState.messages.length === 0) {
+                if (welcome) welcome.style.display = 'flex';
+            } else {
+                if (welcome) welcome.style.display = 'none';
+            }
+        }
+
+        // --- Context Gathering ---
+        function pulseGatherContext() {
+            const page = appState.currentPage;
+            let ctx = { module: null, primary: null, compare: null, label: '' };
+
+            if (page === 'race' || page === 'raceAnalysis') {
+                ctx.module = 'race';
+                ctx.primary = pulseGetRaceData('primary');
+                ctx.compare = pulseGetRaceData('compare');
+                ctx.label = ctx.primary ? ('Race: ' + (ctx.primary.event || 'Selected trial')) : 'Race module (no trial selected)';
+            } else if (page === 'start' || page === 'startAnalysis') {
+                ctx.module = 'start';
+                ctx.primary = pulseGetStartData();
+                ctx.label = ctx.primary ? ('Start: ' + (ctx.primary.event || 'Selected trial')) : 'Start module (no trial selected)';
+            } else if (page === 'turn' || page === 'turnAnalysis') {
+                ctx.module = 'turn';
+                ctx.primary = pulseGetTurnData();
+                ctx.label = ctx.primary ? ('Turn: ' + (ctx.primary.event || 'Selected trial')) : 'Turn module (no trial selected)';
+            } else {
+                ctx.module = 'home';
+                ctx.label = 'Dashboard home';
+            }
+
+            pulseState.context = ctx;
+            pulseState.activeModule = ctx.module;
+
+            // Update context bar
+            const bar = document.getElementById('pulseContextBar');
+            const text = document.getElementById('pulseContextText');
+            if (bar && text) {
+                text.textContent = ctx.label;
+                bar.style.display = 'flex';
+            }
+        }
+
+        function pulseGetRaceData(type) {
+            try {
+                if (typeof raceModuleState === 'undefined') return null;
+                if (type === 'primary') {
+                    const r = getPrimaryRace();
+                    if (!r) return null;
+                    return { event: raceLabel(r), date: r.source_date, data: r, splits: r.splits || [] };
+                } else if (type === 'compare') {
+                    const r = getCompareRace();
+                    if (!r) return null;
+                    return { event: raceLabel(r), date: r.source_date, data: r, splits: r.splits || [] };
+                }
+            } catch (e) {
+                console.log('[Pulse] Race data gather error:', e);
+            }
+            return null;
+        }
+
+        function pulseGetStartData() {
+            try {
+                if (typeof startModuleState === 'undefined') return null;
+                const s = getStartPrimary();
+                if (!s) return null;
+                return { event: startLabel(s), date: s.source_date, data: s };
+            } catch (e) { return null; }
+        }
+
+        function pulseGetTurnData() {
+            try {
+                if (typeof turnModuleState === 'undefined') return null;
+                const t = getTurnPrimary();
+                if (!t) return null;
+                return { event: turnLabel(t), date: t.source_date, data: t };
+            } catch (e) { return null; }
+        }
+
+        // --- Prompt State Management ---
+        function pulseUpdatePromptStates() {
+            const ctx = pulseState.context;
+            const hasData = ctx && ctx.primary;
+            const hasCompare = ctx && ctx.compare;
+            const isCoachTeam = appState.role === 'coach' && !appState.selectedAthleteUuid;
+            const noQuota = (pulseState.quota.remaining || 0) <= 0;
+
+            const btns = {
+                analyze: document.getElementById('ppAnalyze'),
+                compare: document.getElementById('ppCompare'),
+                focus:   document.getElementById('ppFocus'),
+                trend:   document.getElementById('ppTrend'),
+                explain: document.getElementById('ppExplain'),
+                team:    document.getElementById('ppTeam'),
+            };
+
+            if (btns.analyze)  btns.analyze.disabled  = !hasData || noQuota || pulseState.loading;
+            if (btns.compare)  btns.compare.disabled  = !hasCompare || noQuota || pulseState.loading;
+            if (btns.focus)    btns.focus.disabled    = !hasData || noQuota || pulseState.loading;
+            if (btns.trend)    btns.trend.disabled    = noQuota || pulseState.loading;
+            if (btns.explain)  btns.explain.disabled  = !hasData || noQuota || pulseState.loading;
+            if (btns.team)     { btns.team.style.display = isCoachTeam ? 'inline-flex' : 'none'; btns.team.disabled = noQuota || pulseState.loading; }
+        }
+
+        // --- Send Prompt ---
+        async function pulseSend(promptType) {
+            if (pulseState.loading) return;
+            if ((pulseState.quota.remaining || 0) <= 0) {
+                showToast('AI query limit reached for this billing period.', 'error');
+                return;
+            }
+
+            pulseGatherContext(); // refresh context
+            const ctx = pulseState.context;
+
+            // Build user-visible prompt text
+            const promptLabels = {
+                analyze: 'Analyze this trial',
+                compare: 'Compare these two trials',
+                focus: 'What should I focus on?',
+                trend: 'How am I trending?',
+                explain: 'Explain the key metrics',
+                team: 'Give me a team overview',
+            };
+
+            const userText = promptLabels[promptType] || promptType;
+
+            // Add user message
+            pulseAddMessage('user', userText);
+
+            // Hide welcome
+            const welcome = document.getElementById('pulseWelcome');
+            if (welcome) welcome.style.display = 'none';
+
+            // Show typing indicator
+            pulseState.loading = true;
+            pulseUpdatePromptStates();
+            const typingId = pulseAddTyping();
+
+            try {
+                // Call Edge Function
+                const session = await supabaseClient.auth.getSession();
+                const token = session.data.session?.access_token;
+
+                if (!token) throw new Error('Not authenticated');
+
+                const payload = {
+                    prompt_type: promptType,
+                    context: {
+                        module: ctx.module,
+                        primary: ctx.primary,
+                        compare: ctx.compare,
+                        role: appState.role,
+                        athlete_name: appState.userProfile?.first_name || 'Athlete',
+                    },
+                };
+
+                const response = await fetch(SUPABASE_URL + '/functions/v1/ai-coach', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token,
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                // Remove typing
+                pulseRemoveTyping(typingId);
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error || 'Request failed (' + response.status + ')');
+                }
+
+                // Stream response
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let aiText = '';
+                const msgEl = pulseAddMessage('ai', '');
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    
+                    // Parse SSE chunks
+                    const lines = chunk.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') continue;
+                            try {
+                                const parsed = JSON.parse(data);
+                                if (parsed.text) {
+                                    aiText += parsed.text;
+                                    pulseUpdateMessage(msgEl, aiText);
+                                }
+                                if (parsed.error) {
+                                    throw new Error(parsed.error);
+                                }
+                            } catch (pe) {
+                                // Not JSON, treat as raw text
+                                if (data !== '[DONE]') {
+                                    aiText += data;
+                                    pulseUpdateMessage(msgEl, aiText);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // If no streaming happened, check for full JSON response
+                if (!aiText) {
+                    try {
+                        const fullText = decoder.decode();
+                        const json = JSON.parse(fullText);
+                        aiText = json.response || json.text || 'No response received.';
+                        pulseUpdateMessage(msgEl, aiText);
+                    } catch (_) {}
+                }
+
+                // Save to messages array
+                pulseState.messages.push({ role: 'ai', text: aiText });
+
+                // Refresh quota
+                await pulseLoadQuota();
+                pulseUpdateFabBadge();
+                pulseUpdateDrawerState();
+
+            } catch (err) {
+                pulseRemoveTyping(typingId);
+                pulseAddMessage('ai', 'Sorry, something went wrong: ' + err.message + '. Please try again.');
+                console.error('[Pulse] Send error:', err);
+            } finally {
+                pulseState.loading = false;
+                pulseUpdatePromptStates();
+            }
+        }
+
+        // --- Message Rendering ---
+        function pulseAddMessage(role, text) {
+            const container = document.getElementById('pulseMessages');
+            const div = document.createElement('div');
+            div.className = 'pulse-msg ' + role;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'pulse-msg-avatar';
+            if (role === 'ai') {
+                avatar.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9.5 2A1.5 1.5 0 0 0 8 3.5v1A1.5 1.5 0 0 0 9.5 6h5A1.5 1.5 0 0 0 16 4.5v-1A1.5 1.5 0 0 0 14.5 2h-5Z"/><path d="M4 8a2 2 0 0 1 2-2h1m10 0h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"/></svg>';
+            } else {
+                const name = appState.userProfile?.first_name || 'U';
+                avatar.textContent = name[0].toUpperCase();
+            }
+
+            const bubble = document.createElement('div');
+            bubble.className = 'pulse-msg-bubble';
+            bubble.innerHTML = pulseFormatText(text);
+
+            div.appendChild(avatar);
+            div.appendChild(bubble);
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+
+            if (role === 'user') {
+                pulseState.messages.push({ role: 'user', text });
+            }
+
+            return bubble; // return bubble element for streaming updates
+        }
+
+        function pulseUpdateMessage(bubbleEl, text) {
+            if (bubbleEl) {
+                bubbleEl.innerHTML = pulseFormatText(text);
+                const container = document.getElementById('pulseMessages');
+                if (container) container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        function pulseFormatText(text) {
+            if (!text) return '';
+            // Basic markdown-lite: bold, italic, bullet lists
+            return text
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/^[-•] (.+)$/gm, '<span style="display:block;padding-left:12px;margin:2px 0;">&#8226; $1</span>')
+                .replace(/\n/g, '<br>');
+        }
+
+        function pulseAddTyping() {
+            const container = document.getElementById('pulseMessages');
+            const div = document.createElement('div');
+            div.className = 'pulse-msg ai';
+            const id = 'pulse-typing-' + Date.now();
+            div.id = id;
+            div.innerHTML = `
+                <div class="pulse-msg-avatar"><svg viewBox="0 0 24 24"><path d="M9.5 2A1.5 1.5 0 0 0 8 3.5v1A1.5 1.5 0 0 0 9.5 6h5A1.5 1.5 0 0 0 16 4.5v-1A1.5 1.5 0 0 0 14.5 2h-5Z"/><path d="M4 8a2 2 0 0 1 2-2h1m10 0h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"/></svg></div>
+                <div class="pulse-msg-bubble"><div class="pulse-typing"><span></span><span></span><span></span></div></div>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            return id;
+        }
+
+        function pulseRemoveTyping(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        // ============================================
         // INITIALIZATION
         // ============================================
         async function init() {
@@ -18781,6 +19673,93 @@
         init();
     </script>
     
+    <!-- Pulse AI Coach (v02.29) -->
+    <button class="pulse-fab" id="pulseFab" onclick="pulseToggle()" title="Pulse AI Coach" style="display:none;">
+        <svg viewBox="0 0 24 24"><path d="M9.5 2A1.5 1.5 0 0 0 8 3.5v1A1.5 1.5 0 0 0 9.5 6h5A1.5 1.5 0 0 0 16 4.5v-1A1.5 1.5 0 0 0 14.5 2h-5Z"/><path d="M4 8a2 2 0 0 1 2-2h1m10 0h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"/><path d="M9 12h6M9 16h4"/></svg>
+        <span class="pulse-fab-badge" id="pulseFabBadge" style="display:none;">50</span>
+    </button>
+
+    <div class="pulse-overlay" id="pulseOverlay" onclick="pulseClose()"></div>
+
+    <div class="pulse-drawer" id="pulseDrawer">
+        <!-- Header -->
+        <div class="pulse-header">
+            <div class="pulse-header-left">
+                <div class="pulse-logo">
+                    <svg viewBox="0 0 24 24"><path d="M9.5 2A1.5 1.5 0 0 0 8 3.5v1A1.5 1.5 0 0 0 9.5 6h5A1.5 1.5 0 0 0 16 4.5v-1A1.5 1.5 0 0 0 14.5 2h-5Z"/><path d="M4 8a2 2 0 0 1 2-2h1m10 0h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"/></svg>
+                </div>
+                <span class="pulse-title">Pulse</span>
+                <span class="pulse-quota-tag" id="pulseQuotaTag">50 left</span>
+            </div>
+            <button class="pulse-close-btn" onclick="pulseClose()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- Messages -->
+        <div class="pulse-messages" id="pulseMessages">
+            <div class="pulse-welcome" id="pulseWelcome">
+                <div class="pulse-welcome-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                </div>
+                <h3>Performance Insights</h3>
+                <p>Select a trial in any module, then use a guided prompt below to get AI-powered analysis of your data.</p>
+            </div>
+        </div>
+
+        <!-- Context Bar -->
+        <div class="pulse-context-bar" id="pulseContextBar" style="display:none;">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            <span id="pulseContextText">No data selected</span>
+        </div>
+
+        <!-- Locked State (shown for free/non-flagged users) -->
+        <div class="pulse-locked" id="pulseLocked" style="display:none;">
+            <div class="pulse-locked-icon">
+                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h3>Upgrade to Pro</h3>
+            <p>Get AI-powered insights on your race, start, and turn data with 50 queries per month.</p>
+            <button class="pulse-upgrade-btn" onclick="pulseClose(); openSubscriptionModal();">Upgrade to Pro</button>
+        </div>
+
+        <!-- Prompts -->
+        <div class="pulse-prompts" id="pulsePrompts">
+            <div class="pulse-prompts-label">Guided Analysis</div>
+            <div class="pulse-prompts-grid" id="pulsePromptsGrid">
+                <button class="pulse-prompt-btn" onclick="pulseSend('analyze')" id="ppAnalyze">
+                    <svg viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/></svg>
+                    Analyze this trial
+                </button>
+                <button class="pulse-prompt-btn" onclick="pulseSend('compare')" id="ppCompare" disabled>
+                    <svg viewBox="0 0 24 24"><path d="M16 3h5v5M8 3H3v5M21 3L14 10M3 3l7 7M21 21l-7-7M3 21l7-7M16 21h5v-5M8 21H3v-5"/></svg>
+                    Compare trials
+                </button>
+                <button class="pulse-prompt-btn" onclick="pulseSend('focus')" id="ppFocus">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+                    What should I focus on?
+                </button>
+                <button class="pulse-prompt-btn" onclick="pulseSend('trend')" id="ppTrend">
+                    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    How am I trending?
+                </button>
+                <button class="pulse-prompt-btn" onclick="pulseSend('explain')" id="ppExplain">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+                    Explain this metric
+                </button>
+                <button class="pulse-prompt-btn" onclick="pulseSend('team')" id="ppTeam" style="display:none;">
+                    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Team overview
+                </button>
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="pulse-disclaimer">
+            AI-generated insights based on your data. Always verify with your coach.
+        </div>
+    </div>
+
     <!-- Welcome Tour Overlay (v02.24) - At end of body to be on top of everything -->
     <div class="tour-overlay" id="tourOverlay"></div>
     <div id="tourHighlight" class="tour-highlight" style="display:none;"></div>

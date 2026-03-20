@@ -6574,6 +6574,10 @@
                         <h3>Select a Race</h3>
                         <div style="display:flex;align-items:center;gap:12px;">
                             <span class="race-selector-hint" id="raceSelectorHint">Click a race to view details. Click a second to compare.</span>
+                            <button class="race-selector-clear" id="benchmarkToggle" style="display:none; background:transparent; border:1px solid var(--accent-purple); color:var(--accent-purple); padding:5px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all 0.2s; font-family:Montserrat,sans-serif;" onclick="toggleBenchmarkCompare()">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;vertical-align:-1px;margin-right:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                Compare to WR
+                            </button>
                             <button class="race-selector-clear" id="raceSelectorClear" style="display:none;" onclick="clearRaceSelection()">Clear Selection</button>
                         </div>
                     </div>
@@ -14321,17 +14325,23 @@
             _multiAthlete: false,
             _nameMap: {},
             _genderFilter: '',    // 'male', 'female', or ''
-            _sampleMode: false
+            _sampleMode: false,
+            benchmarkActive: false,   // true when "Compare to Record" toggle is on
+            benchmarkCompare: null,   // benchmark race-like object
+            _benchmarkCache: {}       // cache by "distance_stroke_course" key
         };
 
         // Convenience getters
         function getPrimaryRace() { return raceModuleState.primaryIdx !== null ? raceModuleState.filteredRaces[raceModuleState.primaryIdx] : null; }
-        function getCompareRace() { return raceModuleState.compareIdx !== null ? raceModuleState.filteredRaces[raceModuleState.compareIdx] : null; }
+        function getCompareRace() {
+            if (raceModuleState.benchmarkActive && raceModuleState.benchmarkCompare) return raceModuleState.benchmarkCompare;
+            return raceModuleState.compareIdx !== null ? raceModuleState.filteredRaces[raceModuleState.compareIdx] : null;
+        }
         function hasSelection() { return raceModuleState.primaryIdx !== null; }
-        function hasComparison() { return raceModuleState.compareIdx !== null; }
+        function hasComparison() { return (raceModuleState.benchmarkActive && !!raceModuleState.benchmarkCompare) || raceModuleState.compareIdx !== null; }
         function courseUnit(r) { const c = (r.course || r.mj?.course || '').toUpperCase(); return c === 'SCY' ? 'Yds' : 'm'; }
         function courseBadge(r) { const c = (r.course || r.mj?.course || '').toUpperCase(); return c || 'SCY'; }
-        function raceLabel(r) { const d = r.mj.Distance||r.mj.distance||''; const s = r.mj.Style||r.mj.style||''; const u = courseUnit(r); return `${d}${d ? ' '+u+' ' : ''}${s}`; }
+        function raceLabel(r) { if (r && r._isBenchmark) return r._benchmarkLabel; const d = r.mj.Distance||r.mj.distance||''; const s = r.mj.Style||r.mj.style||''; const u = courseUnit(r); return `${d}${d ? ' '+u+' ' : ''}${s}`; }
         function raceFullLabel(r) { return `${formatDate(r.source_date)} - ${raceLabel(r)}`; }
 
         async function loadRaceData() {
@@ -14680,6 +14690,7 @@
             renderStrokeRateChart();
             renderStrokeCountGrid();
             renderRaceSummary();
+            updateBenchmarkToggle();
             
             // Check if selected race has video (v02.15)
             const primary = raceModuleState.filteredRaces[raceModuleState.primaryIdx];
@@ -14764,6 +14775,7 @@
             clearBtn.style.display = hasSelection() ? 'inline' : 'none';
             const hint = document.getElementById('raceSelectorHint');
             if (!hasSelection()) hint.textContent = 'Click a race to view details. Click a second to compare.';
+            else if (raceModuleState.benchmarkActive) hint.textContent = 'Comparing to World Record. All tabs show both.';
             else if (!hasComparison()) hint.textContent = 'Race selected. Click another to compare, or click same to deselect.';
             else hint.textContent = 'Comparing two races. All tabs show both.';
         }
@@ -14789,6 +14801,9 @@
                     showUpgradePrompt('comparison');
                     return;
                 }
+                // Manual compare selection turns off benchmark
+                st.benchmarkActive = false;
+                st.benchmarkCompare = null;
                 st.compareIdx = idx;
             } else {
                 // Check if user can compare (Pro only, except sample mode) - v02.20
@@ -14797,8 +14812,11 @@
                     return;
                 }
                 // Already have 2 -- replace compare
+                st.benchmarkActive = false;
+                st.benchmarkCompare = null;
                 st.compareIdx = idx;
             }
+            updateBenchmarkToggle();
             renderRaceSelectorCards();
             renderAllRaceVisuals();
         }
@@ -14806,8 +14824,147 @@
         function clearRaceSelection() {
             raceModuleState.primaryIdx = null;
             raceModuleState.compareIdx = null;
+            raceModuleState.benchmarkActive = false;
+            raceModuleState.benchmarkCompare = null;
+            updateBenchmarkToggle();
             renderRaceSelectorCards();
             renderAllRaceVisuals();
+        }
+
+        // ============================================
+        // BENCHMARK COMPARISON (Phase 2)
+        // ============================================
+        async function toggleBenchmarkCompare() {
+            const st = raceModuleState;
+
+            // If already active, turn off
+            if (st.benchmarkActive) {
+                st.benchmarkActive = false;
+                st.benchmarkCompare = null;
+                updateBenchmarkToggle();
+                renderAllRaceVisuals();
+                return;
+            }
+
+            // Need a primary race selected
+            const primary = getPrimaryRace();
+            if (!primary) return;
+
+            // If user already has a manual compare, clear it (benchmark takes the slot)
+            st.compareIdx = null;
+
+            const mj = primary.metrics_json || primary.mj || {};
+            const dist = String(mj.Distance || mj.distance || '');
+            const style = String(mj.Style || mj.style || '').toLowerCase();
+            const course = (primary.course || mj.course || 'SCY').toUpperCase();
+
+            if (!dist || !style) {
+                showToast('Cannot determine event for benchmark match', 'warning');
+                return;
+            }
+
+            // Check cache first
+            const cacheKey = `${dist}_${style}_${course}`;
+            if (st._benchmarkCache[cacheKey]) {
+                st.benchmarkCompare = st._benchmarkCache[cacheKey];
+                st.benchmarkActive = true;
+                updateBenchmarkToggle();
+                renderRaceSelectorCards();
+                renderAllRaceVisuals();
+                return;
+            }
+
+            // Fetch from Supabase
+            const btn = document.getElementById('benchmarkToggle');
+            if (btn) { btn.disabled = true; btn.textContent = 'Loading...'; }
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('benchmarks')
+                    .select('*')
+                    .eq('event_distance', parseInt(dist))
+                    .eq('stroke', style)
+                    .eq('course', course)
+                    .eq('is_current', true)
+                    .order('record_type', { ascending: true })
+                    .limit(1);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    showToast('No record available for ' + dist + 'm ' + style + ' ' + course, 'info');
+                    updateBenchmarkToggle();
+                    return;
+                }
+
+                const bm = data[0];
+
+                // Build a race-like object that the compare system can use
+                const benchmarkRace = {
+                    race_uuid: 'benchmark_' + bm.benchmark_uuid,
+                    source_date: bm.date_set,
+                    course: bm.course,
+                    video_key: bm.video_key || null,
+                    metrics_json: bm.metrics_json,
+                    mj: bm.metrics_json,
+                    splits: [],
+                    _isBenchmark: true,
+                    _benchmarkLabel: bm.record_type + ' — ' + dist + 'm ' + style.charAt(0).toUpperCase() + style.slice(1) + ' ' + course + ' — ' + formatBenchmarkTime(bm.final_time),
+                    _recordType: bm.record_type,
+                    _finalTime: bm.final_time,
+                };
+
+                // Cache it
+                st._benchmarkCache[cacheKey] = benchmarkRace;
+                st.benchmarkCompare = benchmarkRace;
+                st.benchmarkActive = true;
+                updateBenchmarkToggle();
+                renderRaceSelectorCards();
+                renderAllRaceVisuals();
+
+            } catch (err) {
+                console.error('[Benchmark] Fetch error:', err);
+                showToast('Failed to load benchmark data', 'error');
+                updateBenchmarkToggle();
+            }
+        }
+
+        function formatBenchmarkTime(seconds) {
+            if (!seconds || isNaN(seconds)) return '--';
+            const s = parseFloat(seconds);
+            if (s >= 60) {
+                const mins = Math.floor(s / 60);
+                const secs = (s % 60).toFixed(2);
+                return mins + ':' + (secs < 10 ? '0' : '') + secs;
+            }
+            return s.toFixed(2);
+        }
+
+        function updateBenchmarkToggle() {
+            const btn = document.getElementById('benchmarkToggle');
+            if (!btn) return;
+
+            const primary = getPrimaryRace();
+            btn.disabled = false;
+
+            if (!primary) {
+                btn.style.display = 'none';
+                return;
+            }
+
+            btn.style.display = 'inline-flex';
+
+            if (raceModuleState.benchmarkActive) {
+                btn.style.background = 'linear-gradient(135deg, var(--accent-purple), #9333EA)';
+                btn.style.borderColor = 'var(--accent-purple)';
+                btn.style.color = '#fff';
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;vertical-align:-1px;margin-right:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>WR Active';
+            } else {
+                btn.style.background = 'transparent';
+                btn.style.borderColor = 'var(--accent-purple)';
+                btn.style.color = 'var(--accent-purple)';
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;vertical-align:-1px;margin-right:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Compare to WR';
+            }
         }
 
         // ============================================

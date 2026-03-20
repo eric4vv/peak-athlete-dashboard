@@ -6712,6 +6712,11 @@
                         </div>
                         <div class="card-body" id="raceVideoContent">
                             <div class="race-video-tab-content">
+                                <!-- Video Source Switcher (v02.30) -->
+                                <div id="videoSwitcher" style="display:none; margin-bottom:12px; display:flex; gap:8px;">
+                                    <button id="videoChipPrimary" onclick="switchVideoSource('primary')" style="padding:6px 14px; border-radius:20px; border:1px solid var(--accent-blue); background:var(--accent-blue); color:#fff; font-size:12px; font-weight:600; cursor:pointer; font-family:Montserrat,sans-serif; transition:all 0.2s;">My Race</button>
+                                    <button id="videoChipCompare" onclick="switchVideoSource('compare')" style="padding:6px 14px; border-radius:20px; border:1px solid var(--border-color); background:transparent; color:var(--text-secondary); font-size:12px; font-weight:600; cursor:pointer; font-family:Montserrat,sans-serif; transition:all 0.2s;">Compare</button>
+                                </div>
                                 <div class="no-video-message" id="noVideoMessage">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect><line x1="1" y1="1" x2="23" y2="23" stroke-width="2"></line></svg>
                                     <h3>No Video Available</h3>
@@ -14858,13 +14863,28 @@
             const style = String(mj.Style || mj.style || '').toLowerCase();
             const course = (primary.course || mj.course || 'SCY').toUpperCase();
 
+            // Determine athlete gender for correct benchmark match
+            let athleteGender = null;
+            if (appState.role === 'athlete') {
+                athleteGender = appState.userProfile?.gender || null;
+            } else if (appState.selectedAthleteUuid && typeof _allTeamAthletes !== 'undefined' && _allTeamAthletes) {
+                const selAth = _allTeamAthletes.find(a => a.athlete_uuid === appState.selectedAthleteUuid);
+                athleteGender = selAth?.gender || null;
+            }
+
+            if (!athleteGender) {
+                showToast('Set athlete gender in profile to see matching records', 'info');
+                updateBenchmarkToggle();
+                return;
+            }
+
             if (!dist || !style) {
                 showToast('Cannot determine event for benchmark match', 'warning');
                 return;
             }
 
             // Check cache first
-            const cacheKey = `${dist}_${style}_${course}`;
+            const cacheKey = `${dist}_${style}_${course}_${athleteGender}`;
             if (st._benchmarkCache[cacheKey]) {
                 st.benchmarkCompare = st._benchmarkCache[cacheKey];
                 st.benchmarkActive = true;
@@ -14885,6 +14905,7 @@
                     .eq('event_distance', parseInt(dist))
                     .eq('stroke', style)
                     .eq('course', course)
+                    .eq('gender', athleteGender)
                     .eq('is_current', true)
                     .order('record_type', { ascending: true })
                     .limit(1);
@@ -14892,7 +14913,8 @@
                 if (error) throw error;
 
                 if (!data || data.length === 0) {
-                    showToast('No record available for ' + dist + 'm ' + style + ' ' + course, 'info');
+                    const gLabel = athleteGender === 'female' ? "Women's" : "Men's";
+                    showToast(`No ${gLabel} record available for ${dist}m ${style} ${course}`, 'info');
                     updateBenchmarkToggle();
                     return;
                 }
@@ -14909,7 +14931,7 @@
                     mj: bm.metrics_json,
                     splits: [],
                     _isBenchmark: true,
-                    _benchmarkLabel: bm.record_type + ' — ' + dist + 'm ' + style.charAt(0).toUpperCase() + style.slice(1) + ' ' + course + ' — ' + formatBenchmarkTime(bm.final_time),
+                    _benchmarkLabel: bm.record_type + (bm.gender === 'female' ? ' (W)' : '') + ' — ' + dist + 'm ' + style.charAt(0).toUpperCase() + style.slice(1) + ' ' + course + ' — ' + formatBenchmarkTime(bm.final_time),
                     _recordType: bm.record_type,
                     _finalTime: bm.final_time,
                 };
@@ -15717,6 +15739,9 @@
         let videoPlayerState = {
             videoKey: null,
             videoUrl: null,
+            compareVideoKey: null,
+            compareVideoUrl: null,
+            activeSource: 'primary',  // 'primary' or 'compare'
             isMinimized: false,
             isDragging: false,
             dragOffset: { x: 0, y: 0 }
@@ -15759,39 +15784,138 @@
             const primary = raceModuleState.filteredRaces[raceModuleState.primaryIdx];
             const videoKey = primary?.video_key;
             
-            console.log('checkRaceVideo:', { raceUuid, videoKey, primary }); // Debug
+            // Get compare race video (could be benchmark or manual compare)
+            const compare = getCompareRace();
+            const compareVideoKey = compare?.video_key || null;
+            
+            console.log('checkRaceVideo:', { raceUuid, videoKey, compareVideoKey });
             
             if (!raceUuid || !videoKey) {
-                if (videoTab) videoTab.style.display = 'none';
-                if (floatingPlayer) floatingPlayer.style.display = 'none';
+                // No primary video
                 videoPlayerState.videoKey = null;
                 videoPlayerState.videoUrl = null;
+                
+                if (compareVideoKey) {
+                    // Only compare has video — still show tab
+                    videoPlayerState.compareVideoKey = compareVideoKey;
+                    if (videoTab) videoTab.style.display = 'inline-flex';
+                    videoPlayerState.activeSource = 'compare';
+                    await loadVideoUrl(compareVideoKey, 'compare');
+                    updateVideoSwitcher();
+                    return;
+                }
+                
+                if (videoTab) videoTab.style.display = 'none';
+                if (floatingPlayer) floatingPlayer.style.display = 'none';
+                videoPlayerState.compareVideoKey = null;
+                videoPlayerState.compareVideoUrl = null;
                 updateVideoTabContent(null);
+                updateVideoSwitcher();
                 return;
             }
             
-            // Race has video - show video tab
+            // Primary has video - show video tab
             videoPlayerState.videoKey = videoKey;
+            videoPlayerState.activeSource = 'primary';
             if (videoTab) videoTab.style.display = 'inline-flex';
             
-            // Get signed URL for video
-            await loadVideoUrl(videoKey);
+            // Load primary video
+            await loadVideoUrl(videoKey, 'primary');
+            
+            // Also load compare video if available
+            if (compareVideoKey) {
+                videoPlayerState.compareVideoKey = compareVideoKey;
+                await loadVideoUrl(compareVideoKey, 'compare');
+            } else {
+                videoPlayerState.compareVideoKey = null;
+                videoPlayerState.compareVideoUrl = null;
+            }
+            
+            updateVideoSwitcher();
         }
 
-        // Load signed URL for video (v02.27: sends requestUuid + athleteUuid for auth)
-        async function loadVideoUrl(videoKey) {
+        // Switch video source between primary and compare
+        function switchVideoSource(source) {
+            videoPlayerState.activeSource = source;
+            
+            const videoPlayer = document.getElementById('raceVideoPlayer');
+            const floatingVideo = document.getElementById('floatingVideo');
+            const url = source === 'compare' ? videoPlayerState.compareVideoUrl : videoPlayerState.videoUrl;
+            
+            if (url && videoPlayer) {
+                videoPlayer.src = url;
+                videoPlayer.style.display = 'block';
+                document.getElementById('noVideoMessage').style.display = 'none';
+            }
+            if (url && floatingVideo) {
+                floatingVideo.src = url;
+            }
+            
+            updateVideoSwitcher();
+        }
+
+        // Update video switcher chip UI
+        function updateVideoSwitcher() {
+            const switcher = document.getElementById('videoSwitcher');
+            const chipPrimary = document.getElementById('videoChipPrimary');
+            const chipCompare = document.getElementById('videoChipCompare');
+            if (!switcher) return;
+            
+            const hasPrimary = !!videoPlayerState.videoUrl;
+            const hasCompare = !!videoPlayerState.compareVideoUrl;
+            
+            // Only show switcher if at least 2 sources have video
+            if (hasPrimary && hasCompare) {
+                switcher.style.display = 'flex';
+            } else {
+                switcher.style.display = 'none';
+                return;
+            }
+            
+            // Update compare chip label
+            const compare = getCompareRace();
+            if (compare && compare._isBenchmark) {
+                chipCompare.textContent = compare._recordType + ' Pace';
+            } else {
+                chipCompare.textContent = 'Compare';
+            }
+            
+            const active = videoPlayerState.activeSource;
+            
+            // Primary chip
+            chipPrimary.style.background = active === 'primary' ? 'var(--accent-blue)' : 'transparent';
+            chipPrimary.style.color = active === 'primary' ? '#fff' : 'var(--text-secondary)';
+            chipPrimary.style.borderColor = active === 'primary' ? 'var(--accent-blue)' : 'var(--border-color)';
+            
+            // Compare chip
+            const bmColor = compare?._isBenchmark ? 'var(--accent-purple)' : 'var(--accent-cyan)';
+            chipCompare.style.background = active === 'compare' ? bmColor : 'transparent';
+            chipCompare.style.color = active === 'compare' ? '#fff' : 'var(--text-secondary)';
+            chipCompare.style.borderColor = active === 'compare' ? bmColor : 'var(--border-color)';
+        }
+
+        // Load signed URL for video (v02.30: supports primary + compare + benchmark)
+        async function loadVideoUrl(videoKey, sourceType) {
             if (!videoKey) return;
+            sourceType = sourceType || 'primary';
             
             try {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (!session) return;
                 
+                // For benchmark videos, send benchmarkVideoKey flag
+                const compare = getCompareRace();
+                const isBenchmarkVideo = sourceType === 'compare' && compare && compare._isBenchmark;
+                
                 // v02.27: Resolve requestUuid (may be null if video wasn't from a request)
-                const requestUuid = await resolveRequestUuid(videoKey);
+                const requestUuid = isBenchmarkVideo ? null : await resolveRequestUuid(videoKey);
                 // v02.27: Always send athleteUuid as fallback for direct-linked videos
                 const athleteUuid = appState.selectedAthleteUuid || appState.athleteUuid;
                 
-                console.log('[v02.27] loadVideoUrl sending:', { videoKey, requestUuid, athleteUuid });
+                const bodyPayload = { videoKey, requestUuid, athleteUuid };
+                if (isBenchmarkVideo) bodyPayload.isBenchmark = true;
+                
+                console.log('[v02.30] loadVideoUrl sending:', { sourceType, ...bodyPayload });
                 
                 const response = await fetch(`${SUPABASE_URL}/functions/v1/r2-download-url`, {
                     method: 'POST',
@@ -15799,22 +15923,29 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${session.access_token}`
                     },
-                    body: JSON.stringify({ videoKey, requestUuid, athleteUuid })
+                    body: JSON.stringify(bodyPayload)
                 });
                 
                 if (!response.ok) {
-                    console.error('Failed to get video URL');
+                    console.error('Failed to get video URL for', sourceType);
                     return;
                 }
                 
                 const { downloadUrl } = await response.json();
-                videoPlayerState.videoUrl = downloadUrl;
                 
-                console.log('Video URL loaded:', downloadUrl); // Debug
-                
-                // Update video elements
-                updateVideoTabContent(downloadUrl);
-                updateFloatingVideo(downloadUrl);
+                if (sourceType === 'compare') {
+                    videoPlayerState.compareVideoUrl = downloadUrl;
+                    console.log('Compare video URL loaded:', downloadUrl);
+                } else {
+                    videoPlayerState.videoUrl = downloadUrl;
+                    console.log('Primary video URL loaded:', downloadUrl);
+                    
+                    // Update video elements (only for active source)
+                    if (videoPlayerState.activeSource === 'primary') {
+                        updateVideoTabContent(downloadUrl);
+                        updateFloatingVideo(downloadUrl);
+                    }
+                }
                 
             } catch (e) {
                 console.error('Error loading video URL:', e);

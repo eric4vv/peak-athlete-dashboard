@@ -14864,10 +14864,19 @@
             const course = (primary.course || mj.course || 'SCY').toUpperCase();
 
             // Determine athlete gender for correct benchmark match
+            // Use the athlete whose race is selected, not the logged-in user
             let athleteGender = null;
+            const primaryRaceAthleteUuid = primary.athlete_uuid;
+            
             if (appState.role === 'athlete') {
                 athleteGender = appState.userProfile?.gender || null;
-            } else if (appState.selectedAthleteUuid && typeof _allTeamAthletes !== 'undefined' && _allTeamAthletes) {
+            } else if (primaryRaceAthleteUuid && typeof _allTeamAthletes !== 'undefined' && _allTeamAthletes) {
+                const selAth = _allTeamAthletes.find(a => a.athlete_uuid === primaryRaceAthleteUuid);
+                athleteGender = selAth?.gender || null;
+            }
+
+            // Fallback: try selectedAthleteUuid
+            if (!athleteGender && appState.selectedAthleteUuid && typeof _allTeamAthletes !== 'undefined' && _allTeamAthletes) {
                 const selAth = _allTeamAthletes.find(a => a.athlete_uuid === appState.selectedAthleteUuid);
                 athleteGender = selAth?.gender || null;
             }

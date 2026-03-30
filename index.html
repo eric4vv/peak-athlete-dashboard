@@ -1158,7 +1158,16 @@
         .chart-container {
             position: relative;
             height: 300px;
+            overflow-x: auto;
+            overflow-y: hidden;
         }
+        .chart-scroll-inner {
+            position: relative;
+            height: 100%;
+            min-width: 100%;
+        }
+        /* Prevent grid items from expanding to fit scrollable content */
+        .grid-2 > .card { min-width: 0; overflow: hidden; }
 
         /* Grid Layout */
         .grid-2 {
@@ -6248,6 +6257,11 @@
                         <!-- Start Video Tab (v02.18) -->
                         <div class="start-tab-content" id="startTab-video">
                             <div class="race-video-tab-content">
+                                <!-- Video Source Switcher (v02.30) -->
+                                <div id="startVideoSwitcher" style="display:none; margin-bottom:12px; display:flex; gap:8px;">
+                                    <button id="startVideoChipPrimary" onclick="switchStartVideoSource('primary')" style="padding:6px 14px; border-radius:20px; border:1px solid var(--accent-blue); background:var(--accent-blue); color:#fff; font-size:12px; font-weight:600; cursor:pointer; font-family:Montserrat,sans-serif; transition:all 0.2s;">Primary</button>
+                                    <button id="startVideoChipCompare" onclick="switchStartVideoSource('compare')" style="padding:6px 14px; border-radius:20px; border:1px solid var(--border-color); background:transparent; color:var(--text-secondary); font-size:12px; font-weight:600; cursor:pointer; font-family:Montserrat,sans-serif; transition:all 0.2s;">Compare</button>
+                                </div>
                                 <div class="no-video-message" id="startNoVideoMessage">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect><line x1="1" y1="1" x2="23" y2="23" stroke-width="2"></line></svg>
                                     <h3>No Video Available</h3>
@@ -6449,6 +6463,11 @@
                         <!-- Turn Video Tab (v02.18) -->
                         <div class="turn-tab-content" id="turnTab-video">
                             <div class="race-video-tab-content">
+                                <!-- Video Source Switcher (v02.30) -->
+                                <div id="turnVideoSwitcher" style="display:none; margin-bottom:12px; display:flex; gap:8px;">
+                                    <button id="turnVideoChipPrimary" onclick="switchTurnVideoSource('primary')" style="padding:6px 14px; border-radius:20px; border:1px solid var(--accent-blue); background:var(--accent-blue); color:#fff; font-size:12px; font-weight:600; cursor:pointer; font-family:Montserrat,sans-serif; transition:all 0.2s;">Primary</button>
+                                    <button id="turnVideoChipCompare" onclick="switchTurnVideoSource('compare')" style="padding:6px 14px; border-radius:20px; border:1px solid var(--border-color); background:transparent; color:var(--text-secondary); font-size:12px; font-weight:600; cursor:pointer; font-family:Montserrat,sans-serif; transition:all 0.2s;">Compare</button>
+                                </div>
                                 <div class="no-video-message" id="turnNoVideoMessage">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect><line x1="1" y1="1" x2="23" y2="23" stroke-width="2"></line></svg>
                                     <h3>No Video Available</h3>
@@ -6613,8 +6632,8 @@
                             <div class="card-header">
                                 <h3 class="card-title">Split Times <span class="info-tip"><span class="tip-content">Cumulative time at each wall. Switch to "Per Segment" to see individual lap times and identify pacing patterns.</span></span></h3>
                                 <div class="chart-toggle" id="splitChartToggle">
-                                    <button class="chart-toggle-btn" data-mode="cumulative">Cumulative</button>
-                                    <button class="chart-toggle-btn active" data-mode="segment">Per Segment</button>
+                                    <button class="chart-toggle-btn active" data-mode="cumulative">Wall Splits</button>
+                                    <button class="chart-toggle-btn" data-mode="segment">Per Segment</button>
                                 </div>
                             </div>
                             <div class="card-body">
@@ -14324,7 +14343,7 @@
             filteredRaces: [],
             primaryIdx: null,    // index into filteredRaces
             compareIdx: null,    // index into filteredRaces
-            splitChartMode: 'segment',
+            splitChartMode: 'cumulative',
             activeTab: 'splits',
             _groupUuids: null,   // array of UUIDs when group selected
             _multiAthlete: false,
@@ -15052,6 +15071,34 @@
         }
 
         // Chart.js data label plugin (lightweight inline)
+        // Chart scroll helper: wraps canvas in scrollable inner div when many data points
+        function setupChartScroll(canvas, dataPointCount, minPxPerPoint) {
+            minPxPerPoint = minPxPerPoint || 70;
+            const container = canvas.parentElement;
+            if (!container) return;
+
+            // Remove existing scroll wrapper if any
+            let inner = container.querySelector('.chart-scroll-inner');
+            if (inner && inner !== canvas.parentElement) {
+                // Canvas is inside inner — move it out, remove inner
+                container.appendChild(canvas);
+                inner.remove();
+            }
+
+            if (dataPointCount > 6) {
+                const minWidth = dataPointCount * minPxPerPoint;
+                // Create inner wrapper
+                inner = document.createElement('div');
+                inner.className = 'chart-scroll-inner';
+                inner.style.minWidth = minWidth + 'px';
+                container.insertBefore(inner, canvas);
+                inner.appendChild(canvas);
+            } else {
+                // Ensure canvas is direct child of container (no scroll needed)
+                canvas.style.minWidth = '';
+            }
+        }
+
         const dataLabelsPlugin = {
             id: 'customDataLabels',
             afterDatasetsDraw(chart) {
@@ -15061,38 +15108,48 @@
                 chart.data.datasets.forEach((ds, di) => {
                     if (ds._hideLabels) return;
                     const meta = chart.getDatasetMeta(di);
+                    const pointCount = meta.data.length;
+                    
+                    // Collect all label positions first to detect overlaps
+                    const labels = [];
                     meta.data.forEach((el, i) => {
                         const val = ds.data[i];
                         if (val == null) return;
+                        const text = typeof val === 'number' ? val.toFixed(2) : String(val);
+                        const textWidth = ctx.measureText(text).width || 40;
+                        let yOff = chart.config.type === 'bar' ? -8 : -14;
+                        if (el.y + yOff - 10 < chartArea.top) yOff = 16;
+                        labels.push({ el, text, textWidth, yOff, x: el.x, y: el.y + yOff, i });
+                    });
+                    
+                    // Remove overlapping labels — keep first, skip any that collide
+                    const visible = [];
+                    for (const lbl of labels) {
+                        const overlaps = visible.some(v => 
+                            Math.abs(lbl.x - v.x) < (lbl.textWidth / 2 + v.textWidth / 2 + 4) &&
+                            Math.abs(lbl.y - v.y) < 16
+                        );
+                        if (!overlaps) visible.push(lbl);
+                    }
+                    
+                    // Draw only non-overlapping labels
+                    visible.forEach(lbl => {
                         ctx.save();
                         ctx.font = '600 11px JetBrains Mono, monospace';
                         ctx.fillStyle = ds.borderColor || getThemeColors().textSec;
                         
-                        const text = typeof val === 'number' ? val.toFixed(2) : val;
-                        const textWidth = ctx.measureText(text).width;
-                        
-                        // Smart positioning to prevent cutoff (v02.22)
-                        let xPos = el.x;
-                        let yPos = el.y;
-                        let yOff = chart.config.type === 'bar' ? -8 : -14;
-                        
-                        // If label would go above chart area, place below point
-                        if (el.y + yOff - 10 < chartArea.top) {
-                            yOff = 16; // Place below the point
-                        }
-                        
-                        // Adjust horizontal position if near edges
-                        if (el.x - textWidth/2 < chartArea.left + 5) {
+                        let xPos = lbl.el.x;
+                        if (lbl.el.x - lbl.textWidth/2 < chartArea.left + 5) {
                             ctx.textAlign = 'left';
-                            xPos = el.x + 4;
-                        } else if (el.x + textWidth/2 > chartArea.right - 5) {
+                            xPos = lbl.el.x + 4;
+                        } else if (lbl.el.x + lbl.textWidth/2 > chartArea.right - 5) {
                             ctx.textAlign = 'right';
-                            xPos = el.x - 4;
+                            xPos = lbl.el.x - 4;
                         } else {
                             ctx.textAlign = 'center';
                         }
                         
-                        ctx.fillText(text, xPos, yPos + yOff);
+                        ctx.fillText(lbl.text, xPos, lbl.y);
                         ctx.restore();
                     });
                 });
@@ -15290,7 +15347,6 @@
             if (!canvas) return;
             const races = raceModuleState.filteredRaces;
             if (!races.length) return;
-            // Robustly destroy any existing chart on this canvas
             if (appState.charts.splits) { try { appState.charts.splits.destroy(); } catch(e) {} appState.charts.splits = null; }
             const existingChart = Chart.getChart(canvas);
             if (existingChart) { try { existingChart.destroy(); } catch(e) {} }
@@ -15300,40 +15356,117 @@
             const toChart = primary ? (compare ? [primary, compare] : [primary]) : races.slice(0, Math.min(3, races.length));
             const colors = primary ? [getThemeColors().accent, getThemeColors().purple] : [getThemeColors().accent, getThemeColors().purple, getThemeColors().orange];
 
-            const allDists = new Set();
-            toChart.forEach(r => extractSplits(r.mj).forEach(s => allDists.add(s.distance)));
-            const sortedDists = [...allDists].sort((a,b)=>a-b);
-
             const isSeg = raceModuleState.splitChartMode === 'segment';
             const primaryRace = toChart[0];
             const distUnit = primaryRace ? (courseUnit(primaryRace) === 'Yds' ? 'yds' : 'm') : 'm';
+            const course = (primaryRace?.course || primaryRace?.mj?.course || 'SCY').toUpperCase();
+            const lapLen = parseInt(primaryRace?.mj?.['Lap length'] || primaryRace?.metrics_json?.['Lap length']) || (course === 'LCM' ? 50 : 25);
+
+            // Collect all available split distances
+            const allDists = new Set();
+            toChart.forEach(r => extractSplits(r.mj).forEach(s => allDists.add(s.distance)));
+            let sortedDists = [...allDists].sort((a,b) => a-b);
+
+            // Wall Splits mode: filter to lap boundaries only
+            if (!isSeg) {
+                const wallDists = sortedDists.filter(d => d % lapLen === 0);
+                if (wallDists.length >= 2) sortedDists = wallDists;
+            }
+
             const datasets = toChart.map((r, i) => {
                 const splits = extractSplits(r.mj);
                 const sm = {}; splits.forEach(s => sm[s.distance] = s.cumTime);
-                const data = isSeg
-                    ? sortedDists.map((d,j) => { const c = sm[d]; if(!c) return null; const pD = j>0?sortedDists[j-1]:0; return parseFloat((c-(sm[pD]||0)).toFixed(2)); })
-                    : sortedDists.map(d => sm[d] || null);
+
+                let data;
+                if (isSeg) {
+                    // Per Segment: show time for each segment (all 5m details)
+                    data = sortedDists.map((d, j) => {
+                        const c = sm[d]; if (!c) return null;
+                        const pD = j > 0 ? sortedDists[j-1] : 0;
+                        return parseFloat((c - (sm[pD] || 0)).toFixed(2));
+                    });
+                } else {
+                    // Wall Splits: show per-lap split (not cumulative)
+                    data = sortedDists.map((d, j) => {
+                        const c = sm[d]; if (!c) return null;
+                        const pD = j > 0 ? sortedDists[j-1] : 0;
+                        return parseFloat((c - (sm[pD] || 0)).toFixed(2));
+                    });
+                }
+
                 return {
-                    label: raceFullLabel(r), data, borderColor: colors[i], backgroundColor: colors[i] + (isSeg ? '90' : '15'),
-                    fill: !isSeg && i===0, tension: 0.3, spanGaps: true, pointRadius: 4, pointBackgroundColor: colors[i],
+                    label: raceFullLabel(r), data, borderColor: colors[i], backgroundColor: colors[i] + '90',
+                    fill: false, tension: 0.3, spanGaps: true, pointRadius: 4, pointBackgroundColor: colors[i],
                     borderWidth: 2
                 };
             });
 
+            // Determine race distance for scroll threshold
+            const raceDistance = parseInt(primaryRace?.mj?.Distance || primaryRace?.mj?.distance || 0);
+            const needsScroll = isSeg ? sortedDists.length > 16 : (raceDistance > 400);
+            setupChartScroll(canvas, needsScroll ? sortedDists.length : 0);
+
             appState.charts.splits = new Chart(canvas, {
-                type: isSeg ? 'bar' : 'line',
-                data: { labels: sortedDists.map(d=>d+distUnit), datasets },
+                type: 'bar',
+                data: { labels: sortedDists.map(d => d + distUnit), datasets },
                 plugins: [dataLabelsPlugin],
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    layout: { padding: { top: 20, right: 15, left: 10 } }, // v02.22: padding for labels
+                    layout: { padding: { top: 20, right: 15, left: 10 } },
                     scales: {
                         x: { grid: { color: 'rgba(128,140,160,0.10)' }, ticks: { color: getThemeColors().textSec } },
-                        y: { grid: { color: 'rgba(128,140,160,0.10)' }, ticks: { color: getThemeColors().textSec }, title: { display:true, text: isSeg?'Segment Time (s)':'Cumulative Time (s)', color:getThemeColors().textSec } }
+                        y: { grid: { color: 'rgba(128,140,160,0.10)' }, ticks: { color: getThemeColors().textSec }, title: { display: true, text: isSeg ? 'Segment Time (s)' : 'Lap Split (s)', color: getThemeColors().textSec } }
                     },
-                    plugins: { legend: { position:'bottom', labels: { color:getThemeColors().textSec, usePointStyle:true } } }
+                    plugins: { legend: { position: 'bottom', labels: { color: getThemeColors().textSec, usePointStyle: true } } }
                 }
             });
+
+            // Render conventional split text below chart (Wall Splits mode only)
+            renderWallSplitText(toChart, sortedDists, lapLen, distUnit, colors, isSeg);
+        }
+
+        function renderWallSplitText(toChart, wallDists, lapLen, distUnit, colors, isSeg) {
+            let container = document.getElementById('wallSplitText');
+            if (!container) {
+                // Create container after the chart canvas
+                const chartContainer = document.getElementById('splitsChart')?.parentElement?.parentElement;
+                if (chartContainer) {
+                    container = document.createElement('div');
+                    container.id = 'wallSplitText';
+                    container.style.cssText = 'padding:0 4px;';
+                    chartContainer.appendChild(container);
+                }
+            }
+            if (!container) return;
+
+            if (isSeg) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            toChart.forEach((r, ri) => {
+                const splits = extractSplits(r.mj);
+                const sm = {}; splits.forEach(s => sm[s.distance] = s.cumTime);
+                const label = toChart.length > 1 ? `<span style="color:${colors[ri]};font-weight:600;font-size:11px;margin-right:8px;">${ri === 0 ? 'Primary' : 'Compare'}</span>` : '';
+
+                html += `<div style="display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center;padding:8px 0;${ri > 0 ? 'border-top:1px solid var(--border-color);' : ''}">`;
+                html += label;
+                wallDists.forEach((d, j) => {
+                    const cum = sm[d];
+                    if (!cum) return;
+                    const prev = j > 0 ? (sm[wallDists[j-1]] || 0) : 0;
+                    const lapSplit = (cum - prev).toFixed(2);
+                    html += `<div style="font-family:JetBrains Mono,monospace;font-size:12px;">
+                        <span style="color:var(--text-muted);">${d}${distUnit}</span>
+                        <span style="color:var(--text-primary);font-weight:600;margin-left:4px;">${formatTime(cum)}</span>
+                        <span style="color:${colors[ri]};font-size:10px;margin-left:2px;">(${lapSplit})</span>
+                    </div>`;
+                });
+                html += '</div>';
+            });
+
+            container.innerHTML = html;
         }
 
         // ============================================
@@ -15429,6 +15562,7 @@
                 }
             }
 
+            setupChartScroll(canvas, segs.length > 16 ? segs.length : 0);
             appState.charts.raceVelocity = new Chart(canvas, {
                 type: 'bar', data: { labels: segs.map(s=>s.label), datasets },
                 plugins: [dataLabelsPlugin],
@@ -15513,6 +15647,7 @@
             }
 
             const strokeDistUnit = race ? (courseUnit(race) === 'Yds' ? 'yds' : 'm') : 'm';
+            setupChartScroll(canvas, rates.length > 16 ? rates.length : 0);
             appState.charts.strokeRate = new Chart(canvas, {
                 type:'line', data: { labels: rates.map(r=>r.distance+strokeDistUnit), datasets },
                 plugins: [dataLabelsPlugin],
@@ -15521,7 +15656,7 @@
                     layout: { padding: { top: 20, right: 15, left: 10 } }, // v02.22: padding for labels
                     scales: {
                         x: { grid:{color:'rgba(148,163,184,0.1)'}, ticks:{color:getThemeColors().textSec,maxTicksLimit:12} },
-                        y: { grid:{color:'rgba(148,163,184,0.1)'}, ticks:{color:getThemeColors().textSec}, title:{display:true,text:'Strokes/min',color:getThemeColors().textSec} }
+                        y: { grid:{color:'rgba(148,163,184,0.1)'}, ticks:{color:getThemeColors().textSec, stepSize:5}, title:{display:true,text:'Strokes/min',color:getThemeColors().textSec} }
                     },
                     plugins: { legend:{position:'bottom',labels:{color:getThemeColors().textSec,usePointStyle:true}} }
                 }
@@ -16065,18 +16200,24 @@
         // ============================================
         // START VIDEO FUNCTIONS (v02.18)
         // ============================================
-        let startVideoState = { videoKey: null, videoUrl: null, isLocked: false };
+        let startVideoState = { videoKey: null, videoUrl: null, compareVideoKey: null, compareVideoUrl: null, activeSource: 'primary', isLocked: false };
         
         function checkStartVideo() {
             const videoTab = document.getElementById('startVideoTab');
             const primary = getStartPrimary();
+            const compare = getStartCompare();
             const videoKey = primary?.video_key;
+            const compareVideoKey = compare?.video_key || null;
+            
+            startVideoState.compareVideoKey = compareVideoKey;
             
             if (!primary || !videoKey) {
                 if (videoTab) videoTab.style.display = 'none';
                 startVideoState.videoKey = null;
                 startVideoState.videoUrl = null;
+                startVideoState.compareVideoUrl = null;
                 startVideoState.isLocked = false;
+                updateStartVideoSwitcher();
                 return;
             }
             
@@ -16102,7 +16243,9 @@
             // Start has video and is accessible - show video tab
             startVideoState.videoKey = videoKey;
             startVideoState.isLocked = false;
+            startVideoState.activeSource = 'primary';
             if (videoTab) videoTab.style.display = 'inline-flex';
+            updateStartVideoSwitcher();
         }
         
         async function updateStartVideoTab() {
@@ -16175,6 +16318,29 @@
                 if (noVideoMsg) noVideoMsg.style.display = 'none';
                 if (controlsBar) controlsBar.style.display = 'flex';
             }
+            
+            // Load compare video if available (v02.30)
+            const compare = getStartCompare();
+            const cVideoKey = compare?.video_key;
+            if (cVideoKey && cVideoKey !== startVideoState.compareVideoKey) {
+                startVideoState.compareVideoKey = cVideoKey;
+                try {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session) {
+                        const requestUuid = await resolveRequestUuid(cVideoKey);
+                        const athleteUuid = appState.selectedAthleteUuid || appState.athleteUuid;
+                        const resp = await fetch(`${SUPABASE_URL}/functions/v1/r2-download-url`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                            body: JSON.stringify({ videoKey: cVideoKey, requestUuid, athleteUuid })
+                        });
+                        if (resp.ok) { startVideoState.compareVideoUrl = (await resp.json()).downloadUrl; }
+                    }
+                } catch (e) { console.error('Error loading start compare video:', e); }
+            } else if (!cVideoKey) {
+                startVideoState.compareVideoUrl = null;
+            }
+            updateStartVideoSwitcher();
         }
         
         async function downloadStartVideo() {
@@ -16209,21 +16375,57 @@
             }
         }
 
+        function switchStartVideoSource(source) {
+            startVideoState.activeSource = source;
+            const videoPlayer = document.getElementById('startVideoPlayer');
+            const url = source === 'compare' ? startVideoState.compareVideoUrl : startVideoState.videoUrl;
+            if (url && videoPlayer) {
+                videoPlayer.src = url;
+                videoPlayer.style.display = 'block';
+                document.getElementById('startNoVideoMessage').style.display = 'none';
+            }
+            updateStartVideoSwitcher();
+        }
+
+        function updateStartVideoSwitcher() {
+            const switcher = document.getElementById('startVideoSwitcher');
+            const chipP = document.getElementById('startVideoChipPrimary');
+            const chipC = document.getElementById('startVideoChipCompare');
+            if (!switcher) return;
+            const hasP = !!startVideoState.videoUrl;
+            const hasC = !!startVideoState.compareVideoUrl;
+            switcher.style.display = (hasP && hasC) ? 'flex' : 'none';
+            if (!hasP || !hasC) return;
+            const active = startVideoState.activeSource;
+            chipP.style.background = active === 'primary' ? 'var(--accent-blue)' : 'transparent';
+            chipP.style.color = active === 'primary' ? '#fff' : 'var(--text-secondary)';
+            chipP.style.borderColor = active === 'primary' ? 'var(--accent-blue)' : 'var(--border-color)';
+            chipC.style.background = active === 'compare' ? 'var(--accent-cyan)' : 'transparent';
+            chipC.style.color = active === 'compare' ? '#fff' : 'var(--text-secondary)';
+            chipC.style.borderColor = active === 'compare' ? 'var(--accent-cyan)' : 'var(--border-color)';
+        }
+
         // ============================================
         // TURN VIDEO FUNCTIONS (v02.18)
         // ============================================
-        let turnVideoState = { videoKey: null, videoUrl: null, isLocked: false };
+        let turnVideoState = { videoKey: null, videoUrl: null, compareVideoKey: null, compareVideoUrl: null, activeSource: 'primary', isLocked: false };
         
         function checkTurnVideo() {
             const videoTab = document.getElementById('turnVideoTab');
             const primary = getTurnPrimary();
+            const compare = getTurnCompare();
             const videoKey = primary?.video_key;
+            const compareVideoKey = compare?.video_key || null;
+            
+            turnVideoState.compareVideoKey = compareVideoKey;
             
             if (!primary || !videoKey) {
                 if (videoTab) videoTab.style.display = 'none';
                 turnVideoState.videoKey = null;
                 turnVideoState.videoUrl = null;
+                turnVideoState.compareVideoUrl = null;
                 turnVideoState.isLocked = false;
+                updateTurnVideoSwitcher();
                 return;
             }
             
@@ -16249,7 +16451,9 @@
             // Turn has video and is accessible - show video tab
             turnVideoState.videoKey = videoKey;
             turnVideoState.isLocked = false;
+            turnVideoState.activeSource = 'primary';
             if (videoTab) videoTab.style.display = 'inline-flex';
+            updateTurnVideoSwitcher();
         }
         
         async function updateTurnVideoTab() {
@@ -16322,6 +16526,29 @@
                 if (noVideoMsg) noVideoMsg.style.display = 'none';
                 if (controlsBar) controlsBar.style.display = 'flex';
             }
+            
+            // Load compare video if available (v02.30)
+            const compare = getTurnCompare();
+            const cVideoKey = compare?.video_key;
+            if (cVideoKey && cVideoKey !== turnVideoState.compareVideoKey) {
+                turnVideoState.compareVideoKey = cVideoKey;
+                try {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session) {
+                        const requestUuid = await resolveRequestUuid(cVideoKey);
+                        const athleteUuid = appState.selectedAthleteUuid || appState.athleteUuid;
+                        const resp = await fetch(`${SUPABASE_URL}/functions/v1/r2-download-url`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                            body: JSON.stringify({ videoKey: cVideoKey, requestUuid, athleteUuid })
+                        });
+                        if (resp.ok) { turnVideoState.compareVideoUrl = (await resp.json()).downloadUrl; }
+                    }
+                } catch (e) { console.error('Error loading turn compare video:', e); }
+            } else if (!cVideoKey) {
+                turnVideoState.compareVideoUrl = null;
+            }
+            updateTurnVideoSwitcher();
         }
         
         async function downloadTurnVideo() {
@@ -16354,6 +16581,36 @@
                 console.error('Download error:', e);
                 showToast('Error downloading video', 'error');
             }
+        }
+
+        function switchTurnVideoSource(source) {
+            turnVideoState.activeSource = source;
+            const videoPlayer = document.getElementById('turnVideoPlayer');
+            const url = source === 'compare' ? turnVideoState.compareVideoUrl : turnVideoState.videoUrl;
+            if (url && videoPlayer) {
+                videoPlayer.src = url;
+                videoPlayer.style.display = 'block';
+                document.getElementById('turnNoVideoMessage').style.display = 'none';
+            }
+            updateTurnVideoSwitcher();
+        }
+
+        function updateTurnVideoSwitcher() {
+            const switcher = document.getElementById('turnVideoSwitcher');
+            const chipP = document.getElementById('turnVideoChipPrimary');
+            const chipC = document.getElementById('turnVideoChipCompare');
+            if (!switcher) return;
+            const hasP = !!turnVideoState.videoUrl;
+            const hasC = !!turnVideoState.compareVideoUrl;
+            switcher.style.display = (hasP && hasC) ? 'flex' : 'none';
+            if (!hasP || !hasC) return;
+            const active = turnVideoState.activeSource;
+            chipP.style.background = active === 'primary' ? 'var(--accent-blue)' : 'transparent';
+            chipP.style.color = active === 'primary' ? '#fff' : 'var(--text-secondary)';
+            chipP.style.borderColor = active === 'primary' ? 'var(--accent-blue)' : 'var(--border-color)';
+            chipC.style.background = active === 'compare' ? 'var(--accent-cyan)' : 'transparent';
+            chipC.style.color = active === 'compare' ? '#fff' : 'var(--text-secondary)';
+            chipC.style.borderColor = active === 'compare' ? 'var(--accent-cyan)' : 'var(--border-color)';
         }
 
         // Initialize draggable video player

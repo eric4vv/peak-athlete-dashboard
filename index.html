@@ -5557,7 +5557,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                         Sign Out
                     </div>
-                    <a href="mailto:eric@mypeakathlete.com" title="Contact Support" style="width:36px; height:36px; border-radius:8px; border:1px solid var(--border-color); display:flex; align-items:center; justify-content:center; color:var(--text-muted); text-decoration:none; transition:all 0.2s; flex-shrink:0;" onmouseover="this.style.color='var(--accent-blue)';this.style.borderColor='var(--border-hover)'" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border-color)'">
+                    <a href="/cdn-cgi/l/email-protection#d9bcabb0ba99b4a0a9bcb8b2b8adb1b5bcadbcf7bab6b4" title="Contact Support" style="width:36px; height:36px; border-radius:8px; border:1px solid var(--border-color); display:flex; align-items:center; justify-content:center; color:var(--text-muted); text-decoration:none; transition:all 0.2s; flex-shrink:0;" onmouseover="this.style.color='var(--accent-blue)';this.style.borderColor='var(--border-hover)'" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border-color)'">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     </a>
                 </div>
@@ -7272,7 +7272,7 @@
         </div>
     </div>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ============================================
         // THEME MANAGEMENT
         // ============================================
@@ -8554,7 +8554,7 @@
                         </div>
                         
                         <button onclick="startCheckout()" class="btn btn-primary" style="width:100%; padding:14px; font-size:15px; font-weight:600; background:linear-gradient(135deg,var(--accent-green),#00B86B);">
-                            Start 14-Day Free Trial
+                            Start 7-Day Free Trial
                         </button>
                         <p style="color:var(--text-muted); font-size:12px; margin-top:12px;">Cancel anytime. No charge during trial.</p>
                         
@@ -8682,7 +8682,7 @@
                                     <span>Waiting for payment confirmation...</span>
                                 </div>
                             </div>
-                            <p style="margin-top:16px;font-size:12px;color:var(--text-muted);">14-day free trial • Cancel anytime</p>
+                            <p style="margin-top:16px;font-size:12px;color:var(--text-muted);">7-day free trial • Cancel anytime</p>
                             <button onclick="stopSubscriptionPolling(); document.getElementById('checkoutLinkModal').remove()" style="margin-top:16px;padding:8px 20px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;cursor:pointer;color:var(--text-muted);font-size:13px;">Cancel</button>
                         </div>
                     </div>
@@ -8695,12 +8695,12 @@
                 document.head.appendChild(style);
                 
                 btn.disabled = false;
-                btn.textContent = 'Start 14-Day Free Trial';
+                btn.textContent = 'Start 7-Day Free Trial';
             } catch (e) {
                 console.error('Checkout error:', e);
                 showToast('Error: ' + e.message, 'error');
                 btn.disabled = false;
-                btn.textContent = 'Start 14-Day Free Trial';
+                btn.textContent = 'Start 7-Day Free Trial';
             }
         }
         
@@ -20207,7 +20207,7 @@
                 compare: 'Compare these two trials',
                 focus: 'What should I focus on?',
                 trend: 'How am I trending?',
-                explain: 'Explain the key metrics',
+                explain: 'What am I looking at?',
                 team: 'Give me a team overview',
             };
 
@@ -20254,6 +20254,10 @@
                         trend: trendData,
                         role: appState.role,
                         athlete_name: appState.userProfile?.first_name || 'Athlete',
+                        activeTab: ctx.module === 'race' ? raceModuleState.activeTab
+                            : ctx.module === 'start' ? startModuleState.activeTab
+                            : ctx.module === 'turn' ? turnModuleState.activeTab
+                            : null,
                     },
                 };
 
@@ -20565,7 +20569,7 @@
                 </button>
                 <button class="pulse-prompt-btn" onclick="pulseSend('explain')" id="ppExplain">
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
-                    Explain this metric
+                    What am I looking at?
                 </button>
                 <button class="pulse-prompt-btn" onclick="pulseSend('team')" id="ppTeam" style="display:none;">
                     <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>

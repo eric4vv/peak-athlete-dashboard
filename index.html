@@ -1167,7 +1167,7 @@
             min-width: 100%;
         }
         /* Prevent grid items from expanding to fit scrollable content */
-        .grid-2 > .card { min-width: 0; overflow: hidden; }
+        .grid-2 > .card { min-width: 0; }
 
         /* Grid Layout */
         .grid-2 {
@@ -1303,30 +1303,26 @@
         .info-tip::before { content: '?'; }
         .info-tip:hover { color: var(--accent-blue); border-color: var(--accent-blue); background: var(--accent-glow); }
         .info-tip .tip-content {
-            display: none; position: absolute; z-index: 500;
-            bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+            display: none; /* Hidden by default — JS shows a fixed-position clone */
+        }
+        .info-tip:hover { color: var(--accent-blue); border-color: var(--accent-blue); background: var(--accent-glow); }
+
+        /* Fixed tooltip rendered by JS — never clipped by parent overflow */
+        .fixed-tooltip {
+            position: fixed; z-index: 9999;
             width: 260px; padding: 12px 14px;
             background: var(--bg-card); border: 1px solid var(--border-hover);
             border-radius: 10px; box-shadow: var(--shadow-card-lg);
             font-size: 11px; font-weight: 400; line-height: 1.55;
             color: var(--text-secondary); text-align: left;
+            font-family: 'Montserrat', sans-serif;
             pointer-events: none;
         }
-        .info-tip .tip-content::after {
-            content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-            border: 6px solid transparent; border-top-color: var(--border-hover);
-        }
-        .info-tip .tip-content strong { color: var(--text-primary); font-weight: 600; }
-        .info-tip .tip-content .tip-good { color: var(--accent-green); font-weight: 600; }
-        .info-tip .tip-content .tip-watch { color: var(--accent-orange); font-weight: 600; }
-        .info-tip:hover .tip-content { display: block; pointer-events: auto; }
-        /* Tip content alignment adjustments for edge cases */
-        .info-tip.tip-left .tip-content { left: 0; transform: none; }
-        .info-tip.tip-left .tip-content::after { left: 12px; transform: none; }
-        .info-tip.tip-right .tip-content { left: auto; right: 0; transform: none; }
-        .info-tip.tip-right .tip-content::after { left: auto; right: 12px; transform: none; }
+        .fixed-tooltip strong { color: var(--text-primary); font-weight: 600; }
+        .fixed-tooltip .tip-good { color: var(--accent-green); font-weight: 600; }
+        .fixed-tooltip .tip-watch { color: var(--accent-orange); font-weight: 600; }
         @media (max-width: 768px) {
-            .info-tip .tip-content { width: 220px; font-size: 10px; }
+            .fixed-tooltip { width: 220px; font-size: 10px; }
         }
 
         /* ===== SAMPLE DATA BANNER ===== */
@@ -6684,7 +6680,11 @@
                     <div class="grid-2">
                         <div class="card">
                             <div class="card-header">
-                                <h3 class="card-title">Stroke Rate by Segment <span class="info-tip"><span class="tip-content">Strokes per minute in each segment. Increasing stroke rate with decreasing distance-per-stroke can indicate fatigue.</span></span></h3>
+                                <h3 class="card-title">Stroke Rate <span class="info-tip"><span class="tip-content">Strokes per minute in each segment. Increasing stroke rate with decreasing distance-per-stroke can indicate fatigue.</span></span></h3>
+                                <div class="chart-toggle" id="strokeRateToggle">
+                                    <button class="chart-toggle-btn active" data-mode="byLap">By Lap</button>
+                                    <button class="chart-toggle-btn" data-mode="detailed">Detailed</button>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div class="chart-container">
@@ -14352,7 +14352,8 @@
             _sampleMode: false,
             benchmarkActive: false,   // true when "Compare to Record" toggle is on
             benchmarkCompare: null,   // benchmark race-like object
-            _benchmarkCache: {}       // cache by "distance_stroke_course" key
+            _benchmarkCache: {},       // cache by "distance_stroke_course" key
+            strokeRateMode: 'byLap'   // 'byLap' or 'detailed'
         };
 
         // Convenience getters
@@ -14485,6 +14486,16 @@
                     btn.classList.add('active');
                     raceModuleState.splitChartMode = btn.dataset.mode;
                     renderSplitsChart();
+                };
+            });
+
+            // Stroke rate toggle (v02.30)
+            document.querySelectorAll('#strokeRateToggle .chart-toggle-btn').forEach(btn => {
+                btn.onclick = () => {
+                    document.querySelectorAll('#strokeRateToggle .chart-toggle-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    raceModuleState.strokeRateMode = btn.dataset.mode;
+                    renderStrokeRateChart();
                 };
             });
         }
@@ -15626,8 +15637,32 @@
             if (!race) { for (const r of raceModuleState.filteredRaces) { if (extractStrokeRates(r.mj).length) { race = r; break; } } }
             if (!race) { appState.charts.strokeRate = null; return; }
 
-            const rates = extractStrokeRates(race.mj);
-            if (!rates.length) { appState.charts.strokeRate = null; return; }
+            const allRates = extractStrokeRates(race.mj);
+            if (!allRates.length) { appState.charts.strokeRate = null; return; }
+
+            const course = (race.course || race.mj?.course || 'SCY').toUpperCase();
+            const lapLen = parseInt(race.mj?.['Lap length'] || race.metrics_json?.['Lap length']) || (course === 'LCM' ? 50 : 25);
+            const isByLap = raceModuleState.strokeRateMode === 'byLap';
+            const strokeDistUnit = race ? (courseUnit(race) === 'Yds' ? 'yds' : 'm') : 'm';
+
+            // Helper: average rates within each lap boundary
+            function aggregateByLap(rates) {
+                const lapMap = {};
+                rates.forEach(r => {
+                    const lap = Math.ceil(r.distance / lapLen);
+                    const lapDist = lap * lapLen;
+                    if (!lapMap[lapDist]) lapMap[lapDist] = [];
+                    lapMap[lapDist].push(r.rate);
+                });
+                return Object.entries(lapMap)
+                    .sort(([a],[b]) => parseInt(a) - parseInt(b))
+                    .map(([dist, vals]) => ({
+                        distance: parseInt(dist),
+                        rate: parseFloat((vals.reduce((s,v)=>s+v,0) / vals.length).toFixed(2))
+                    }));
+            }
+
+            const rates = isByLap ? aggregateByLap(allRates) : allRates;
 
             const datasets = [{
                 label: `Stroke Rate - ${raceFullLabel(race)}`, data: rates.map(r=>r.rate),
@@ -15636,8 +15671,9 @@
             }];
 
             if (compare) {
-                const cRates = extractStrokeRates(compare.mj);
-                if (cRates.length) {
+                const cAllRates = extractStrokeRates(compare.mj);
+                if (cAllRates.length) {
+                    const cRates = isByLap ? aggregateByLap(cAllRates) : cAllRates;
                     datasets.push({
                         label: `Stroke Rate - ${raceFullLabel(compare)}`, data: cRates.map(r=>r.rate),
                         borderColor:getThemeColors().purple, backgroundColor:'rgba(167,139,250,0.08)', fill:false, tension:0.3,
@@ -15646,14 +15682,13 @@
                 }
             }
 
-            const strokeDistUnit = race ? (courseUnit(race) === 'Yds' ? 'yds' : 'm') : 'm';
             setupChartScroll(canvas, rates.length > 16 ? rates.length : 0);
             appState.charts.strokeRate = new Chart(canvas, {
                 type:'line', data: { labels: rates.map(r=>r.distance+strokeDistUnit), datasets },
                 plugins: [dataLabelsPlugin],
                 options: {
                     responsive:true, maintainAspectRatio:false,
-                    layout: { padding: { top: 20, right: 15, left: 10 } }, // v02.22: padding for labels
+                    layout: { padding: { top: 20, right: 15, left: 10 } },
                     scales: {
                         x: { grid:{color:'rgba(148,163,184,0.1)'}, ticks:{color:getThemeColors().textSec,maxTicksLimit:12} },
                         y: { grid:{color:'rgba(148,163,184,0.1)'}, ticks:{color:getThemeColors().textSec, stepSize:5}, title:{display:true,text:'Strokes/min',color:getThemeColors().textSec} }
@@ -15676,16 +15711,13 @@
             const multi = raceModuleState._multiAthlete;
             const nameMap = raceModuleState._nameMap || {};
 
-            // Determine which races to display
             let racesToShow;
             let showingMode = '';
             if (primary) {
-                // Selection mode: show only selected races
                 racesToShow = compare ? [primary, compare] : [primary];
                 racesToShow = racesToShow.filter(r => extractStrokeCounts(r.mj).length > 0);
                 showingMode = 'selected';
             } else {
-                // No selection: show all filtered races with stroke data
                 racesToShow = races.filter(r => extractStrokeCounts(r.mj).length > 0);
                 showingMode = 'all';
             }
@@ -15697,32 +15729,57 @@
                 return;
             }
 
-            const maxLaps = Math.max(...racesToShow.map(r=>extractStrokeCounts(r.mj).length));
-            const allCounts = racesToShow.flatMap(r=>extractStrokeCounts(r.mj).map(c=>c.count));
+            const maxLaps = Math.max(...racesToShow.map(r => extractStrokeCounts(r.mj).length));
+            const allCounts = racesToShow.flatMap(r => extractStrokeCounts(r.mj).map(c => c.count));
             const minC = Math.min(...allCounts), maxC = Math.max(...allCounts), range = maxC - minC || 1;
+            const CHUNK = 10;
+            const chunks = Math.ceil(maxLaps / CHUNK);
 
-            container.innerHTML = `<div class="stroke-grid" style="grid-template-columns:${multi?'160px':'140px'} repeat(${maxLaps},minmax(50px,1fr));">
-                <div class="stroke-cell header"></div>
-                ${Array.from({length:maxLaps},(_,i)=>`<div class="stroke-cell header">Lap ${i+1}</div>`).join('')}
-                ${racesToShow.map(r => {
+            let html = '';
+
+            for (let ch = 0; ch < chunks; ch++) {
+                const startLap = ch * CHUNK;
+                const endLap = Math.min(startLap + CHUNK, maxLaps);
+                const numCols = endLap - startLap;
+
+                html += `<div class="stroke-grid" style="grid-template-columns:${multi ? '160px' : '140px'} repeat(${numCols},minmax(40px,1fr)); margin-bottom:${ch < chunks - 1 ? '6px' : '0'};">`;
+                // Header row
+                html += `<div class="stroke-cell header"></div>`;
+                for (let l = startLap; l < endLap; l++) {
+                    html += `<div class="stroke-cell header">L${l + 1}</div>`;
+                }
+
+                // Data rows
+                racesToShow.forEach(r => {
                     const counts = extractStrokeCounts(r.mj);
                     const isPri = getPrimaryRace() === r;
                     const isCmp = getCompareRace() === r;
                     const highlight = isPri ? 'border-left:3px solid var(--accent-blue);' : isCmp ? 'border-left:3px solid var(--accent-purple);' : '';
-                    const athTag = multi ? `<span style="font-size:9px;font-weight:600;color:var(--accent-blue);">${nameMap[r.athlete_uuid]||''}</span><br>` : '';
-                    return `<div class="stroke-cell label" style="${highlight}">${athTag}${formatDate(r.source_date)}<br><span style="font-size:10px;opacity:0.7;">${raceLabel(r)}</span></div>
-                        ${Array.from({length:maxLaps},(_,i) => {
-                            const c = counts[i];
-                            if (!c) return '<div class="stroke-cell" style="opacity:0.3;">-</div>';
-                            const norm = (c.count - minC) / range;
-                            const cls = norm > 0.75 ? 'very-high' : norm > 0.5 ? 'high' : norm > 0.25 ? 'mid' : 'low';
-                            return `<div class="stroke-cell ${cls}">${c.count}</div>`;
-                        }).join('')}`;
-                }).join('')}
-            </div>` +
-            (showingMode === 'all' ?
-                `<div style="text-align:center;padding:6px 0 2px;font-size:11px;color:var(--text-muted);">Showing all ${racesToShow.length} races with stroke data. Select a race above to focus.</div>` :
-                `<div style="text-align:center;padding:6px 0 2px;font-size:11px;color:var(--text-muted);">Showing ${racesToShow.length} selected race${racesToShow.length>1?'s':''}.</div>`);
+                    const athTag = multi ? `<span style="font-size:9px;font-weight:600;color:var(--accent-blue);">${nameMap[r.athlete_uuid] || ''}</span><br>` : '';
+
+                    // Only show label in first chunk, or abbreviated in subsequent chunks
+                    if (ch === 0) {
+                        html += `<div class="stroke-cell label" style="${highlight}">${athTag}${formatDate(r.source_date)}<br><span style="font-size:10px;opacity:0.7;">${raceLabel(r)}</span></div>`;
+                    } else {
+                        html += `<div class="stroke-cell label" style="${highlight};font-size:10px;color:var(--text-muted);">${isPri ? 'Primary' : isCmp ? 'Compare' : ''}</div>`;
+                    }
+
+                    for (let l = startLap; l < endLap; l++) {
+                        const c = counts[l];
+                        if (!c) { html += '<div class="stroke-cell" style="opacity:0.3;">-</div>'; continue; }
+                        const norm = (c.count - minC) / range;
+                        const cls = norm > 0.75 ? 'very-high' : norm > 0.5 ? 'high' : norm > 0.25 ? 'mid' : 'low';
+                        html += `<div class="stroke-cell ${cls}">${c.count}</div>`;
+                    }
+                });
+                html += '</div>';
+            }
+
+            html += showingMode === 'all'
+                ? `<div style="text-align:center;padding:6px 0 2px;font-size:11px;color:var(--text-muted);">Showing all ${racesToShow.length} races with stroke data. Select a race above to focus.</div>`
+                : `<div style="text-align:center;padding:6px 0 2px;font-size:11px;color:var(--text-muted);">Showing ${racesToShow.length} selected race${racesToShow.length > 1 ? 's' : ''}.</div>`;
+
+            container.innerHTML = html;
         }
 
         // ============================================
@@ -18782,9 +18839,58 @@
         }
 
         // Add form validation listeners
+        // ============================================
+        // FIXED-POSITION TOOLTIPS (v02.30)
+        // ============================================
+        let _fixedTooltip = null;
+
+        function initFixedTooltips() {
+            document.addEventListener('mouseenter', function(e) {
+                const tip = e.target.closest('.info-tip');
+                if (!tip) return;
+                const content = tip.querySelector('.tip-content');
+                if (!content) return;
+
+                // Remove existing tooltip
+                removeFixedTooltip();
+
+                // Create fixed tooltip
+                _fixedTooltip = document.createElement('div');
+                _fixedTooltip.className = 'fixed-tooltip';
+                _fixedTooltip.innerHTML = content.innerHTML;
+                document.body.appendChild(_fixedTooltip);
+
+                // Position relative to the icon
+                const rect = tip.getBoundingClientRect();
+                const ttRect = _fixedTooltip.getBoundingClientRect();
+                let left = rect.left + rect.width / 2 - ttRect.width / 2;
+                let top = rect.top - ttRect.height - 10;
+
+                // Keep within viewport
+                if (left < 8) left = 8;
+                if (left + ttRect.width > window.innerWidth - 8) left = window.innerWidth - ttRect.width - 8;
+                if (top < 8) { top = rect.bottom + 10; } // flip below if no room above
+
+                _fixedTooltip.style.left = left + 'px';
+                _fixedTooltip.style.top = top + 'px';
+            }, true);
+
+            document.addEventListener('mouseleave', function(e) {
+                if (e.target.closest('.info-tip')) removeFixedTooltip();
+            }, true);
+        }
+
+        function removeFixedTooltip() {
+            if (_fixedTooltip && _fixedTooltip.parentNode) {
+                _fixedTooltip.parentNode.removeChild(_fixedTooltip);
+            }
+            _fixedTooltip = null;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             setupUploadDropzone();
             initDraggableVideoPlayer(); // v02.15
+            initFixedTooltips(); // v02.30
             
             ['uploadDistance', 'uploadStroke', 'uploadCourse', 'uploadLane'].forEach(id => {
                 const el = document.getElementById(id);

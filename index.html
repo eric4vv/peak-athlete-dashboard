@@ -17353,12 +17353,17 @@
             const compareVideoKey = compare?.video_key || null;
             
             startVideoState.compareVideoKey = compareVideoKey;
+            // Clear stale compare URL if compare selection changed
+            if (compareVideoKey !== startVideoState._loadedCompareKey) {
+                startVideoState.compareVideoUrl = null;
+            }
             
             if (!primary || !videoKey) {
                 if (videoTab) videoTab.style.display = 'none';
                 startVideoState.videoKey = null;
                 startVideoState.videoUrl = null;
                 startVideoState.compareVideoUrl = null;
+                startVideoState._loadedCompareKey = null;
                 startVideoState.isLocked = false;
                 updateStartVideoSwitcher();
                 return;
@@ -17465,8 +17470,8 @@
             // Load compare video if available (v02.30)
             const compare = getStartCompare();
             const cVideoKey = compare?.video_key;
-            if (cVideoKey && cVideoKey !== startVideoState.compareVideoKey) {
-                startVideoState.compareVideoKey = cVideoKey;
+            if (cVideoKey && (!startVideoState.compareVideoUrl || cVideoKey !== startVideoState._loadedCompareKey)) {
+                startVideoState._loadedCompareKey = cVideoKey;
                 try {
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (session) {
@@ -17482,6 +17487,7 @@
                 } catch (e) { console.error('Error loading start compare video:', e); }
             } else if (!cVideoKey) {
                 startVideoState.compareVideoUrl = null;
+                startVideoState._loadedCompareKey = null;
             }
             updateStartVideoSwitcher();
         }
@@ -17561,12 +17567,17 @@
             const compareVideoKey = compare?.video_key || null;
             
             turnVideoState.compareVideoKey = compareVideoKey;
+            // Clear stale compare URL if compare selection changed
+            if (compareVideoKey !== turnVideoState._loadedCompareKey) {
+                turnVideoState.compareVideoUrl = null;
+            }
             
             if (!primary || !videoKey) {
                 if (videoTab) videoTab.style.display = 'none';
                 turnVideoState.videoKey = null;
                 turnVideoState.videoUrl = null;
                 turnVideoState.compareVideoUrl = null;
+                turnVideoState._loadedCompareKey = null;
                 turnVideoState.isLocked = false;
                 updateTurnVideoSwitcher();
                 return;
@@ -17673,8 +17684,8 @@
             // Load compare video if available (v02.30)
             const compare = getTurnCompare();
             const cVideoKey = compare?.video_key;
-            if (cVideoKey && cVideoKey !== turnVideoState.compareVideoKey) {
-                turnVideoState.compareVideoKey = cVideoKey;
+            if (cVideoKey && (!turnVideoState.compareVideoUrl || cVideoKey !== turnVideoState._loadedCompareKey)) {
+                turnVideoState._loadedCompareKey = cVideoKey;
                 try {
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (session) {
@@ -17690,6 +17701,7 @@
                 } catch (e) { console.error('Error loading turn compare video:', e); }
             } else if (!cVideoKey) {
                 turnVideoState.compareVideoUrl = null;
+                turnVideoState._loadedCompareKey = null;
             }
             updateTurnVideoSwitcher();
         }

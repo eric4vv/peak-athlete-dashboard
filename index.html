@@ -12766,6 +12766,12 @@
                     query = query.eq('athlete_uuid', appState.athleteUuid);
                 } else if (appState.selectedAthleteUuid) {
                     query = query.eq('athlete_uuid', appState.selectedAthleteUuid);
+                } else if (appState.role === 'coach' && appState.teamUuid && _allTeamAthletes?.length) {
+                    const uuids = _allTeamAthletes.map(a => a.athlete_uuid);
+                    if (uuids.length <= 200) query = query.in('athlete_uuid', uuids);
+                } else {
+                    container.innerHTML = '';
+                    return;
                 }
 
                 const { data, error } = await query;
@@ -12981,7 +12987,12 @@
                     scopeUuids = (_allTeamAthletes || []).map(a => a.athlete_uuid);
                     startModuleState._multiAthlete = true;
                 } else {
+                    // No athlete, no team — return empty (show sample mode)
                     startModuleState._multiAthlete = false;
+                    startModuleState.allStarts = [];
+                    updateStartInfoBadge();
+                    populateStartStyleFilter();
+                    return;
                 }
 
                 // Apply gender filter - narrow scopeUuids to matching athletes
@@ -14349,7 +14360,12 @@
                     scopeUuids = (_allTeamAthletes || []).map(a => a.athlete_uuid);
                     turnModuleState._multiAthlete = true;
                 } else {
+                    // No athlete, no team — return empty (show sample mode)
                     turnModuleState._multiAthlete = false;
+                    turnModuleState.allTurns = [];
+                    updateTurnInfoBadge();
+                    populateTurnStyleFilter();
+                    return;
                 }
 
                 if (genderFilter && appState.role === 'coach' && _allTeamAthletes) {
@@ -15606,7 +15622,12 @@
                     scopeUuids = (_allTeamAthletes || []).map(a => a.athlete_uuid);
                     raceModuleState._multiAthlete = true;
                 } else {
+                    // No athlete, no team — return empty (show sample mode)
                     raceModuleState._multiAthlete = false;
+                    raceModuleState.allRaces = [];
+                    updateRaceInfoBadge();
+                    populateRaceFilters();
+                    return;
                 }
 
                 // Apply gender filter - narrow scopeUuids to matching athletes

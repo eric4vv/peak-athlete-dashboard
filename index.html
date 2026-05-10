@@ -16141,12 +16141,12 @@
         function extractSplits(mj, interval) {
             interval = interval || 25;
             const splits = [];
-            for (let d = interval; d <= 1500; d += interval) {
+            for (let d = interval; d <= 1650; d += interval) {
                 const v = mj[`Split ${d} m`];
                 if (v !== undefined && v !== null && v !== '' && !isNaN(parseFloat(v))) splits.push({ distance: d, cumTime: parseFloat(v) });
             }
             if (!splits.length) {
-                for (let d = 5; d <= 1500; d += 5) {
+                for (let d = 5; d <= 1650; d += 5) {
                     const v = mj[`Split ${d} m`];
                     if (v !== undefined && v !== null && v !== '' && !isNaN(parseFloat(v))) splits.push({ distance: d, cumTime: parseFloat(v) });
                 }
@@ -16233,7 +16233,7 @@
                     meta.data.forEach((el, i) => {
                         const val = ds.data[i];
                         if (val == null) return;
-                        const text = typeof val === 'number' ? val.toFixed(2) : String(val);
+                        const text = typeof val === 'number' ? formatTime(val) : String(val);
                         const textWidth = ctx.measureText(text).width || 40;
                         let yOff = chart.config.type === 'bar' ? -8 : -14;
                         if (el.y + yOff - 10 < chartArea.top) yOff = 16;
@@ -16484,33 +16484,36 @@
             const allDists = new Set();
             toChart.forEach(r => extractSplits(r.mj).forEach(s => allDists.add(s.distance)));
             let sortedDists = [...allDists].sort((a,b) => a-b);
+            const raceDistance = parseInt(primaryRace?.mj?.Distance || primaryRace?.mj?.distance || 0);
 
-            // Wall Splits mode: filter to lap boundaries only
             if (!isSeg) {
+                // Wall Splits: show every wall (lap boundary)
                 const wallDists = sortedDists.filter(d => d % lapLen === 0);
                 if (wallDists.length >= 2) sortedDists = wallDists;
+            } else {
+                // Per Segment: macro view — zoom out from wall splits
+                if (lapLen >= 50) {
+                    // LCM (50m pool): break down to every 25m (half-lap detail)
+                    const segDists = sortedDists.filter(d => d % 25 === 0);
+                    if (segDists.length >= 2) sortedDists = segDists;
+                } else {
+                    // SCM/SCY (25m pool): aggregate to macro segments
+                    // 200+ events: per 100m | shorter events: per 50m
+                    const segInterval = raceDistance >= 200 ? 100 : 50;
+                    const segDists = sortedDists.filter(d => d % segInterval === 0);
+                    if (segDists.length >= 2) sortedDists = segDists;
+                }
             }
 
             const datasets = toChart.map((r, i) => {
                 const splits = extractSplits(r.mj);
                 const sm = {}; splits.forEach(s => sm[s.distance] = s.cumTime);
 
-                let data;
-                if (isSeg) {
-                    // Per Segment: show time for each segment (all 5m details)
-                    data = sortedDists.map((d, j) => {
-                        const c = sm[d]; if (!c) return null;
-                        const pD = j > 0 ? sortedDists[j-1] : 0;
-                        return parseFloat((c - (sm[pD] || 0)).toFixed(2));
-                    });
-                } else {
-                    // Wall Splits: show per-lap split (not cumulative)
-                    data = sortedDists.map((d, j) => {
-                        const c = sm[d]; if (!c) return null;
-                        const pD = j > 0 ? sortedDists[j-1] : 0;
-                        return parseFloat((c - (sm[pD] || 0)).toFixed(2));
-                    });
-                }
+                const data = sortedDists.map((d, j) => {
+                    const c = sm[d]; if (!c) return null;
+                    const pD = j > 0 ? sortedDists[j-1] : 0;
+                    return parseFloat((c - (sm[pD] || 0)).toFixed(2));
+                });
 
                 return {
                     label: raceFullLabel(r), data, borderColor: colors[i], backgroundColor: colors[i] + '90',
@@ -16520,7 +16523,6 @@
             });
 
             // Determine race distance for scroll threshold
-            const raceDistance = parseInt(primaryRace?.mj?.Distance || primaryRace?.mj?.distance || 0);
             const needsScroll = isSeg ? sortedDists.length > 16 : (raceDistance > 400);
             setupChartScroll(canvas, needsScroll ? sortedDists.length : 0);
 
@@ -16533,7 +16535,7 @@
                     layout: { padding: { top: 20, right: 15, left: 10 } },
                     scales: {
                         x: { grid: { color: 'rgba(128,140,160,0.10)' }, ticks: { color: getThemeColors().textSec } },
-                        y: { grid: { color: 'rgba(128,140,160,0.10)' }, ticks: { color: getThemeColors().textSec }, title: { display: true, text: isSeg ? t('chart_segment_time') : t('chart_lap_split'), color: getThemeColors().textSec } }
+                        y: { grid: { color: 'rgba(128,140,160,0.10)' }, ticks: { color: getThemeColors().textSec, callback: function(v) { return v >= 60 ? formatTime(v) : v.toFixed(1); } }, title: { display: true, text: isSeg ? t('chart_segment_time') : t('chart_lap_split'), color: getThemeColors().textSec } }
                     },
                     plugins: { legend: { position: 'bottom', labels: { color: getThemeColors().textSec, usePointStyle: true } } }
                 }
@@ -16543,7 +16545,7 @@
             renderWallSplitText(toChart, sortedDists, lapLen, distUnit, colors, isSeg);
         }
 
-        function renderWallSplitText(toChart, wallDists, lapLen, distUnit, colors, isSeg) {
+        function renderWallSplitText(toChart, chartDists, lapLen, distUnit, colors, isSeg) {
             let container = document.getElementById('wallSplitText');
             if (!container) {
                 // Create container after the chart canvas
@@ -16557,28 +16559,31 @@
             }
             if (!container) return;
 
-            if (isSeg) {
-                container.innerHTML = '';
-                return;
-            }
+            // Always show split text — use 50m intervals for both modes
+            const splitInterval = 50;
 
             let html = '';
             toChart.forEach((r, ri) => {
                 const splits = extractSplits(r.mj);
                 const sm = {}; splits.forEach(s => sm[s.distance] = s.cumTime);
-                const label = toChart.length > 1 ? `<span style="color:${colors[ri]};font-weight:600;font-size:11px;margin-right:8px;">${ri === 0 ? 'Primary' : 'Compare'}</span>` : '';
+                // Get all distances that are multiples of splitInterval
+                const textDists = splits.map(s => s.distance).filter(d => d % splitInterval === 0);
+                if (!textDists.length) return;
+
+                const label = toChart.length > 1 ? `<span style="color:${colors[ri]};font-weight:600;font-size:11px;margin-right:8px;">${ri === 0 ? t('vid_primary') : t('vid_compare')}</span>` : '';
 
                 html += `<div style="display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center;padding:8px 0;${ri > 0 ? 'border-top:1px solid var(--border-color);' : ''}">`;
                 html += label;
-                wallDists.forEach((d, j) => {
+                textDists.forEach((d, j) => {
                     const cum = sm[d];
                     if (!cum) return;
-                    const prev = j > 0 ? (sm[wallDists[j-1]] || 0) : 0;
-                    const lapSplit = (cum - prev).toFixed(2);
+                    const prevD = j > 0 ? textDists[j-1] : 0;
+                    const prevCum = sm[prevD] || 0;
+                    const segSplit = formatTime(cum - prevCum);
                     html += `<div style="font-family:JetBrains Mono,monospace;font-size:12px;">
                         <span style="color:var(--text-muted);">${d}${distUnit}</span>
                         <span style="color:var(--text-primary);font-weight:600;margin-left:4px;">${formatTime(cum)}</span>
-                        <span style="color:${colors[ri]};font-size:10px;margin-left:2px;">(${lapSplit})</span>
+                        <span style="color:${colors[ri]};font-size:10px;margin-left:2px;">(${segSplit})</span>
                     </div>`;
                 });
                 html += '</div>';

@@ -16233,7 +16233,7 @@
                     meta.data.forEach((el, i) => {
                         const val = ds.data[i];
                         if (val == null) return;
-                        const text = typeof val === 'number' ? formatTime(val) : String(val);
+                        const text = typeof val === 'number' ? (ds._useTimeFormat && val >= 60 ? formatTime(val) : val.toFixed(2)) : String(val);
                         const textWidth = ctx.measureText(text).width || 40;
                         let yOff = chart.config.type === 'bar' ? -8 : -14;
                         if (el.y + yOff - 10 < chartArea.top) yOff = 16;
@@ -16493,12 +16493,12 @@
             } else {
                 // Per Segment: macro view — zoom out from wall splits
                 if (lapLen >= 50) {
-                    // LCM (50m pool): break down to every 25m (half-lap detail)
-                    const segDists = sortedDists.filter(d => d % 25 === 0);
+                    // LCM (50m pool): 400+ → per 100m | shorter → per 25m (half-lap)
+                    const segInterval = raceDistance >= 400 ? 100 : 25;
+                    const segDists = sortedDists.filter(d => d % segInterval === 0);
                     if (segDists.length >= 2) sortedDists = segDists;
                 } else {
-                    // SCM/SCY (25m pool): aggregate to macro segments
-                    // 200+ events: per 100m | shorter events: per 50m
+                    // SCM/SCY (25m pool): 200+ → per 100m | shorter → per 50m
                     const segInterval = raceDistance >= 200 ? 100 : 50;
                     const segDists = sortedDists.filter(d => d % segInterval === 0);
                     if (segDists.length >= 2) sortedDists = segDists;
@@ -16518,7 +16518,7 @@
                 return {
                     label: raceFullLabel(r), data, borderColor: colors[i], backgroundColor: colors[i] + '90',
                     fill: false, tension: 0.3, spanGaps: true, pointRadius: 4, pointBackgroundColor: colors[i],
-                    borderWidth: 2
+                    borderWidth: 2, _useTimeFormat: true
                 };
             });
 

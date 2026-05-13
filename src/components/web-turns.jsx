@@ -1259,9 +1259,89 @@ const TurnDetail = ({ primary, compare, diff, story, phases, items, phase, onCha
   </React.Fragment>
 );
 
+// ── TurnPhaseHero (v03.01) ────────────────────────────────────
+// Sentence-style hero for the four Turn phase tabs (Approach /
+// Wall / Underwater / Breakout). Mirrors the PhaseHero atom from
+// web-starts.jsx — duplicated locally rather than imported to
+// keep zero coupling between the two modules. Props match the
+// Starts version exactly so future consolidation into shared.jsx
+// is a straight lift if needed.
+const TurnPhaseHero = ({ sentence, highlight, subtext, delta, deltaColor }) => {
+  const isMobile = (window.useIsMobile || (() => false))();
+  if (!sentence) {
+    return (
+      <div style={{
+        padding: 18, borderRadius: 12,
+        background: 'var(--bg-2)', border: '1px solid var(--line-soft)',
+        font: '500 12px var(--font-ui)', color: 'var(--tx-lo)',
+        textAlign: 'center', marginBottom: 14,
+      }}>
+        Headline unavailable for this phase.
+      </div>
+    );
+  }
+  const highlightColor = (() => {
+    if (deltaColor === 'lime') return 'var(--lime-eff)';
+    if (deltaColor === 'flag') return 'var(--flag-eff)';
+    return 'var(--signal-eff)';
+  })();
+  const renderSentence = () => {
+    if (!highlight || !sentence.includes(highlight)) return sentence;
+    const idx = sentence.indexOf(highlight);
+    const before = sentence.slice(0, idx);
+    const after  = sentence.slice(idx + highlight.length);
+    return [
+      before,
+      React.createElement('span', {
+        key: 'hl',
+        style: { color: highlightColor },
+      }, highlight),
+      after,
+    ];
+  };
+  const deltaTone = (() => {
+    if (deltaColor === 'lime') return 'var(--lime-eff)';
+    if (deltaColor === 'flag') return 'var(--flag-eff)';
+    return 'var(--tx-md)';
+  })();
+  return (
+    <div style={{ marginBottom: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div className="display" style={{
+        fontSize: isMobile ? 22 : 28,
+        lineHeight: 1.2, color: 'var(--tx-hi)',
+        letterSpacing: '-0.02em', maxWidth: 620,
+      }}>
+        {renderSentence()}
+      </div>
+      {subtext && (
+        <p style={{
+          font: '500 14px/1.5 var(--font-ui)',
+          color: 'var(--tx-md)', maxWidth: 580, margin: 0,
+        }}>
+          {subtext}
+        </p>
+      )}
+      {delta && (
+        <span className="mono" style={{
+          alignSelf: 'flex-start',
+          padding: '4px 10px', borderRadius: 6,
+          background: 'color-mix(in oklch, ' + deltaTone + ' 14%, transparent)',
+          color: deltaTone,
+          font: '700 11px var(--font-mono)', letterSpacing: 0.04,
+        }}>
+          {delta}
+        </span>
+      )}
+    </div>
+  );
+};
+
 // ── TurnPhaseDetail — per-phase rows table ────────────────────
 // v00.51 v1 ships rows tables only. Per-phase visuals
 // (approach/depart velocity bars, push-off arc) land in v00.52+.
+// v03.01 — Added TurnPhaseHero above the rows table for all four
+// phase tabs. Matches the PhaseHero pattern Starts uses for
+// Underwater + Surface, closing a long-standing parity gap.
 //
 // HelpDot tooltips on each row label (v00.43 pattern).
 const TurnPhaseDetail = ({ phase, primary, compare }) => {
@@ -1301,12 +1381,22 @@ const TurnPhaseDetail = ({ phase, primary, compare }) => {
       { k: 'Vel 5-0 m',          p: num(primary, 'avg_vel_5_0_pre'),      c: num(compare, 'avg_vel_5_0_pre'),      u: 'm/s',  dec: 2, dir: 'higher',
         tip: 'Average velocity from 5 m before the wall to the wall itself.' },
     ],
-    Wall: [
-      { k: '5-in / 5-out',       p: num(primary, 'time_5in_5out_s'),      c: num(compare, 'time_5in_5out_s'),      u: 's',    dec: 2, dir: 'lower',
-        tip: 'Time window 5 m before the wall to 5 m after — the tight wall-plant + push-off measurement.' },
-      { k: 'Push-off velocity',  p: num(primary, 'push_off_velocity'),    c: num(compare, 'push_off_velocity'),    u: 'm/s',  dec: 2, dir: 'higher',
-        tip: 'Velocity of the body at the moment feet leave the wall. Higher = more explosive push.' },
-    ],
+    Wall: (() => {
+      // v03.01 — Derived "Push-off gain" replaces the dead
+      // push_off_velocity column (Templo importer doesn't populate
+      // it). Matches the metric the chart hero calls PUSH-OFF GAIN.
+      const pushOffGain = (t) => {
+        const pre  = num(t, 'avg_vel_5_0_pre');
+        const post = num(t, 'avg_vel_0_5');
+        return (pre != null && post != null) ? +(post - pre).toFixed(2) : null;
+      };
+      return [
+        { k: '5-in / 5-out',  p: num(primary, 'time_5in_5out_s'), c: num(compare, 'time_5in_5out_s'), u: 's',   dec: 2, dir: 'lower',
+          tip: 'Time window 5 m before the wall to 5 m after — the tight wall-plant + push-off measurement.' },
+        { k: 'Push-off gain', p: pushOffGain(primary),            c: pushOffGain(compare),            u: 'm/s', dec: 2, dir: 'higher',
+          tip: 'Velocity difference between the 5 m before wall and the 5 m after wall. Positive = push-off added speed beyond what you carried in.' },
+      ];
+    })(),
     Underwater: [
       { k: 'Kick rate',          p: num(primary, 'kick_rate'),            c: num(compare, 'kick_rate'),            u: '/min', dec: 1, dir: 'higher',
         tip: 'Underwater kicks per minute between push-off and surface break.' },
@@ -1344,8 +1434,22 @@ const TurnPhaseDetail = ({ phase, primary, compare }) => {
 
   const showWallContactBar = name === 'Wall';
 
+  // v03.01 — Per-phase hero sentence (parity with Starts'
+  // PhaseHero for Underwater + Surface). Lands first inside the
+  // ChartCard so the narrative reads before the supporting
+  // visual and rows.
+  const phaseStory = (() => {
+    const builder = window.PA_TURNS && window.PA_TURNS.buildTurnPhaseStory;
+    if (!builder) return null;
+    try { return builder(name, primary, compare); }
+    catch (_) { return null; }
+  })();
+
   return (
     <ChartCard title={(name + ' · ' + (ranges[name] || '')).toUpperCase()}>
+      {phaseStory && (
+        <TurnPhaseHero {...phaseStory}/>
+      )}
       {showWallContactBar && (
         <div style={{ marginBottom: 18 }}>
           <TurnWallContactBar primary={primary} compare={compare}/>

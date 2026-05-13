@@ -237,6 +237,191 @@
     return { eyebrow, titleNode, sub, rightChip };
   }
 
+  // ── buildTurnPhaseStory (v03.01) ──────────────────────────────
+  // Returns a phase-specific sentence-hero spec for the four Turn
+  // tabs (Approach / Wall / Underwater / Breakout), parallel to the
+  // PhaseHero pattern Starts uses for Underwater + Surface. Each
+  // phase picks one canonical metric to anchor the sentence and a
+  // second metric for subtext. Compare mode appends a Δ chip with
+  // direction-aware color (lime = better, flag = worse). Returns
+  // null when the phase isn't recognized; returns an "unavailable"
+  // shape (sentence + null highlight) when the canonical column is
+  // missing on the trial, so the UI always renders something.
+  function buildTurnPhaseStory(phase, primary, compare) {
+    if (!primary || !phase) return null;
+    const n = (t, c) => {
+      if (!t) return null;
+      const v = t[c];
+      return (v == null || isNaN(parseFloat(v))) ? null : parseFloat(v);
+    };
+
+    const cmpLabel = compare
+      ? (compare._benchmarkKind === 'PB'     ? 'PB'
+       : compare._benchmarkKind === 'MEDIAN' ? 'MEDIAN'
+                                              : 'compare')
+      : null;
+
+    // Δ chip helper — mirrors web-starts.jsx buildDeltaChip logic.
+    const buildDelta = (a, b, dir, unit) => {
+      if (a == null || b == null) return { delta: null, color: null };
+      const raw = +(a - b).toFixed(2);
+      if (raw === 0) {
+        return { delta: '±0 ' + unit + ' vs ' + cmpLabel, color: null };
+      }
+      const sign = raw > 0 ? '+' : '';
+      const tone = (dir === 'lower')
+        ? (raw < 0 ? 'lime' : 'flag')
+        : (raw > 0 ? 'lime' : 'flag');
+      return {
+        delta: sign + raw.toFixed(2) + ' ' + unit + ' vs ' + cmpLabel,
+        color: tone,
+      };
+    };
+
+    if (phase === 'Approach') {
+      const v50   = n(primary, 'avg_vel_5_0_pre');
+      const v1510 = n(primary, 'avg_vel_15_10_pre');
+      if (v50 == null) {
+        return {
+          sentence: 'Approach velocity unavailable for this trial.',
+          highlight: null,
+          subtext: 'Needs the 5-0 m pre-wall velocity column.',
+          delta: null, deltaColor: null,
+        };
+      }
+      const chip = buildDelta(v50, compare ? n(compare, 'avg_vel_5_0_pre') : null, 'higher', 'm/s');
+      const highlight = v50.toFixed(2) + ' m/s';
+      let subtext = 'Average velocity through the last 5 m before the wall.';
+      if (v1510 != null) {
+        const carry = +(v50 - v1510).toFixed(2);
+        if (Math.abs(carry) < 0.03) {
+          subtext = 'Held speed steady from 15 m out into the wall.';
+        } else if (carry > 0) {
+          subtext = 'Accelerated ' + carry.toFixed(2) + ' m/s from the 15-10 m zone into the wall.';
+        } else {
+          subtext = 'Lost ' + Math.abs(carry).toFixed(2) + ' m/s from 15 m out to the wall.';
+        }
+      }
+      return {
+        sentence: 'Carried ' + highlight + ' through the last 5 m before the wall.',
+        highlight, subtext,
+        delta: chip.delta, deltaColor: chip.color,
+      };
+    }
+
+    if (phase === 'Wall') {
+      // v03.01 — Reframed around PUSH-OFF GAIN: the velocity
+      // difference between the 5 m before wall (avg_vel_5_0_pre)
+      // and the 5 m after wall (avg_vel_0_5). This is the same
+      // metric the TurnFullVelocityProfile chart already calls
+      // "PUSH-OFF GAIN" — keeping hero + chart + table on the
+      // same story. Positive value means push-off added speed
+      // beyond what was carried in; negative means contact + drag
+      // ate the boost. Replaces the earlier push_off_velocity
+      // hero (column not populated by the Templo importer).
+      const preVel  = n(primary, 'avg_vel_5_0_pre');
+      const postVel = n(primary, 'avg_vel_0_5');
+      if (preVel == null || postVel == null) {
+        return {
+          sentence: 'Push-off gain unavailable for this trial.',
+          highlight: null,
+          subtext: 'Needs both avg_vel_5_0_pre and avg_vel_0_5.',
+          delta: null, deltaColor: null,
+        };
+      }
+      const gain = +(postVel - preVel).toFixed(2);
+      const gainPct = preVel > 0 ? Math.round((gain / preVel) * 100) : null;
+
+      // Compare's push-off gain — for the Δ chip.
+      let cmpGain = null;
+      if (compare) {
+        const cPre  = n(compare, 'avg_vel_5_0_pre');
+        const cPost = n(compare, 'avg_vel_0_5');
+        if (cPre != null && cPost != null) cmpGain = +(cPost - cPre).toFixed(2);
+      }
+      const chip = buildDelta(gain, cmpGain, 'higher', 'm/s');
+
+      let sentence, highlight;
+      if (gain > 0) {
+        highlight = '+' + gain.toFixed(2) + ' m/s';
+        sentence = 'Push-off gained ' + highlight
+                 + (gainPct != null ? ' — a ' + gainPct + '% boost over your approach.' : '.');
+      } else if (gain < 0) {
+        highlight = gain.toFixed(2) + ' m/s';
+        sentence = 'Push-off lost ' + highlight
+                 + (gainPct != null ? ' — a ' + Math.abs(gainPct) + '% drop from your approach.' : '.');
+      } else {
+        highlight = '±0 m/s';
+        sentence = 'Push-off matched your approach speed exactly.';
+      }
+      const subtext = 'From ' + preVel.toFixed(2) + ' m/s in to '
+                    + postVel.toFixed(2) + ' m/s out across the wall.';
+      return {
+        sentence, highlight, subtext,
+        delta: chip.delta, deltaColor: chip.color,
+      };
+    }
+
+    if (phase === 'Underwater') {
+      const kick = n(primary, 'kick_rate');
+      const sbr  = n(primary, 'surface_break_s');
+      if (kick == null && sbr == null) {
+        return {
+          sentence: 'Underwater metrics unavailable for this trial.',
+          highlight: null,
+          subtext: 'Needs kick_rate or surface_break_s.',
+          delta: null, deltaColor: null,
+        };
+      }
+      if (kick != null) {
+        const chip = buildDelta(kick, compare ? n(compare, 'kick_rate') : null, 'higher', '/min');
+        const highlight = kick.toFixed(1) + '/min';
+        const subtext = sbr != null
+          ? sbr.toFixed(2) + ' s from push-off to surface break.'
+          : 'Kicks per minute between push-off and surface break.';
+        return {
+          sentence: 'Held ' + highlight + ' kick rate through the underwater.',
+          highlight, subtext,
+          delta: chip.delta, deltaColor: chip.color,
+        };
+      }
+      // Fallback — surface break only. Neutral framing (long UW can
+      // be a strength for strong kickers), so no delta color.
+      const highlight = sbr.toFixed(2) + ' s';
+      return {
+        sentence: 'Stayed underwater ' + highlight + ' from push-off to surface break.',
+        highlight,
+        subtext: 'Time the body remained submerged after push-off.',
+        delta: null, deltaColor: null,
+      };
+    }
+
+    if (phase === 'Breakout') {
+      const t515 = n(primary, 'time_5in_15out_s');
+      const sr   = n(primary, 'stroke_rate_post_turn');
+      if (t515 == null) {
+        return {
+          sentence: 'Breakout time unavailable for this trial.',
+          highlight: null,
+          subtext: 'Needs time_5in_15out_s.',
+          delta: null, deltaColor: null,
+        };
+      }
+      const chip = buildDelta(t515, compare ? n(compare, 'time_5in_15out_s') : null, 'lower', 's');
+      const highlight = t515.toFixed(2) + ' s';
+      const subtext = sr != null
+        ? 'Re-engaged at ' + sr.toFixed(1) + ' strokes/min after breakout.'
+        : 'Time from 5 m before the wall to 15 m past it.';
+      return {
+        sentence: 'Covered 5 m in / 15 m out in ' + highlight + '.',
+        highlight, subtext,
+        delta: chip.delta, deltaColor: chip.color,
+      };
+    }
+
+    return null;
+  }
+
   // ── Filter + selection helpers ────────────────────────────────
 
   function optionsFrom(trials) {
@@ -284,10 +469,10 @@
   window.PA_TURNS = {
     listTurnTrials,
     trialKey, turnTitle, turnDate,
-    phaseSpans, metricItems, buildTurnStory,
+    phaseSpans, metricItems, buildTurnStory, buildTurnPhaseStory,
     optionsFrom, applyFilters, findByKey,
     turn15in15out,
   };
 
-  try { console.log('[PA_TURNS] loaded (v00.51)'); } catch (_) {}
+  try { console.log('[PA_TURNS] loaded (v03.01)'); } catch (_) {}
 })();

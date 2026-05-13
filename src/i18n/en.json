@@ -1,0 +1,688 @@
+{
+  "common": {
+    "cancel":   "Cancel",
+    "save":     "Save",
+    "retry":    "Retry",
+    "back":     "Back",
+    "close":    "Close",
+    "done":     "Done",
+    "loading":  "Loading…",
+    "saving":   "Saving…",
+    "details":  "Details",
+    "retryUpper": "RETRY"
+  },
+  "errorState": {
+    "eyebrow": "SOMETHING WENT WRONG",
+    "title":   "We couldn't load this data"
+  },
+  "toast": {
+    "dismiss": "Dismiss"
+  },
+  "confirm": {
+    "title":         "Are you sure?",
+    "confirm":       "Confirm",
+    "cancel":        "Cancel",
+    "dangerConfirm": "Yes, do it"
+  },
+  "preview": {
+    "bannerEyebrow":  "PREVIEW MODE",
+    "bannerTitle":    "You're seeing a Pro athlete's sample data",
+    "bannerBody":     "Upgrade to Pro to use these features with your own sessions.",
+    "upgrade":        "Upgrade to Pro",
+    "exit":           "Exit preview",
+    "emptyTitle":     "No sessions yet",
+    "emptyBody":      "Upload your first race to see your own metrics — or preview the dashboard with a Pro athlete's sample data.",
+    "previewBtn":     "Preview with sample data",
+    "tryCompare":     "Try compare in preview",
+    "tryHistory":     "Try Pro features"
+  },
+  "team": {
+    "coaches": {
+      "title":              "Coaches",
+      "loading":            "Loading coaches…",
+      "empty":              "No coaches on this team yet.",
+      "statusActive":       "Active",
+      "statusPending":      "Pending",
+      "labelOwner":         "Owner",
+      "you":                "You"
+    },
+    "teammates": {
+      "title":              "Teammates",
+      "loading":            "Loading teammates…",
+      "empty":              "No other teammates on this team yet.",
+      "you":                "You",
+      "lastSessionLabel":   "Last session",
+      "noLastSession":      "No sessions yet"
+    },
+    "manage": {
+      "menuOpen":           "Manage",
+      "menuRemove":         "Remove from team",
+      "menuSetGender":      "Set gender",
+      "menuSetGenderMale":  "Male",
+      "menuSetGenderFemale":"Female",
+      "menuSetGenderClear": "Clear",
+      "genderMissing":      "Gender not set",
+      "removeConfirmTitle": "Remove from team?",
+      "removeConfirmBody":  "{name} will lose access to this team's data. This can be reversed by re-approving them later.",
+      "toastRemoved":       "{name} removed.",
+      "toastRemoveError":   "Could not remove — please try again.",
+      "toastGenderSaved":   "Gender updated for {name}.",
+      "toastGenderError":   "Could not update gender — please try again."
+    },
+    "leave": {
+      "btn":                "Leave team",
+      "btnPending":         "Cancel request",
+      "confirmAthleteTitle":"Leave this team?",
+      "confirmAthleteBody": "You'll lose access to team data and any pending analyses tied to this team. You can rejoin later by re-entering the team code.",
+      "confirmCoachTitle":  "Leave this team?",
+      "confirmCoachBody":   "You'll lose coach access to this team's data and roster. You can rejoin by re-entering the team code, but pending approvals you handled stay attached to the team.",
+      "confirmCancelTitle": "Cancel join request?",
+      "confirmCancelBody":  "Your pending request to {team} will be removed. You can request again later.",
+      "toastLeft":          "You left the team.",
+      "toastCancelled":     "Request cancelled.",
+      "toastError":         "Could not leave team — please try again.",
+      "blockedLastCoach":   "You're the only active coach on this team. Add another coach or remove all athletes before leaving.",
+      "loading":            "Checking team…"
+    },
+    "athleteEmpty": {
+      "eyebrow":  "NO TEAM YET",
+      "title":    "Join your team",
+      "body":     "Once your coach shares a team code, enter it here. They'll approve your request before you see team data.",
+      "joinBtn":  "Join a team"
+    },
+    "athletePending": {
+      "eyebrow":           "WAITING FOR APPROVAL",
+      "title":             "Waiting for your coach to approve",
+      "titleWithTeam":     "Waiting for {team} to approve",
+      "body":              "Your coach has been notified. Once they approve, your team data and roster will appear here."
+    },
+    "athleteActive": {
+      "eyebrow":         "ON THE TEAM",
+      "title":           "You're on the roster",
+      "titleWithTeam":   "You're on {team}",
+      "body":            "Full team info — coaches list, leaving the team, and squad mates — lands here in the next update."
+    },
+    "pending": {
+      "bannerTitleOne":  "1 pending approval",
+      "bannerTitleN":    "{n} pending approvals",
+      "bannerBodyOne":   "1 member is waiting to join your team. Click to review.",
+      "bannerBodyN":     "{n} members are waiting to join your team. Click to review.",
+      "panelTitle":      "Pending approvals",
+      "panelEmpty":      "No pending requests right now.",
+      "loading":         "Loading pending requests…",
+      "errorTitle":      "Could not load pending requests",
+      "athleteLabel":    "Athlete",
+      "coachLabel":      "Coach",
+      "requestedAt":     "Requested {date}",
+      "approve":         "Approve",
+      "reject":          "Reject",
+      "approving":       "Approving…",
+      "rejecting":       "Rejecting…",
+      "confirmApproveTitle":  "Approve member?",
+      "confirmApproveBody":   "{name} will be added to your team and gain access to its data.",
+      "confirmRejectTitle":   "Reject this request?",
+      "confirmRejectBody":    "{name} will be removed from your team's pending list. They can request again later.",
+      "toastApproved":   "{name} added to the team.",
+      "toastRejected":   "{name} request rejected.",
+      "toastError":      "Could not update — please try again."
+    }
+  },
+  "board": {
+    "title":              "LEADERBOARDS",
+    "heading":            "Top performers",
+    "acrossTeamN":        "across {n} on {team}",
+    "acrossCompN":        "across {n}",
+    "athleteSingular":    "athlete",
+    "athletePlural":      "athletes",
+    "modeTeam":           "Team",
+    "modeCompetition":    "Competition",
+    "genderAll":          "All",
+    "genderFemale":       "Female",
+    "genderMale":         "Male",
+    "periodAll":          "All time",
+    "period30d":          "Last 30 days",
+    "podiumEmpty":        "No qualifying entries yet.",
+    "noTeamHint":         "Join a team to see team rankings.",
+    "cardFastestStart":   "FASTEST START",
+    "cardFastestStartSub":"best 15 m time off the block",
+    "cardFastestTurn":    "FASTEST TURN",
+    "cardFastestTurnSub": "best 15-in / 15-out time",
+    "cardBestRace":       "BEST RACE TIME",
+    "cardBestRaceSubAll": "best PB across all events",
+    "cardBestReaction":   "BEST REACTION",
+    "cardBestReactionSub":"fastest start signal response",
+    "selectAllEvents":    "All events",
+    "compOptin": {
+      "panelTitle":          "Competition opt-in",
+      "loading":             "Loading…",
+      "toggleOff":           "Opt in to compete",
+      "toggleOffSub":        "Add yourself to the global rankings. You'll appear on every event leaderboard.",
+      "toggleOn":            "You're on the leaderboard",
+      "toggleOnSub":         "You're competing on every event. Toggle off any time to leave.",
+      "eventStart":          "Fastest 15m start",
+      "eventReaction":       "Best reaction time",
+      "eventTurn":           "Fastest 15-in / 15-out turn",
+      "eventRacePB":         "Best race PB",
+      "saving":              "Saving…",
+      "toastOptedIn":        "You're now competing on the leaderboard.",
+      "toastOptedOut":       "You've left the competition.",
+      "toastEntrySaved":     "Updated.",
+      "toastError":          "Could not update — please try again.",
+      "proStripTitle":       "Compete on this leaderboard",
+      "proStripBody":        "Upgrade to Pro to add yourself to the rankings.",
+      "proStripCta":         "Upgrade to Pro"
+    }
+  },
+  "admin": {
+    "navLabel":      "Admin",
+    "groupAdmin":    "ADMIN",
+    "pageTitle":     "Race Requests",
+    "pageSub":       "ADMIN",
+    "filter": {
+      "all":         "All",
+      "pending":     "Pending",
+      "processing":  "Processing",
+      "completed":   "Completed",
+      "failed":      "Failed"
+    },
+    "count":         "{n} {requestWord}",
+    "requestSingular":"request",
+    "requestPlural": "requests",
+    "loading":       "Loading requests…",
+    "errorTitle":    "Could not load requests",
+    "empty":         "No requests match this filter.",
+    "emptyAll":      "No race requests yet.",
+    "table": {
+      "status":    "Status",
+      "athlete":   "Athlete",
+      "event":     "Event",
+      "distance":  "Distance",
+      "stroke":    "Stroke",
+      "course":    "Course",
+      "date":      "Submitted",
+      "actions":   "Actions"
+    },
+    "actions": {
+      "downloadVideo": "Download video",
+      "editStatus":    "Update status",
+      "downloading":   "Downloading…"
+    },
+    "modal": {
+      "title":       "Update status",
+      "sub":         "Update the request status. Athletes are emailed automatically when marked complete.",
+      "statusLabel": "New status",
+      "notesLabel":  "Admin notes (optional)",
+      "notesHint":   "Visible to the athlete on completion.",
+      "save":        "Save",
+      "saving":      "Saving…",
+      "cancel":      "Cancel",
+      "errFallback": "Could not update status. Try again."
+    },
+    "toast": {
+      "statusUpdated":   "Status updated",
+      "statusUpdatedFail": "Could not update status",
+      "downloadFailed":  "Could not download video"
+    },
+    "noTeam":          "No team",
+    "noEvent":         "—",
+    "noStroke":        "—"
+  },
+  "auth": {
+    "signIn":          "Sign in",
+    "signUp":          "Sign up",
+    "signOut":         "Sign out",
+    "createAccount":   "Create account",
+    "forgotPassword":  "Forgot password?",
+    "alreadyHave":     "Already have an account?",
+    "email":           "Email",
+    "password":        "Password",
+    "newPassword":     "New password",
+    "signinCard": {
+      "title":   "Performance Lab",
+      "sub":     "Sign in to your Peak Athlete account.",
+      "submit":  "Sign in",
+      "submitBusy": "Signing in…",
+      "errFallback": "Sign-in failed",
+      "metaLeft":  "Prototype",
+      "metaRight": "shell · auth"
+    },
+    "signupCard": {
+      "title":   "Create your account",
+      "sub":     "Set up Performance Lab in under a minute. We'll send a verification link after you finish.",
+      "firstName": "First name",
+      "lastName":  "Last name",
+      "passwordPlaceholder": "At least 6 characters",
+      "iAmAn":   "I am an",
+      "gender":  "Gender",
+      "roleAthlete": "Athlete",
+      "roleCoach":   "Coach",
+      "genderFemale":"Female",
+      "genderMale":  "Male",
+      "submit":      "Create account",
+      "submitBusy":  "Creating account…",
+      "switchPrompt":"Already have an account?",
+      "switchLink":  "Sign in",
+      "metaRight":   "create · account",
+      "errFallback": "Sign-up failed",
+      "errNoUser":   "Sign-up returned no user. Try again or contact eric@mypeakathlete.com."
+    },
+    "verifyCard": {
+      "title":  "Check your email",
+      "subA":   "We sent a verification link to ",
+      "subB":   ". Click it to activate your account, then come back here to sign in.",
+      "resend": "Resend verification email",
+      "resending": "Resending…",
+      "back":   "Back to sign in",
+      "errFallback": "Could not resend the email. Try again in a minute.",
+      "info":   "Verification email re-sent. Check your inbox.",
+      "metaRight": "verify · email"
+    },
+    "forgotCard": {
+      "title":  "Forgot password?",
+      "sub":    "Enter the email you signed up with. We'll send you a link to set a new password.",
+      "submit": "Send reset link",
+      "submitBusy": "Sending…",
+      "back":   "Back to sign in",
+      "errFallback": "Could not send reset link. Try again in a minute.",
+      "metaRight": "reset · request",
+      "sentTitle": "Check your email",
+      "sentSubA":  "If an account exists for ",
+      "sentSubB":  ", we sent a password-reset link. Click it to set a new password, then come back here to sign in.",
+      "sentMetaRight": "reset · sent"
+    },
+    "resetCard": {
+      "title":  "Set a new password",
+      "sub":    "Pick a password you haven't used here before. You'll be signed in immediately after.",
+      "passwordLabel": "New password",
+      "passwordPlaceholder": "At least 6 characters",
+      "submit": "Update password",
+      "submitBusy": "Updating…",
+      "cancel": "Cancel",
+      "errFallback": "Could not update password. Try requesting a new reset link.",
+      "metaRight": "reset · finish"
+    },
+    "consentModal": {
+      "title":   "Terms & Privacy",
+      "sub":     "Before you start using Performance Lab, please review and accept how we handle your data. This only takes a second.",
+      "tosEyebrow":     "Terms of Service",
+      "tosBody":        "You're using Performance Lab to view, analyze, and request video analysis of your own (or your athletes') swim performance. Don't misuse the service or upload content you don't own.",
+      "tosLink":        "View full Terms →",
+      "privEyebrow":    "Privacy Policy",
+      "privBody":       "We store your performance metrics, video files, and account details in encrypted storage. We never sell your data. You can request deletion at any time by emailing eric@mypeakathlete.com.",
+      "privLink":       "View full Privacy Policy →",
+      "agreeLabel":     "I agree to the Terms of Service and Privacy Policy.",
+      "submit":         "Accept and continue",
+      "submitBusy":     "Saving…",
+      "signOutInstead": "Sign out instead",
+      "errFallback":    "Could not record acceptance. Try again.",
+      "metaRight":      "terms · privacy"
+    },
+    "placeholder": {
+      "back":      "Back to sign in",
+      "metaRight": "coming soon"
+    }
+  },
+  "nav": {
+    "deck":         "The Deck",
+    "squad":        "Squad Overview",
+    "starts":       "Starts",
+    "turns":        "Turns",
+    "races":        "Races",
+    "leaderboards": "Leaderboards",
+    "team":         "Team Overview",
+    "roster":       "Roster & Flags",
+    "groupHome":     "HOME",
+    "groupAnalysis": "ANALYSIS",
+    "groupRankings": "RANKINGS",
+    "groupTeam":     "TEAM",
+    "groupSquad":    "SQUAD"
+  },
+  "account": {
+    "title":   "Account",
+    "tabs": {
+      "subscription":  "Subscription",
+      "profile":       "Profile",
+      "preferences":   "Preferences",
+      "notifications": "Notifications"
+    },
+    "preferences": {
+      "title":         "PREFERENCES",
+      "theme":         "Theme",
+      "themeSubDark":  "Currently dark. Toggle from the topbar or here.",
+      "themeSubLight": "Currently light. Toggle from the topbar or here.",
+      "switchToLight": "Switch to light",
+      "switchToDark":  "Switch to dark",
+      "language":      "Language",
+      "languageSub":   "Switch the dashboard between English and Spanish.",
+      "accent":        "Accent color",
+      "accentSub":     "Currently teal. Custom accents coming post-launch."
+    },
+    "subscription": {
+      "yourPlan":          "YOUR PLAN",
+      "planFree":          "Free",
+      "planPro":           "Pro",
+      "planProTrial":      "Pro · Trial",
+      "statusFree":        "FREE",
+      "statusActive":      "ACTIVE",
+      "statusTrialDays":   "TRIAL · {days} DAYS LEFT",
+      "statusTrial":       "TRIAL · ACTIVE",
+      "statusCancelsOn":   "CANCELS ON {date}",
+      "statusCancelsEnd":  "CANCELS AT PERIOD END",
+      "trialEndsOn":       "Your trial ends on {date}. We'll move you to the paid Pro plan automatically.",
+      "renewsOn":          "Renews on {date}.",
+      "cancelsAtEnd":      "Your Pro access stays active until {date}, then drops to Free. You can reactivate anytime from the customer portal.",
+      "freePlanLine":      "You're on the Free plan. 1 race analysis per month. Upgrade to Pro for 3 analyses, video downloads, the Pulse AI coach, and competition leaderboards.",
+      "includedInPro":     "INCLUDED IN PRO",
+      "whatProUnlocks":    "WHAT PRO UNLOCKS",
+      "feature1":          "3 race analyses per month",
+      "feature2":          "Video downloads (race / start / turn)",
+      "feature3":          "Pulse AI coach — 50 queries / month",
+      "feature4":          "Competition leaderboards opt-in",
+      "feature5":          "Coach-team analytics + roster flags",
+      "manageBilling":     "Manage billing",
+      "opening":           "Opening…",
+      "upgradeToPro":      "Upgrade to Pro",
+      "cancelSubscription":"Cancel subscription",
+      "portalError":       "Could not open Stripe portal.",
+      "billingByStripe":   "Billing is handled by Stripe. Manage Billing opens Stripe's hosted portal in a new tab."
+    },
+    "profile": {
+      "title":        "YOUR PROFILE",
+      "name":         "Name",
+      "email":        "Email",
+      "role":         "Role",
+      "athleteCode":  "Athlete code",
+      "team":         "Team",
+      "editingHint":  "Profile editing is coming in a future update. To change your name or email meanwhile, contact eric@mypeakathlete.com."
+    },
+    "notifications": {
+      "title":     "NOTIFICATIONS",
+      "comingSoon":"Coming soon",
+      "body":      "Email preferences for analysis updates, coach notes, and team activity will live here. For now, transactional emails (your analysis is ready, your race request was received) fire automatically and can't be unsubscribed without contacting eric@mypeakathlete.com."
+    }
+  },
+  "lang": {
+    "en": "English",
+    "es": "Español"
+  },
+  "analysis": {
+    "filter": {
+      "distance":  "Distance",
+      "style":     "Style",
+      "course":    "Course",
+      "all":       "All",
+      "metersUnit":"m"
+    },
+    "trialLock": {
+      "title":   "More history is locked",
+      "body":    "Free accounts can open the 2 most recent sessions. Upgrade to Pro for full history access.",
+      "cta":     "Upgrade",
+      "tooltip": "Pro feature — upgrade to unlock"
+    },
+    "compareLock": {
+      "toastTitle": "Compare is a Pro feature",
+      "toastBody":  "Upgrade to Pro to compare two sessions side-by-side."
+    },
+    "benchmark": {
+      "compareTo":      "Compare to ▾",
+      "personalBest":   "Personal best",
+      "personalBestHint":"fastest of same event",
+      "medianRace":     "Median race",
+      "medianRaceHint": "middle of same event",
+      "worldRecord":    "World record",
+      "worldRecordHint":"matched on event + course + gender"
+    },
+    "slot": {
+      "primary":           "Primary",
+      "compare":           "Compare",
+      "noComparable":      "No comparable trials",
+      "warnHintRace":      "same distance · stroke · course",
+      "warnHintStroke":    "same stroke",
+      "selectRace":        "Select a race",
+      "selectStart":       "Select a start",
+      "selectTurn":        "Select a turn"
+    },
+    "trials": {
+      "title":          "TRIALS",
+      "filterCount":    "{filtered} of {total}",
+      "empty":          "No trials match these filters."
+    },
+    "vs": {
+      "personalBest":   "vs PERSONAL BEST",
+      "medianRace":     "vs MEDIAN RACE",
+      "worldRecord":    "vs WORLD RECORD",
+      "benchmark":      "vs BENCHMARK"
+    },
+    "video": {
+      "raceTitle":      "RACE VIDEO · {event}",
+      "startTitle":     "START VIDEO · {event}",
+      "turnTitle":      "TURN VIDEO · {event}",
+      "raceHint":       "from start to touch",
+      "startHint":      "block to breakout",
+      "turnHint":       "approach to breakout",
+      "loading":        "Loading video…",
+      "unavailable":    "Video unavailable",
+      "noVideo":        "No video for this trial yet.",
+      "retry":          "Retry",
+      "download":       "Download",
+      "downloading":    "Downloading…",
+      "myRace":         "My Race",
+      "compareChip":    "Compare",
+      "proEyebrow":     "PRO FEATURE",
+      "proTitle":       "Watch your race videos",
+      "proBody":        "Upgrade to Pro to play the video alongside your splits and stroke mechanics. Your videos are stored forever once analyzed.",
+      "proCta":         "Upgrade to Pro"
+    },
+    "tabs": {
+      "block":      "Block",
+      "flight":     "Flight",
+      "underwater": "Underwater",
+      "breakout":   "Breakout",
+      "approach":   "Approach",
+      "wallContact":"Wall contact",
+      "pushOff":    "Push-off",
+      "splits":     "Splits",
+      "strokeRate": "Stroke rate",
+      "strokeCount":"Stroke count",
+      "velocity":   "Velocity",
+      "summary":    "Summary"
+    },
+    "lapBars": {
+      "lap":    "Lap",
+      "strokes":"Strokes",
+      "rate":   "Rate (spm)",
+      "dps":    "DPS (m)"
+    },
+    "loadingState": {
+      "races":  "Loading races…",
+      "starts": "Loading starts…",
+      "turns":  "Loading turns…"
+    },
+    "errorState": {
+      "racesMessage":  "We hit an error pulling your race history. Try again, or refresh the page if it keeps failing.",
+      "startsMessage": "We hit an error pulling your start trials. Try again, or refresh the page if it keeps failing.",
+      "turnsMessage":  "We hit an error pulling your turn trials. Try again, or refresh the page if it keeps failing."
+    },
+    "emptyState": {
+      "racesEyebrow":  "NO RACES YET",
+      "racesTitle":    "Request your first race analysis",
+      "racesBody":     "Once a race is processed, your splits, stroke rate, and stroke count will appear here.",
+      "startsEyebrow": "NO STARTS YET",
+      "startsTitle":   "Book a start analysis session",
+      "startsBody":    "Once a start is processed, reaction time, flight phase, and underwater velocity will appear here.",
+      "turnsEyebrow":  "NO TURNS YET",
+      "turnsTitle":    "Book a turn analysis session",
+      "turnsBody":     "Once a turn is processed, approach time, rotation, push-off, and breakout will appear here."
+    }
+  },
+  "pulse": {
+    "title":       "Pulse AI",
+    "welcome":     "Pick a prompt below to ask Pulse about your data.",
+    "thinking":    "Analyzing",
+    "disclaimer":  "AI-generated insights based on your data. Always verify with your coach.",
+    "prompt": {
+      "analyze":   "Analyze this trial",
+      "compare":   "Compare these two",
+      "focus":     "What should I focus on?",
+      "trend":     "How am I trending?",
+      "explain":   "What am I looking at?",
+      "team":      "Team overview"
+    },
+    "context": {
+      "none":      "No trial selected"
+    },
+    "error": {
+      "generic":   "Sorry, something went wrong:",
+      "empty":     "No response received. Try again."
+    },
+    "aria": {
+      "toggle":    "Open Pulse AI coach"
+    }
+  },
+  "deck": {
+    "proBanner": {
+      "headline": "Get 3 race analyses every month",
+      "subline":  "Plus Pulse AI coach · Video downloads · Full dashboard",
+      "cta":      "Upgrade to Pro"
+    },
+    "status": {
+      "completed":  "Ready",
+      "processing": "Analyzing",
+      "failed":     "Failed",
+      "pending":    "In queue",
+      "default":    "In queue",
+      "active":     "Active",
+      "recent":     "Recent",
+      "dormant":    "Dormant"
+    },
+    "requestBtn": {
+      "upload":      "Request analysis",
+      "buy":         "Buy analysis",
+      "try":         "Try analysis",
+      "loading":     "Request analysis",
+      "checking":    "Checking for updates…",
+      "noSubscription": "No subscription"
+    },
+    "requests": {
+      "title":           "Your requests",
+      "inFlight":        "{n} in flight",
+      "loading":         "Loading…",
+      "empty":           "No requests yet. The button up top starts your first one.",
+      "retry":           "Retry upload",
+      "checkRaces":      "Check the Races tab for results.",
+      "adminNoteLabel":  "Note",
+      "fileHint":        "MP4 or MOV · up to 500 MB"
+    },
+    "headline": {
+      "latest":          "Latest",
+      "personalBest":    "Personal best",
+      "personalBestToday": "Personal best (today)",
+      "fallbackEvent":   "this event",
+      "raceRequestLabel": "Race request"
+    },
+    "recentRaces": {
+      "title":       "Recent races",
+      "loading":     "Loading…",
+      "empty":       "Nothing yet."
+    },
+    "nextFocus": {
+      "eyebrow":     "NEXT FOCUS",
+      "current":     "CURRENT",
+      "target":      "TARGET",
+      "you":         "YOU",
+      "pb":          "PB",
+      "needMore":    "Run a few more trials to see your next focus.",
+      "needTwoSame": "Need at least 2 races at the same event in this stroke.",
+      "cutStart":    "Cut your 15 m start time",
+      "sharpenTurn": "Sharpen your in-out turn",
+      "chasePB":     "Chase your {event} PB",
+      "metricStart": "Time to 15 m",
+      "metricRecent": "Most recent"
+    },
+    "strokes": {
+      "all":    "All",
+      "free":   "Free",
+      "back":   "Back",
+      "breast": "Breast",
+      "fly":    "Fly"
+    },
+    "coach": {
+      "noTeamLine":      "Your coach profile isn't linked to a team yet.",
+      "loadingSquad":    "Loading squad activity…",
+      "rosterEmptyHero": "No athletes on your team yet — the roster fills in once they're linked.",
+      "noSessions7d":    "No sessions logged across the squad in the last 7 days. Worth a check-in.",
+      "allActiveLine":   "All {n} athletes logged a session this week — {s} {trialWord} captured across the squad.",
+      "someActiveLine":  "{a} of {n} athletes logged a session this week — {s} {trialWord} captured across the squad.",
+      "trialWordSingular": "trial",
+      "trialWordPlural":   "trials",
+      "welcome":         "Welcome",
+      "welcomeFallback": "coach",
+      "kpiRoster":       "Roster size",
+      "kpiRosterSub":    "athletes on your team",
+      "kpiActive7d":     "Active 7 d",
+      "kpiActive7dSub":  "logged a session this week",
+      "kpiSessions7d":   "Sessions 7 d",
+      "kpiSessions7dSub":"trials across the squad",
+      "kpiSessions30d":  "Sessions 30 d",
+      "kpiSessions30dSub":"trials this month",
+      "kpiTrials30d":    "Trials 30 d",
+      "noTeamEyebrow":   "NO TEAM YET",
+      "noTeamTitle":     "Get on a team to unlock the squad view",
+      "noTeamBody":      "Once you join an existing team or create a new one, your athletes' analysis and recent activity will appear here. You can switch teams later.",
+      "joinExisting":    "Join existing team",
+      "createNew":       "Create new team",
+      "emptyRoster":     "EMPTY ROSTER",
+      "emptyRosterBody": "No athletes on your team yet.",
+      "squadOverview":   "SQUAD OVERVIEW",
+      "squadDot":        "SQUAD · ",
+      "activity": {
+        "title":     "RECENT ACTIVITY",
+        "loading":   "Loading activity…",
+        "empty":     "No recent activity yet",
+        "today":     "Today",
+        "yesterday": "Yesterday",
+        "daysAgo":   "{n}d ago",
+        "typeRace":  "Race",
+        "typeStart": "Start",
+        "typeTurn":  "Turn"
+      }
+    },
+    "squadFocus": {
+      "eyebrow":          "SQUAD FOCUS",
+      "loading":          "Loading squad focus…",
+      "notEnoughTrials":  "Not enough trials across the squad yet.",
+      "noSignalInStroke": "No squad signal in this stroke yet."
+    }
+  },
+  "roles": {
+    "athlete":   "Athlete",
+    "coach":     "Coach",
+    "headCoach": "Head Coach"
+  },
+  "topbar": {
+    "search":         "Search athlete, session…",
+    "openMenu":       "Open menu",
+    "switchToLight":  "Switch to light",
+    "switchToDark":   "Switch to dark",
+    "trialDaysLeft":  "{days} days left in trial",
+    "trialEndsToday": "TRIAL ENDS TODAY",
+    "viewTrial":      "View Pro trial details"
+  },
+  "sidebar": {
+    "prototype": "Prototype",
+    "proBadge":  "PRO",
+    "support":   "Contact support"
+  },
+  "pages": {
+    "home":     { "athlete": "The Deck",       "coach": "Squad Overview" },
+    "starts":   "Starts",
+    "turns":    "Turns",
+    "races":    "Races",
+    "board":    "Leaderboards",
+    "team":     { "athlete": "Team Overview",  "coach": "Roster & Flags" },
+    "subHome":     "HOME",
+    "subAnalysis": "ANALYSIS",
+    "subRankings": "RANKINGS",
+    "subTeam":     "TEAM"
+  }
+}

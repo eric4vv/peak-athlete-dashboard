@@ -1,0 +1,688 @@
+{
+  "common": {
+    "cancel":   "Cancelar",
+    "save":     "Guardar",
+    "retry":    "Reintentar",
+    "back":     "Atrás",
+    "close":    "Cerrar",
+    "done":     "Listo",
+    "loading":  "Cargando…",
+    "saving":   "Guardando…",
+    "details":  "Detalles",
+    "retryUpper": "REINTENTAR"
+  },
+  "errorState": {
+    "eyebrow": "ALGO SALIÓ MAL",
+    "title":   "No pudimos cargar estos datos"
+  },
+  "toast": {
+    "dismiss": "Descartar"
+  },
+  "confirm": {
+    "title":         "¿Estás seguro?",
+    "confirm":       "Confirmar",
+    "cancel":        "Cancelar",
+    "dangerConfirm": "Sí, hacerlo"
+  },
+  "preview": {
+    "bannerEyebrow":  "MODO VISTA PREVIA",
+    "bannerTitle":    "Estás viendo datos de muestra de un atleta Pro",
+    "bannerBody":     "Mejora a Pro para usar estas funciones con tus propias sesiones.",
+    "upgrade":        "Mejorar a Pro",
+    "exit":           "Salir de la vista previa",
+    "emptyTitle":     "Aún sin sesiones",
+    "emptyBody":      "Sube tu primera carrera para ver tus métricas — o explora el panel con los datos de muestra de un atleta Pro.",
+    "previewBtn":     "Vista previa con datos de muestra",
+    "tryCompare":     "Probar comparar en vista previa",
+    "tryHistory":     "Probar funciones Pro"
+  },
+  "team": {
+    "coaches": {
+      "title":              "Entrenadores",
+      "loading":            "Cargando entrenadores…",
+      "empty":              "Aún no hay entrenadores en este equipo.",
+      "statusActive":       "Activo",
+      "statusPending":      "Pendiente",
+      "labelOwner":         "Propietario",
+      "you":                "Tú"
+    },
+    "teammates": {
+      "title":              "Compañeros",
+      "loading":            "Cargando compañeros…",
+      "empty":              "Aún no hay otros compañeros en este equipo.",
+      "you":                "Tú",
+      "lastSessionLabel":   "Última sesión",
+      "noLastSession":      "Sin sesiones aún"
+    },
+    "manage": {
+      "menuOpen":           "Gestionar",
+      "menuRemove":         "Quitar del equipo",
+      "menuSetGender":      "Asignar género",
+      "menuSetGenderMale":  "Masculino",
+      "menuSetGenderFemale":"Femenino",
+      "menuSetGenderClear": "Limpiar",
+      "genderMissing":      "Género no asignado",
+      "removeConfirmTitle": "¿Quitar del equipo?",
+      "removeConfirmBody":  "{name} perderá acceso a los datos de este equipo. Esto se puede revertir aprobándolos nuevamente más tarde.",
+      "toastRemoved":       "{name} fue removido.",
+      "toastRemoveError":   "No se pudo quitar — intenta de nuevo.",
+      "toastGenderSaved":   "Género actualizado para {name}.",
+      "toastGenderError":   "No se pudo actualizar el género — intenta de nuevo."
+    },
+    "leave": {
+      "btn":                "Salir del equipo",
+      "btnPending":         "Cancelar solicitud",
+      "confirmAthleteTitle":"¿Salir de este equipo?",
+      "confirmAthleteBody": "Perderás acceso a los datos del equipo y cualquier análisis pendiente vinculado a este equipo. Podrás volver a unirte después ingresando el código del equipo.",
+      "confirmCoachTitle":  "¿Salir de este equipo?",
+      "confirmCoachBody":   "Perderás el acceso de entrenador a los datos y la plantilla de este equipo. Puedes volver a unirte ingresando el código del equipo, pero las aprobaciones pendientes que manejaste permanecen ligadas al equipo.",
+      "confirmCancelTitle": "¿Cancelar la solicitud?",
+      "confirmCancelBody":  "Tu solicitud pendiente para {team} será removida. Puedes solicitar de nuevo más tarde.",
+      "toastLeft":          "Saliste del equipo.",
+      "toastCancelled":     "Solicitud cancelada.",
+      "toastError":         "No se pudo salir del equipo — intenta de nuevo.",
+      "blockedLastCoach":   "Eres el único entrenador activo en este equipo. Agrega otro entrenador o remueve todos los atletas antes de salir.",
+      "loading":            "Verificando equipo…"
+    },
+    "athleteEmpty": {
+      "eyebrow":  "AÚN SIN EQUIPO",
+      "title":    "Únete a tu equipo",
+      "body":     "Cuando tu entrenador comparta el código del equipo, ingrésalo aquí. Aprobará tu solicitud antes de que veas los datos del equipo.",
+      "joinBtn":  "Unirse a un equipo"
+    },
+    "athletePending": {
+      "eyebrow":           "ESPERANDO APROBACIÓN",
+      "title":             "Esperando la aprobación de tu entrenador",
+      "titleWithTeam":     "Esperando que {team} apruebe",
+      "body":              "Tu entrenador ha sido notificado. Una vez que apruebe, los datos del equipo y la plantilla aparecerán aquí."
+    },
+    "athleteActive": {
+      "eyebrow":         "EN EL EQUIPO",
+      "title":           "Estás en la plantilla",
+      "titleWithTeam":   "Estás en {team}",
+      "body":            "La información completa del equipo — lista de entrenadores, salir del equipo, y compañeros — llega aquí en la próxima actualización."
+    },
+    "pending": {
+      "bannerTitleOne":  "1 aprobación pendiente",
+      "bannerTitleN":    "{n} aprobaciones pendientes",
+      "bannerBodyOne":   "1 miembro está esperando unirse a tu equipo. Haz clic para revisar.",
+      "bannerBodyN":     "{n} miembros están esperando unirse a tu equipo. Haz clic para revisar.",
+      "panelTitle":      "Aprobaciones pendientes",
+      "panelEmpty":      "No hay solicitudes pendientes ahora.",
+      "loading":         "Cargando solicitudes pendientes…",
+      "errorTitle":      "No se pudieron cargar las solicitudes pendientes",
+      "athleteLabel":    "Atleta",
+      "coachLabel":      "Entrenador",
+      "requestedAt":     "Solicitado {date}",
+      "approve":         "Aprobar",
+      "reject":          "Rechazar",
+      "approving":       "Aprobando…",
+      "rejecting":       "Rechazando…",
+      "confirmApproveTitle":  "¿Aprobar miembro?",
+      "confirmApproveBody":   "{name} será agregado a tu equipo y tendrá acceso a sus datos.",
+      "confirmRejectTitle":   "¿Rechazar esta solicitud?",
+      "confirmRejectBody":    "{name} será removido de la lista pendiente. Puede volver a solicitar después.",
+      "toastApproved":   "{name} agregado al equipo.",
+      "toastRejected":   "Solicitud de {name} rechazada.",
+      "toastError":      "No se pudo actualizar — intenta de nuevo."
+    }
+  },
+  "board": {
+    "title":              "CLASIFICACIONES",
+    "heading":            "Mejores resultados",
+    "acrossTeamN":        "entre {n} en {team}",
+    "acrossCompN":        "entre {n}",
+    "athleteSingular":    "atleta",
+    "athletePlural":      "atletas",
+    "modeTeam":           "Equipo",
+    "modeCompetition":    "Competencia",
+    "genderAll":          "Todos",
+    "genderFemale":       "Femenino",
+    "genderMale":         "Masculino",
+    "periodAll":          "Todo el tiempo",
+    "period30d":          "Últimos 30 días",
+    "podiumEmpty":        "Aún sin entradas calificadas.",
+    "noTeamHint":         "Únete a un equipo para ver las clasificaciones del equipo.",
+    "cardFastestStart":   "SALIDA MÁS RÁPIDA",
+    "cardFastestStartSub":"mejor tiempo de 15 m desde el bloque",
+    "cardFastestTurn":    "VUELTA MÁS RÁPIDA",
+    "cardFastestTurnSub": "mejor tiempo 15 entrada / 15 salida",
+    "cardBestRace":       "MEJOR TIEMPO DE CARRERA",
+    "cardBestRaceSubAll": "mejor MP en todos los eventos",
+    "cardBestReaction":   "MEJOR REACCIÓN",
+    "cardBestReactionSub":"respuesta más rápida a la señal de salida",
+    "selectAllEvents":    "Todos los eventos",
+    "compOptin": {
+      "panelTitle":          "Inscripción a competencia",
+      "loading":             "Cargando…",
+      "toggleOff":           "Inscríbete a la competencia",
+      "toggleOffSub":        "Agrégate a las clasificaciones globales. Aparecerás en la clasificación de cada evento.",
+      "toggleOn":            "Estás en la clasificación",
+      "toggleOnSub":         "Estás compitiendo en cada evento. Desactiva en cualquier momento para salir.",
+      "eventStart":          "Salida 15m más rápida",
+      "eventReaction":       "Mejor tiempo de reacción",
+      "eventTurn":           "Vuelta 15-entrada / 15-salida más rápida",
+      "eventRacePB":         "Mejor MP de carrera",
+      "saving":              "Guardando…",
+      "toastOptedIn":        "Ahora estás compitiendo en la clasificación.",
+      "toastOptedOut":       "Has dejado la competencia.",
+      "toastEntrySaved":     "Actualizado.",
+      "toastError":          "No se pudo actualizar — intenta de nuevo.",
+      "proStripTitle":       "Compite en esta clasificación",
+      "proStripBody":        "Mejora a Pro para agregarte a las clasificaciones.",
+      "proStripCta":         "Mejorar a Pro"
+    }
+  },
+  "admin": {
+    "navLabel":      "Admin",
+    "groupAdmin":    "ADMIN",
+    "pageTitle":     "Solicitudes de carrera",
+    "pageSub":       "ADMIN",
+    "filter": {
+      "all":         "Todo",
+      "pending":     "Pendiente",
+      "processing":  "Procesando",
+      "completed":   "Completado",
+      "failed":      "Fallido"
+    },
+    "count":         "{n} {requestWord}",
+    "requestSingular":"solicitud",
+    "requestPlural": "solicitudes",
+    "loading":       "Cargando solicitudes…",
+    "errorTitle":    "No se pudieron cargar las solicitudes",
+    "empty":         "Ninguna solicitud coincide con este filtro.",
+    "emptyAll":      "Aún no hay solicitudes de carrera.",
+    "table": {
+      "status":    "Estado",
+      "athlete":   "Atleta",
+      "event":     "Evento",
+      "distance":  "Distancia",
+      "stroke":    "Estilo",
+      "course":    "Piscina",
+      "date":      "Enviada",
+      "actions":   "Acciones"
+    },
+    "actions": {
+      "downloadVideo": "Descargar video",
+      "editStatus":    "Actualizar estado",
+      "downloading":   "Descargando…"
+    },
+    "modal": {
+      "title":       "Actualizar estado",
+      "sub":         "Actualiza el estado de la solicitud. Los atletas reciben un correo automáticamente al marcar como completada.",
+      "statusLabel": "Nuevo estado",
+      "notesLabel":  "Notas del admin (opcional)",
+      "notesHint":   "Visible para el atleta al completarse.",
+      "save":        "Guardar",
+      "saving":      "Guardando…",
+      "cancel":      "Cancelar",
+      "errFallback": "No se pudo actualizar el estado. Intenta de nuevo."
+    },
+    "toast": {
+      "statusUpdated":   "Estado actualizado",
+      "statusUpdatedFail": "No se pudo actualizar el estado",
+      "downloadFailed":  "No se pudo descargar el video"
+    },
+    "noTeam":          "Sin equipo",
+    "noEvent":         "—",
+    "noStroke":        "—"
+  },
+  "auth": {
+    "signIn":          "Iniciar sesión",
+    "signUp":          "Crear cuenta",
+    "signOut":         "Cerrar sesión",
+    "createAccount":   "Crear cuenta",
+    "forgotPassword":  "¿Olvidaste tu contraseña?",
+    "alreadyHave":     "¿Ya tienes una cuenta?",
+    "email":           "Correo electrónico",
+    "password":        "Contraseña",
+    "newPassword":     "Nueva contraseña",
+    "signinCard": {
+      "title":   "Performance Lab",
+      "sub":     "Inicia sesión en tu cuenta de Peak Athlete.",
+      "submit":  "Iniciar sesión",
+      "submitBusy": "Iniciando sesión…",
+      "errFallback": "Error al iniciar sesión",
+      "metaLeft":  "Prototipo",
+      "metaRight": "shell · auth"
+    },
+    "signupCard": {
+      "title":   "Crea tu cuenta",
+      "sub":     "Configura Performance Lab en menos de un minuto. Te enviaremos un enlace de verificación al terminar.",
+      "firstName": "Nombre",
+      "lastName":  "Apellido",
+      "passwordPlaceholder": "Al menos 6 caracteres",
+      "iAmAn":   "Soy",
+      "gender":  "Género",
+      "roleAthlete": "Atleta",
+      "roleCoach":   "Entrenador",
+      "genderFemale":"Mujer",
+      "genderMale":  "Hombre",
+      "submit":      "Crear cuenta",
+      "submitBusy":  "Creando cuenta…",
+      "switchPrompt":"¿Ya tienes una cuenta?",
+      "switchLink":  "Iniciar sesión",
+      "metaRight":   "crear · cuenta",
+      "errFallback": "Error al crear cuenta",
+      "errNoUser":   "El registro no devolvió usuario. Intenta de nuevo o contacta a eric@mypeakathlete.com."
+    },
+    "verifyCard": {
+      "title":  "Revisa tu correo",
+      "subA":   "Enviamos un enlace de verificación a ",
+      "subB":   ". Haz clic para activar tu cuenta, luego vuelve aquí para iniciar sesión.",
+      "resend": "Reenviar correo de verificación",
+      "resending": "Reenviando…",
+      "back":   "Volver a iniciar sesión",
+      "errFallback": "No se pudo reenviar el correo. Intenta en un minuto.",
+      "info":   "Correo de verificación reenviado. Revisa tu bandeja de entrada.",
+      "metaRight": "verificar · correo"
+    },
+    "forgotCard": {
+      "title":  "¿Olvidaste tu contraseña?",
+      "sub":    "Ingresa el correo con el que te registraste. Te enviaremos un enlace para establecer una nueva contraseña.",
+      "submit": "Enviar enlace de restablecimiento",
+      "submitBusy": "Enviando…",
+      "back":   "Volver a iniciar sesión",
+      "errFallback": "No se pudo enviar el enlace. Intenta en un minuto.",
+      "metaRight": "restablecer · solicitud",
+      "sentTitle": "Revisa tu correo",
+      "sentSubA":  "Si existe una cuenta para ",
+      "sentSubB":  ", enviamos un enlace de restablecimiento. Haz clic para establecer una nueva contraseña, luego vuelve aquí para iniciar sesión.",
+      "sentMetaRight": "restablecer · enviado"
+    },
+    "resetCard": {
+      "title":  "Establecer nueva contraseña",
+      "sub":    "Elige una contraseña que no hayas usado aquí antes. Iniciarás sesión inmediatamente después.",
+      "passwordLabel": "Nueva contraseña",
+      "passwordPlaceholder": "Al menos 6 caracteres",
+      "submit": "Actualizar contraseña",
+      "submitBusy": "Actualizando…",
+      "cancel": "Cancelar",
+      "errFallback": "No se pudo actualizar la contraseña. Solicita un nuevo enlace de restablecimiento.",
+      "metaRight": "restablecer · finalizar"
+    },
+    "consentModal": {
+      "title":   "Términos y Privacidad",
+      "sub":     "Antes de empezar a usar Performance Lab, revisa y acepta cómo manejamos tus datos. Solo toma un segundo.",
+      "tosEyebrow":     "Términos de servicio",
+      "tosBody":        "Estás usando Performance Lab para ver, analizar y solicitar análisis de video de tu propio rendimiento (o el de tus atletas) en natación. No hagas mal uso del servicio ni subas contenido que no te pertenezca.",
+      "tosLink":        "Ver términos completos →",
+      "privEyebrow":    "Política de privacidad",
+      "privBody":       "Almacenamos tus métricas de rendimiento, archivos de video y detalles de cuenta en almacenamiento cifrado. Nunca vendemos tus datos. Puedes solicitar la eliminación en cualquier momento escribiendo a eric@mypeakathlete.com.",
+      "privLink":       "Ver política completa →",
+      "agreeLabel":     "Acepto los Términos de servicio y la Política de privacidad.",
+      "submit":         "Aceptar y continuar",
+      "submitBusy":     "Guardando…",
+      "signOutInstead": "Cerrar sesión",
+      "errFallback":    "No se pudo registrar la aceptación. Intenta de nuevo.",
+      "metaRight":      "términos · privacidad"
+    },
+    "placeholder": {
+      "back":      "Volver a iniciar sesión",
+      "metaRight": "próximamente"
+    }
+  },
+  "nav": {
+    "deck":         "Mi Tablero",
+    "squad":        "Vista del Equipo",
+    "starts":       "Salidas",
+    "turns":        "Vueltas",
+    "races":        "Carreras",
+    "leaderboards": "Clasificaciones",
+    "team":         "Equipo",
+    "roster":       "Plantilla y Alertas",
+    "groupHome":     "INICIO",
+    "groupAnalysis": "ANÁLISIS",
+    "groupRankings": "RANKINGS",
+    "groupTeam":     "EQUIPO",
+    "groupSquad":    "EQUIPO"
+  },
+  "account": {
+    "title":   "Cuenta",
+    "tabs": {
+      "subscription":  "Suscripción",
+      "profile":       "Perfil",
+      "preferences":   "Preferencias",
+      "notifications": "Notificaciones"
+    },
+    "preferences": {
+      "title":         "PREFERENCIAS",
+      "theme":         "Tema",
+      "themeSubDark":  "Actualmente oscuro. Cambia desde la barra superior o aquí.",
+      "themeSubLight": "Actualmente claro. Cambia desde la barra superior o aquí.",
+      "switchToLight": "Cambiar a claro",
+      "switchToDark":  "Cambiar a oscuro",
+      "language":      "Idioma",
+      "languageSub":   "Cambia el panel entre inglés y español.",
+      "accent":        "Color de acento",
+      "accentSub":     "Actualmente verde azulado. Acentos personalizados disponibles tras el lanzamiento."
+    },
+    "subscription": {
+      "yourPlan":          "TU PLAN",
+      "planFree":          "Gratis",
+      "planPro":           "Pro",
+      "planProTrial":      "Pro · Prueba",
+      "statusFree":        "GRATIS",
+      "statusActive":      "ACTIVO",
+      "statusTrialDays":   "PRUEBA · {days} DÍAS RESTANTES",
+      "statusTrial":       "PRUEBA · ACTIVA",
+      "statusCancelsOn":   "SE CANCELA EL {date}",
+      "statusCancelsEnd":  "SE CANCELA AL FINAL DEL PERÍODO",
+      "trialEndsOn":       "Tu prueba termina el {date}. Te pasaremos automáticamente al plan Pro de pago.",
+      "renewsOn":          "Se renueva el {date}.",
+      "cancelsAtEnd":      "Tu acceso Pro estará activo hasta el {date}, luego pasarás a Gratis. Puedes reactivar en cualquier momento desde el portal de cliente.",
+      "freePlanLine":      "Estás en el plan Gratis. 1 análisis de carrera por mes. Actualiza a Pro para 3 análisis, descarga de video, el coach Pulse AI y clasificaciones de competencia.",
+      "includedInPro":     "INCLUIDO EN PRO",
+      "whatProUnlocks":    "QUÉ DESBLOQUEA PRO",
+      "feature1":          "3 análisis de carrera por mes",
+      "feature2":          "Descarga de video (carrera / salida / vuelta)",
+      "feature3":          "Coach Pulse AI — 50 consultas / mes",
+      "feature4":          "Suscripción a clasificaciones de competencia",
+      "feature5":          "Análisis del equipo + alertas de plantilla",
+      "manageBilling":     "Gestionar facturación",
+      "opening":           "Abriendo…",
+      "upgradeToPro":      "Actualizar a Pro",
+      "cancelSubscription":"Cancelar suscripción",
+      "portalError":       "No se pudo abrir el portal de Stripe.",
+      "billingByStripe":   "La facturación la gestiona Stripe. Gestionar facturación abre el portal de Stripe en una pestaña nueva."
+    },
+    "profile": {
+      "title":        "TU PERFIL",
+      "name":         "Nombre",
+      "email":        "Correo electrónico",
+      "role":         "Rol",
+      "athleteCode":  "Código de atleta",
+      "team":         "Equipo",
+      "editingHint":  "La edición del perfil llegará en una actualización futura. Para cambiar tu nombre o correo mientras tanto, contacta a eric@mypeakathlete.com."
+    },
+    "notifications": {
+      "title":     "NOTIFICACIONES",
+      "comingSoon":"Próximamente",
+      "body":      "Las preferencias de correo para actualizaciones de análisis, notas del entrenador y actividad del equipo vivirán aquí. Por ahora, los correos transaccionales (tu análisis está listo, tu solicitud de carrera fue recibida) se envían automáticamente y no se pueden cancelar sin contactar a eric@mypeakathlete.com."
+    }
+  },
+  "lang": {
+    "en": "English",
+    "es": "Español"
+  },
+  "analysis": {
+    "filter": {
+      "distance":  "Distancia",
+      "style":     "Estilo",
+      "course":    "Piscina",
+      "all":       "Todo",
+      "metersUnit":"m"
+    },
+    "trialLock": {
+      "title":   "Más historial está bloqueado",
+      "body":    "Cuentas gratuitas pueden abrir las 2 sesiones más recientes. Mejora a Pro para acceso completo al historial.",
+      "cta":     "Mejorar",
+      "tooltip": "Función Pro — mejora para desbloquear"
+    },
+    "compareLock": {
+      "toastTitle": "Comparar es una función Pro",
+      "toastBody":  "Mejora a Pro para comparar dos sesiones lado a lado."
+    },
+    "benchmark": {
+      "compareTo":      "Comparar con ▾",
+      "personalBest":   "Mejor marca personal",
+      "personalBestHint":"más rápido del mismo evento",
+      "medianRace":     "Carrera mediana",
+      "medianRaceHint": "media del mismo evento",
+      "worldRecord":    "Récord mundial",
+      "worldRecordHint":"emparejado por evento + piscina + género"
+    },
+    "slot": {
+      "primary":           "Primario",
+      "compare":           "Comparar",
+      "noComparable":      "Sin pruebas comparables",
+      "warnHintRace":      "misma distancia · estilo · piscina",
+      "warnHintStroke":    "mismo estilo",
+      "selectRace":        "Selecciona una carrera",
+      "selectStart":       "Selecciona una salida",
+      "selectTurn":        "Selecciona una vuelta"
+    },
+    "trials": {
+      "title":          "PRUEBAS",
+      "filterCount":    "{filtered} de {total}",
+      "empty":          "Ninguna prueba coincide con estos filtros."
+    },
+    "vs": {
+      "personalBest":   "vs MEJOR MARCA",
+      "medianRace":     "vs CARRERA MEDIANA",
+      "worldRecord":    "vs RÉCORD MUNDIAL",
+      "benchmark":      "vs REFERENCIA"
+    },
+    "video": {
+      "raceTitle":      "VIDEO DE CARRERA · {event}",
+      "startTitle":     "VIDEO DE SALIDA · {event}",
+      "turnTitle":      "VIDEO DE VUELTA · {event}",
+      "raceHint":       "de la salida al toque",
+      "startHint":      "del bloque al breakout",
+      "turnHint":       "de la aproximación al breakout",
+      "loading":        "Cargando video…",
+      "unavailable":    "Video no disponible",
+      "noVideo":        "Aún no hay video para esta prueba.",
+      "retry":          "Reintentar",
+      "download":       "Descargar",
+      "downloading":    "Descargando…",
+      "myRace":         "Mi carrera",
+      "compareChip":    "Comparación",
+      "proEyebrow":     "FUNCIÓN PRO",
+      "proTitle":       "Mira tus videos de carrera",
+      "proBody":        "Actualiza a Pro para reproducir el video junto a tus parciales y mecánica de brazada. Tus videos se guardan para siempre una vez analizados.",
+      "proCta":         "Actualizar a Pro"
+    },
+    "tabs": {
+      "block":      "Bloque",
+      "flight":     "Vuelo",
+      "underwater": "Subacuático",
+      "breakout":   "Salida a superficie",
+      "approach":   "Aproximación",
+      "wallContact":"Contacto en pared",
+      "pushOff":    "Empuje",
+      "splits":     "Parciales",
+      "strokeRate": "Frecuencia de brazada",
+      "strokeCount":"Número de brazadas",
+      "velocity":   "Velocidad",
+      "summary":    "Resumen"
+    },
+    "lapBars": {
+      "lap":    "Largo",
+      "strokes":"Brazadas",
+      "rate":   "Frec. (spm)",
+      "dps":    "DPS (m)"
+    },
+    "loadingState": {
+      "races":  "Cargando carreras…",
+      "starts": "Cargando salidas…",
+      "turns":  "Cargando vueltas…"
+    },
+    "errorState": {
+      "racesMessage":  "Tuvimos un error al obtener tu historial de carreras. Intenta de nuevo o recarga la página si persiste.",
+      "startsMessage": "Tuvimos un error al obtener tus salidas. Intenta de nuevo o recarga la página si persiste.",
+      "turnsMessage":  "Tuvimos un error al obtener tus vueltas. Intenta de nuevo o recarga la página si persiste."
+    },
+    "emptyState": {
+      "racesEyebrow":  "AÚN SIN CARRERAS",
+      "racesTitle":    "Solicita tu primer análisis de carrera",
+      "racesBody":     "Una vez procesada una carrera, aparecerán aquí tus parciales, frecuencia y número de brazadas.",
+      "startsEyebrow": "AÚN SIN SALIDAS",
+      "startsTitle":   "Reserva una sesión de análisis de salidas",
+      "startsBody":    "Una vez procesada una salida, aparecerán aquí el tiempo de reacción, el vuelo y la velocidad subacuática.",
+      "turnsEyebrow":  "AÚN SIN VUELTAS",
+      "turnsTitle":    "Reserva una sesión de análisis de vueltas",
+      "turnsBody":     "Una vez procesada una vuelta, aparecerán aquí el tiempo de aproximación, rotación, empuje y breakout."
+    }
+  },
+  "pulse": {
+    "title":       "Pulse AI",
+    "welcome":     "Elige una opción para preguntarle a Pulse sobre tus datos.",
+    "thinking":    "Analizando",
+    "disclaimer":  "Información generada por IA basada en tus datos. Siempre verifica con tu entrenador.",
+    "prompt": {
+      "analyze":   "Analizar este intento",
+      "compare":   "Comparar estos dos",
+      "focus":     "¿En qué debo enfocarme?",
+      "trend":     "¿Cómo estoy progresando?",
+      "explain":   "¿Qué estoy viendo?",
+      "team":      "Vista del equipo"
+    },
+    "context": {
+      "none":      "Ningún intento seleccionado"
+    },
+    "error": {
+      "generic":   "Algo salió mal:",
+      "empty":     "No se recibió respuesta. Inténtalo de nuevo."
+    },
+    "aria": {
+      "toggle":    "Abrir entrenador Pulse AI"
+    }
+  },
+  "deck": {
+    "proBanner": {
+      "headline": "Obtén 3 análisis de carreras cada mes",
+      "subline":  "Más Pulse AI · Descargas de video · Acceso completo",
+      "cta":      "Suscribirse a Pro"
+    },
+    "status": {
+      "completed":  "Listo",
+      "processing": "Analizando",
+      "failed":     "Falló",
+      "pending":    "En cola",
+      "default":    "En cola",
+      "active":     "Activo",
+      "recent":     "Reciente",
+      "dormant":    "Inactivo"
+    },
+    "requestBtn": {
+      "upload":      "Solicitar análisis",
+      "buy":         "Comprar análisis",
+      "try":         "Probar análisis",
+      "loading":     "Solicitar análisis",
+      "checking":    "Buscando actualizaciones…",
+      "noSubscription": "Sin suscripción"
+    },
+    "requests": {
+      "title":           "Tus solicitudes",
+      "inFlight":        "{n} en proceso",
+      "loading":         "Cargando…",
+      "empty":           "Aún no hay solicitudes. El botón de arriba empieza la primera.",
+      "retry":           "Reintentar subida",
+      "checkRaces":      "Revisa la pestaña Carreras para ver los resultados.",
+      "adminNoteLabel":  "Nota",
+      "fileHint":        "MP4 o MOV · hasta 500 MB"
+    },
+    "headline": {
+      "latest":          "Más reciente",
+      "personalBest":    "Mejor marca personal",
+      "personalBestToday": "Mejor marca personal (hoy)",
+      "fallbackEvent":   "este evento",
+      "raceRequestLabel": "Solicitud de carrera"
+    },
+    "recentRaces": {
+      "title":       "Carreras recientes",
+      "loading":     "Cargando…",
+      "empty":       "Sin datos aún."
+    },
+    "nextFocus": {
+      "eyebrow":     "PRÓXIMO FOCO",
+      "current":     "ACTUAL",
+      "target":      "OBJETIVO",
+      "you":         "TÚ",
+      "pb":          "PB",
+      "needMore":    "Realiza más pruebas para ver tu próximo foco.",
+      "needTwoSame": "Necesitas al menos 2 carreras del mismo evento en este estilo.",
+      "cutStart":    "Reduce tu tiempo de salida a 15 m",
+      "sharpenTurn": "Afina tu vuelta entrada-salida",
+      "chasePB":     "Persigue tu PB de {event}",
+      "metricStart": "Tiempo a 15 m",
+      "metricRecent": "Más reciente"
+    },
+    "strokes": {
+      "all":    "Todo",
+      "free":   "Libre",
+      "back":   "Espalda",
+      "breast": "Pecho",
+      "fly":    "Mariposa"
+    },
+    "coach": {
+      "noTeamLine":      "Tu perfil de entrenador aún no está vinculado a un equipo.",
+      "loadingSquad":    "Cargando actividad del equipo…",
+      "rosterEmptyHero": "Aún no hay atletas en tu equipo — la plantilla aparecerá una vez vinculados.",
+      "noSessions7d":    "Sin sesiones registradas en el equipo en los últimos 7 días. Vale la pena hacer un check-in.",
+      "allActiveLine":   "Los {n} atletas registraron sesión esta semana — {s} {trialWord} captadas en el equipo.",
+      "someActiveLine":  "{a} de {n} atletas registraron sesión esta semana — {s} {trialWord} captadas en el equipo.",
+      "trialWordSingular": "prueba",
+      "trialWordPlural":   "pruebas",
+      "welcome":         "Bienvenido",
+      "welcomeFallback": "entrenador",
+      "kpiRoster":       "Tamaño de plantilla",
+      "kpiRosterSub":    "atletas en tu equipo",
+      "kpiActive7d":     "Activos 7 d",
+      "kpiActive7dSub":  "registraron sesión esta semana",
+      "kpiSessions7d":   "Sesiones 7 d",
+      "kpiSessions7dSub":"pruebas en el equipo",
+      "kpiSessions30d":  "Sesiones 30 d",
+      "kpiSessions30dSub":"pruebas este mes",
+      "kpiTrials30d":    "Pruebas 30 d",
+      "noTeamEyebrow":   "AÚN SIN EQUIPO",
+      "noTeamTitle":     "Únete a un equipo para desbloquear la vista del equipo",
+      "noTeamBody":      "Una vez te unas a un equipo existente o crees uno nuevo, los análisis de tus atletas y la actividad reciente aparecerán aquí. Puedes cambiar de equipo después.",
+      "joinExisting":    "Unirse a un equipo existente",
+      "createNew":       "Crear equipo nuevo",
+      "emptyRoster":     "PLANTILLA VACÍA",
+      "emptyRosterBody": "Aún no hay atletas en tu equipo.",
+      "squadOverview":   "VISTA DEL EQUIPO",
+      "squadDot":        "EQUIPO · ",
+      "activity": {
+        "title":     "ACTIVIDAD RECIENTE",
+        "loading":   "Cargando actividad…",
+        "empty":     "Sin actividad reciente",
+        "today":     "Hoy",
+        "yesterday": "Ayer",
+        "daysAgo":   "Hace {n}d",
+        "typeRace":  "Carrera",
+        "typeStart": "Salida",
+        "typeTurn":  "Vuelta"
+      }
+    },
+    "squadFocus": {
+      "eyebrow":          "FOCO DEL EQUIPO",
+      "loading":          "Cargando foco del equipo…",
+      "notEnoughTrials":  "Aún no hay suficientes pruebas en el equipo.",
+      "noSignalInStroke": "Aún sin señal del equipo en este estilo."
+    }
+  },
+  "roles": {
+    "athlete":   "Atleta",
+    "coach":     "Entrenador",
+    "headCoach": "Entrenador principal"
+  },
+  "topbar": {
+    "search":         "Buscar atleta, sesión…",
+    "openMenu":       "Abrir menú",
+    "switchToLight":  "Cambiar a claro",
+    "switchToDark":   "Cambiar a oscuro",
+    "trialDaysLeft":  "{days} días restantes de prueba",
+    "trialEndsToday": "LA PRUEBA TERMINA HOY",
+    "viewTrial":      "Ver detalles de la prueba Pro"
+  },
+  "sidebar": {
+    "prototype": "Prototipo",
+    "proBadge":  "PRO",
+    "support":   "Contactar soporte"
+  },
+  "pages": {
+    "home":     { "athlete": "Mi Tablero",     "coach": "Vista del Equipo" },
+    "starts":   "Salidas",
+    "turns":    "Vueltas",
+    "races":    "Carreras",
+    "board":    "Clasificaciones",
+    "team":     { "athlete": "Equipo",         "coach": "Plantilla y Alertas" },
+    "subHome":     "INICIO",
+    "subAnalysis": "ANÁLISIS",
+    "subRankings": "RANKINGS",
+    "subTeam":     "EQUIPO"
+  }
+}

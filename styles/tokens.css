@@ -1,0 +1,195 @@
+/* ───────────────────────────────────────────────────────────
+   PEAK ATHLETE — PERFORMANCE LAB v03 PROTOTYPE
+   Design tokens · Ink & Signal
+
+   Single source of truth for color, type, spacing, density.
+   Flip data-scope / data-dir / data-density on <body> to retint
+   or resize everything downstream.
+   ─────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── INK (dark) surfaces ── */
+  --ink:        #0B0D0E;   /* near-black, warm bias */
+  --ink-2:      #14171A;   /* card background */
+  --ink-3:      #1C2024;   /* raised surface */
+  --ink-4:      #262B31;   /* borders on dark */
+  --ink-line:   #2E343B;
+
+  /* ── PAPER (light) surfaces ── */
+  --paper:      #F5F3EE;   /* warm off-white */
+  --paper-2:    #ECE8DF;   /* section background */
+  --paper-3:    #E0DBCF;   /* borders on light */
+  --bone:       #C8C2B3;
+
+  /* ── text ── */
+  --text-hi:    #0B0D0E;
+  --text-md:    #44494F;
+  --text-lo:    #7A7E83;
+  --text-on-ink-hi: #F5F3EE;
+  --text-on-ink-md: #A5ABB2;
+  --text-on-ink-lo: #6C7279;
+
+  /* ── signature accent — electric teal (default), oklch-tuned ── */
+  --signal:       oklch(78% 0.17 190);
+  --signal-ink:   oklch(50% 0.14 190);
+  --signal-glow:  color-mix(in oklch, var(--signal) 30%, transparent);
+
+  /* ── performance-state colors ── */
+  --lime:       oklch(85% 0.18 130);   /* improvement / PB */
+  --lime-ink:   oklch(52% 0.17 130);
+  --flag:       oklch(65% 0.22 25);    /* decline / alert */
+  --flag-ink:   oklch(48% 0.21 25);
+  --amber:      oklch(80% 0.15 75);    /* watch / pending */
+  --amber-ink:  oklch(55% 0.15 75);
+  --compare:    oklch(72% 0.14 285);   /* compare / secondary trial */
+  --compare-ink: oklch(50% 0.14 285);
+
+  /* ── type ── */
+  --font-display: "Inter Tight", "Söhne", "Helvetica Neue", Arial, sans-serif;
+  --font-ui:      "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, monospace;
+
+  /* ── radius + shadow ── */
+  --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px; --r-full: 9999px;
+  --shadow-1: 0 1px 0 rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-2: 0 2px 6px rgba(0,0,0,0.08), 0 12px 30px rgba(0,0,0,0.06);
+  --shadow-ink: 0 1px 0 rgba(255,255,255,0.03), 0 10px 30px rgba(0,0,0,0.4);
+}
+
+/* ── Accent direction knob: teal (default) / ember / violet ── */
+[data-dir="ember"] {
+  --signal:     oklch(72% 0.18 40);
+  --signal-ink: oklch(52% 0.17 40);
+}
+[data-dir="violet"] {
+  --signal:     oklch(68% 0.18 300);
+  --signal-ink: oklch(48% 0.17 300);
+}
+
+/* ── Scope knob: dark (ink) / light (paper) ── */
+[data-scope="dark"] {
+  --bg:        var(--ink);
+  --bg-2:      var(--ink-2);
+  --bg-3:      var(--ink-3);
+  --line:      var(--ink-4);
+  --line-soft: var(--ink-line);
+  --tx-hi:     var(--text-on-ink-hi);
+  --tx-md:     var(--text-on-ink-md);
+  --tx-lo:     var(--text-on-ink-lo);
+  --signal-eff: var(--signal);
+  --lime-eff:   var(--lime);
+  --flag-eff:   var(--flag);
+  --amber-eff:  var(--amber);
+  --compare-eff: var(--compare);
+  --shadow:    var(--shadow-ink);
+}
+[data-scope="light"] {
+  --bg:        var(--paper);
+  --bg-2:      #FBF9F4;
+  --bg-3:      #FFFFFF;
+  --line:      var(--paper-3);
+  --line-soft: #EDE8DC;
+  --tx-hi:     var(--text-hi);
+  --tx-md:     var(--text-md);
+  --tx-lo:     var(--text-lo);
+  --signal-eff: var(--signal-ink);
+  --lime-eff:   var(--lime-ink);
+  --flag-eff:   var(--flag-ink);
+  --amber-eff:  var(--amber-ink);
+  --compare-eff: var(--compare-ink);
+  --shadow:    var(--shadow-2);
+}
+
+/* ── Reset + base ── */
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  color: var(--tx-hi);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.mono    { font-family: var(--font-mono); font-feature-settings: "tnum"; }
+.display { font-family: var(--font-display); letter-spacing: -0.02em; font-weight: 700; }
+.eyebrow {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--tx-lo);
+}
+
+/* ── pill utility ── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 500 11px/1 var(--font-ui);
+  padding: 5px 9px;
+  border-radius: var(--r-full);
+  border: 1px solid currentColor;
+  color: var(--tx-md);
+  background: transparent;
+  letter-spacing: 0.02em;
+}
+.pill.solid  { background: var(--tx-hi); color: var(--bg); border-color: transparent; }
+.pill.signal { color: var(--signal-eff); border-color: color-mix(in oklch, var(--signal-eff) 40%, transparent);
+               background: color-mix(in oklch, var(--signal-eff) 10%, transparent); }
+.pill.lime   { color: var(--lime-eff);   border-color: color-mix(in oklch, var(--lime-eff) 40%, transparent);
+               background: color-mix(in oklch, var(--lime-eff) 10%, transparent); }
+.pill.flag   { color: var(--flag-eff);   border-color: color-mix(in oklch, var(--flag-eff) 40%, transparent);
+               background: color-mix(in oklch, var(--flag-eff) 10%, transparent); }
+
+/* ── card primitive ── */
+.card {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.card-pad { padding: 20px; }
+
+/* ── Density knob ── */
+:root {
+  --d-pad: 20px;
+  --d-pad-lg: 32px;
+  --d-gap: 16px;
+  --d-gap-lg: 24px;
+  --d-row: 14px;
+  --d-type-scale: 1;
+}
+[data-density="airy"]     { --d-pad: 28px; --d-pad-lg: 44px; --d-gap: 22px; --d-gap-lg: 32px; --d-row: 20px; --d-type-scale: 1.08; }
+[data-density="balanced"] { --d-pad: 20px; --d-pad-lg: 32px; --d-gap: 16px; --d-gap-lg: 24px; --d-row: 14px; --d-type-scale: 1; }
+[data-density="dense"]    { --d-pad: 11px; --d-pad-lg: 18px; --d-gap: 8px;  --d-gap-lg: 12px; --d-row: 7px;  --d-type-scale: 0.88; }
+
+[data-density] .card-pad              { padding: var(--d-pad); }
+[data-density="dense"]  .card         { border-radius: 8px; }
+[data-density="dense"]  .num-xl       { font-size: 48px; }
+[data-density="dense"]  .num-lg       { font-size: 30px; }
+[data-density="airy"]   .num-xl       { font-size: 76px; }
+[data-density="airy"]   .num-lg       { font-size: 48px; }
+[data-density="dense"]  .card-pad     { padding: 12px !important; }
+[data-density="airy"]   .card-pad     { padding: 28px !important; }
+
+.hr { height: 1px; background: var(--line-soft); border: 0; margin: 0; }
+
+/* ── Big numeric display ── */
+.num-xl { font: 700 64px/0.9 var(--font-mono); letter-spacing: -0.02em;  font-variant-numeric: tabular-nums; }
+.num-lg { font: 700 40px/1   var(--font-mono); letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
+.num-md { font: 600 22px/1   var(--font-mono); font-variant-numeric: tabular-nums; }
+.num-sm { font: 600 15px/1   var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.delta-pos { color: var(--lime-eff); }
+.delta-neg { color: var(--flag-eff); }
+
+/* ── animations ── */
+@keyframes paPulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.9); }
+  50%      { opacity: 1;    transform: scale(1.15); }
+}
+
+/* ── scrollbar polish ── */
+::-webkit-scrollbar         { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb   { background: color-mix(in oklch, var(--tx-lo) 30%, transparent); border-radius: 10px; }
+::-webkit-scrollbar-track   { background: transparent; }

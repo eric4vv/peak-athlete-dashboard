@@ -697,6 +697,67 @@ const ConfirmHost = () => {
 // subscription tab via dispatch) and Exit preview (calls
 // PA_PREVIEW.exit()).
 //
+// ── StuckBanner (v03.04) ──────────────────────────────────────
+// Non-blocking top banner that appears when the supabase client
+// gets internally wedged. Replaces the auto-reload behavior in
+// withRecovery (Tier 2) and the always-on visibility probes
+// (v01.73-v01.74) — both were too aggressive and disrupted the
+// user's workflow with surprise reloads.
+//
+// Listens for `pa:client-stuck` events dispatched by:
+//   1. withRecovery (supabase.js) — when a query hangs even after
+//      a forced token refresh + retry
+//   2. probeStuckClient (supabase.js) — when the Stripe-return
+//      probe times out
+//
+// Banner offers a Reload button (user-initiated recovery) and a
+// dismiss X. Stays visible until the user acts — no auto-hide.
+// Mounted once at the App level in index.html.
+const StuckBanner = () => {
+  const [active, setActive] = React.useState(false);
+  React.useEffect(() => {
+    const onStuck = () => setActive(true);
+    window.addEventListener('pa:client-stuck', onStuck);
+    return () => window.removeEventListener('pa:client-stuck', onStuck);
+  }, []);
+  if (!active) return null;
+  return (
+    <div role="alert" style={{
+      position: 'fixed', top: 0, left: 0, right: 0,
+      zIndex: 9999,
+      background: 'color-mix(in oklch, var(--amber-eff) 92%, transparent)',
+      color: 'var(--ink)',
+      borderBottom: '1px solid var(--line)',
+      padding: '10px 16px',
+      display: 'flex', alignItems: 'center', gap: 12,
+      font: '500 13px var(--font-ui)',
+    }}>
+      <span style={{ flex: 1, lineHeight: 1.4 }}>
+        Connection looks stuck. A page reload usually fixes it.
+      </span>
+      <button type="button"
+        onClick={() => { try { window.location.reload(); } catch (_) {} }}
+        style={{
+          padding: '6px 12px', borderRadius: 8, border: 'none',
+          background: 'var(--ink)', color: 'var(--paper)',
+          font: '700 12px var(--font-ui)', letterSpacing: 0.02,
+          cursor: 'pointer',
+        }}>
+        Reload
+      </button>
+      <button type="button" aria-label="Dismiss"
+        onClick={() => setActive(false)}
+        style={{
+          width: 28, height: 28, borderRadius: 8, border: 'none',
+          background: 'transparent', color: 'var(--ink)',
+          font: '700 16px var(--font-ui)', cursor: 'pointer',
+        }}>
+        ×
+      </button>
+    </div>
+  );
+};
+
 // Renders nothing when preview is off — zero overhead in the
 // normal UX. Subscribes to pa:preview-changed via PA_PREVIEW's
 // usePreview hook so it appears/disappears reactively.
@@ -997,4 +1058,5 @@ Object.assign(window, {
   PreviewBanner,
   RequestAnalysisInline,
   ProUpgradeBanner,
+  StuckBanner,
 });

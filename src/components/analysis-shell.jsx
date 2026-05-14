@@ -505,7 +505,11 @@ const TrialRow = ({ trial, state, onAssign, helpers = DEFAULT_HELPERS, locked = 
         color: locked ? 'var(--tx-lo)' : 'var(--tx-hi)',
         textAlign: 'right',
       }}>
-        {total != null ? total.toFixed(2) + ' s' : '—'}
+        {total != null
+          ? (window.PA_KPIS && window.PA_KPIS.fmtTime
+              ? window.PA_KPIS.fmtTime(total, 2)
+              : total.toFixed(2) + ' s')
+          : '—'}
       </div>
       <div style={{ width: 20, color: 'var(--tx-lo)', textAlign: 'right' }}>
         {locked

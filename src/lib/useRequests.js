@@ -152,13 +152,23 @@
     }, []);
 
     // Visibilitychange listener — when the tab becomes visible and
-    // we were armed, start polling (and disarm so we don't re-trigger
-    // on subsequent tab switches).
+    // we were armed, run a fast health probe BEFORE starting the
+    // 4-query poll. If the client is wedged (Stripe-close-without-
+    // purchase scenario), the probe times out in ~2s and dispatches
+    // pa:client-stuck → StuckBanner shows. Otherwise we proceed to
+    // startPoll() as normal. v03.04 — avoids the prior behavior
+    // where startPoll itself wedged on the broken client and the
+    // user waited 15s for withRecovery to surface a banner.
     useEffect(() => {
-      const onVis = () => {
+      const onVis = async () => {
         if (document.visibilityState !== 'visible') return;
         if (!armedRef.current) return;
         armedRef.current = false;
+        const probe = window.PA_AUTH?.probeStuckClient;
+        if (probe) {
+          const r = await probe('stripe-return').catch(() => ({ healthy: true }));
+          if (!r.healthy) return; // banner already dispatched
+        }
         startPoll();
       };
       document.addEventListener('visibilitychange', onVis);

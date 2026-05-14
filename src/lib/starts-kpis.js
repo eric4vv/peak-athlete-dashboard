@@ -202,18 +202,36 @@
   // ('up' for velocity/height/distance) or bad ('down' for times,
   // angle, which prefers lower / neutral). Deltas are not computed
   // at this stage — they come in with the compare slot (v00.20).
-  // v02.22 — Peak velocity is the MAX of two measured samples:
-  //   hor_vel_hip_flight    (hip velocity during flight phase)
-  //   hor_vel_hands_entry   (hand velocity at water entry)
-  // Originally `Peak Velocity` was hard-coded to hor_vel_hip_flight,
-  // but for some swimmers the entry velocity is actually higher
-  // (gravity adds horizontal speed when takeoff angle is nonzero).
-  // Picking the max prevents the misleading "peak at takeoff" claim
-  // when the real peak was at entry.
+  // v02.22 — Peak velocity is the MAX of measured velocity samples
+  // across the entire start trajectory. v03.03 extended the sample
+  // set from 2 → 6 columns after Eric reported the reported "peak"
+  // was sometimes lower than a velocity recorded in a later phase
+  // (e.g., hor_vel_hip_to_kick1 exceeding hor_vel_hip_flight when
+  // streamline + initial pulse efficiency carries the body past
+  // takeoff speed).
+  //
+  // Samples scanned (in trajectory order):
+  //   hor_vel_hip_flight     — hip velocity during flight phase (takeoff)
+  //   hor_vel_hands_entry    — hand velocity at water entry
+  //   hor_vel_hip_to_kick1   — hip velocity from entry to first dolphin kick
+  //   hor_vel_hip_3kicks     — hip velocity after 3 dolphin kicks
+  //   hor_vel_hip_stroke1    — hip velocity after first stroke
+  //   hor_vel_hip_stroke2    — hip velocity after second stroke
+  //
+  // Returns the highest populated value, or null when nothing is
+  // captured. Picking the max prevents the misleading "peak at
+  // takeoff" claim when the real peak was downstream.
   function peakVelocity(trial) {
     if (!trial) return null;
     const n = (x) => (x == null || isNaN(parseFloat(x))) ? null : parseFloat(x);
-    const samples = [n(trial.hor_vel_hip_flight), n(trial.hor_vel_hands_entry)].filter(v => v != null);
+    const samples = [
+      n(trial.hor_vel_hip_flight),
+      n(trial.hor_vel_hands_entry),
+      n(trial.hor_vel_hip_to_kick1),
+      n(trial.hor_vel_hip_3kicks),
+      n(trial.hor_vel_hip_stroke1),
+      n(trial.hor_vel_hip_stroke2),
+    ].filter(v => v != null);
     return samples.length ? Math.max(...samples) : null;
   }
 
@@ -250,7 +268,7 @@
         tip: 'Hip height above the water at the moment feet leave the block.' },
       { k: 'Peak Velocity',
         v: round(peakVelocity(trial), 2), u: 'm/s', goodDir: 'up',
-        tip: 'Highest horizontal velocity recorded during the start — picked from takeoff or entry, whichever is faster.' },
+        tip: 'Highest horizontal velocity recorded during the start — the max across takeoff, entry, and underwater samples (up to second stroke).' },
       { k: 'Time to 15 m',
         v: round(n(trial.split_15m_s), 2), u: 's', goodDir: 'down',
         tip: 'Total time from start signal to crossing the 15 m mark — the canonical start-quality measurement.' },

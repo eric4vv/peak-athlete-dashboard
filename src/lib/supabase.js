@@ -22,8 +22,17 @@
   const AUTH_REDIRECT_URL = 'https://www.mypeakathlete.com/blank-3';
 
   // Create client (uses window.supabase, exposed by the CDN UMD build)
+  // v03.05 — storageKey namespaces our auth storage so any leftover
+  // localStorage cruft from the legacy @2 supabase-js version can't
+  // interfere with the pinned 2.45.4 build. Side effect: users
+  // currently signed in get logged out once (no auth token under the
+  // new key) and need to sign in again. One-time cost.
   const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true },
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      storageKey: 'pa-prototype-v03-auth',
+    },
   });
 
   // ── Auth ─────────────────────────────────────────────────
@@ -245,17 +254,21 @@
       }
     }
 
-    // Tier 2 — recover via local signOut + reload. User stays
-    // signed in via the stored refresh token on the new page.
-    try { console.warn('[withRecovery] forcing client recovery via local signOut + reload'); } catch (_) {}
+    // Tier 2 (v03.04) — surface a non-blocking banner instead of
+    // force-reloading. Earlier behavior was to local-signOut + auto
+    // reload, but Eric reported the reload disrupted his workflow:
+    // mid-task, mid-modal, mid-scroll. Now we dispatch
+    // pa:client-stuck and the StuckBanner component (shared.jsx)
+    // renders a top banner with a Reload button — the user decides
+    // when to recover. The query still throws so the caller can
+    // render its empty state.
+    try { console.warn('[withRecovery] ' + label + ' stuck after retry — surfacing banner'); } catch (_) {}
     try {
-      await Promise.race([
-        client.auth.signOut({ scope: 'local' }),
-        timeoutPromise(3000),
-      ]);
+      window.dispatchEvent(new CustomEvent('pa:client-stuck', {
+        detail: { source: 'withRecovery:' + label },
+      }));
     } catch (_) {}
-    setTimeout(() => { try { window.location.reload(); } catch (_) {} }, 100);
-    throw new Error('client recovery — page will reload');
+    throw new Error('client recovery — banner surfaced');
   }
 
   // ── Expose to the rest of the app ────────────────────────
@@ -270,76 +283,53 @@
     withRecovery,
   };
 
-  // ── Visibility-change health probes (v01.73) ────────────
-  // Targeted at the Stripe-return scenario:
-  // user clicks Buy → Stripe tab opens → closes Stripe without
-  // purchasing → returns to Lab → supabase client is internally
-  // wedged → next tab click hangs.
+  // ── Stripe-return health probe (v03.04) ────────────────
+  // Removed the always-on visibility probes (v01.73/v01.74) because
+  // they were too aggressive — fired on every tab switch and caused
+  // surprise reloads even when the client was perfectly healthy.
   //
-  // Two probes fire on each visibility-becomes-visible event:
+  // Replaced by: a SINGLE targeted probe that runs only when a
+  // Stripe checkout was just opened. useRequests.armStripeReturn()
+  // sets window.PA_AUTH._stripeArmed = true right before opening
+  // the Stripe tab; on visibilitychange→visible, we probe once,
+  // then disarm. If the probe times out, we dispatch the
+  // pa:client-stuck event instead of force-reloading — the
+  // StuckBanner component in shared.jsx renders a non-blocking
+  // banner so the user decides when to recover.
   //
-  //   Probe A (immediate, t=0)
-  //   Catches the case where the client was ALREADY stuck before
-  //   the user returned (rare). Throttled to once per 30s.
-  //
-  //   Probe B (delayed, t=1500ms)
-  //   Catches the more common case where the client becomes wedged
-  //   DURING the useRequests load() that fires on visibility change
-  //   (4 parallel queries kick off → one breaks the client state).
-  //   By 1.5 seconds in, the breakage has developed; probe B catches
-  //   it. Worst-case user wait: ~3 seconds (1.5s delay + 1.5s probe
-  //   timeout + reload), down from 5s in v01.73 and 15s withRecovery
-  //   wait. Tuned in v01.74 — 1.5s is the lowest delay that still
-  //   gives useRequests.load() enough headroom to actually wedge
-  //   before we probe (queries normally complete <500ms healthy).
-  //
-  // Both probes hit the data path (not auth), since Eric's
-  // diagnostic showed both auth.getSession() AND data queries hang
-  // together when the client wedges. v_my_subscription is RLS-
-  // filtered, returns 0 or 1 row, lightweight.
-  let _lastImmediateProbeAt = 0;
-  let _delayedProbeTimer = null;
-
-  async function _runDataProbe(label) {
+  // Probes the data path (not auth) since Eric's diagnostic showed
+  // both auth.getSession() AND data queries hang together when the
+  // client wedges. v_my_subscription is RLS-filtered, returns 0/1
+  // rows, lightweight.
+  async function probeStuckClient(label) {
     try {
       await Promise.race([
         client.from('v_my_subscription').select('plan_id').maybeSingle(),
         new Promise((_, rej) =>
-          setTimeout(() => rej(new Error('__probe_timeout')), 1500)
+          setTimeout(() => rej(new Error('__probe_timeout')), 2000)
         ),
       ]);
-      // Healthy.
+      return { healthy: true };
     } catch (e) {
       if (e?.message === '__probe_timeout') {
-        try { console.warn('[health-probe ' + label + '] supabase data path unresponsive, reloading'); } catch (_) {}
-        try { window.location.reload(); } catch (_) {}
+        try { console.warn('[stuck-probe ' + label + '] supabase data path unresponsive'); } catch (_) {}
+        try {
+          window.dispatchEvent(new CustomEvent('pa:client-stuck', {
+            detail: { source: label || 'probe' },
+          }));
+        } catch (_) {}
+        return { healthy: false };
       }
+      // Non-timeout error — propagate (RLS denial, network 4xx,
+      // anything that isn't a wedge). Caller decides.
+      throw e;
     }
   }
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible') {
-      // Tab hidden — cancel any pending delayed probe so we don't
-      // probe on a tab the user isn't even looking at.
-      if (_delayedProbeTimer) {
-        clearTimeout(_delayedProbeTimer);
-        _delayedProbeTimer = null;
-      }
-      return;
-    }
-
-    // Probe A (immediate) — throttled to once per 30s
-    const now = Date.now();
-    if (now - _lastImmediateProbeAt >= 30000) {
-      _lastImmediateProbeAt = now;
-      _runDataProbe('immediate');
-    }
-
-    // Probe B (delayed) — always re-armed on visibility-become-visible
-    if (_delayedProbeTimer) clearTimeout(_delayedProbeTimer);
-    _delayedProbeTimer = setTimeout(() => {
-      _delayedProbeTimer = null;
-      _runDataProbe('delayed-1500ms');
-    }, 1500);
-  });
+  // Expose so useRequests can call it on Stripe-return. The
+  // visibility listener that fires the probe lives in useRequests
+  // (it owns the armed state). supabase.js intentionally does NOT
+  // add its own listener — that would double-probe on every
+  // Stripe-return.
+  window.PA_AUTH.probeStuckClient = probeStuckClient;
 })();

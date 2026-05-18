@@ -697,6 +697,35 @@ const ConfirmHost = () => {
 // subscription tab via dispatch) and Exit preview (calls
 // PA_PREVIEW.exit()).
 //
+// ── ChartScroll (v03.12) ──────────────────────────────────────
+// Responsive wrapper for the data-chart SVGs. The analysis charts
+// use fixed viewBox widths (480-720 units) with width:100%, so on
+// a phone (~345 px usable) the whole SVG scales to ~0.5x and all
+// in-SVG text/dots shrink to unreadable size.
+//
+// On mobile this wraps the chart in a horizontal-scroll container
+// with an inner div forced to the chart's natural width — the SVG
+// then renders at ~1x scale (crisp text) and the user swipes
+// sideways to see the full chart. On desktop it's a transparent
+// passthrough (renders children directly, zero layout change, so
+// no desktop regression risk).
+//
+// Usage: <ChartScroll minWidth={W}><svg .../></ChartScroll>
+const ChartScroll = ({ minWidth = 460, children }) => {
+  const isMobile = (window.useIsMobile || (() => false))();
+  if (!isMobile) return children;
+  return (
+    <div style={{
+      overflowX: 'auto',
+      WebkitOverflowScrolling: 'touch',
+    }}>
+      <div style={{ minWidth: minWidth + 'px' }}>
+        {children}
+      </div>
+    </div>
+  );
+};
+
 // ── StuckBanner (v03.04) ──────────────────────────────────────
 // Non-blocking top banner that appears when the supabase client
 // gets internally wedged. Replaces the auto-reload behavior in
@@ -1059,4 +1088,5 @@ Object.assign(window, {
   RequestAnalysisInline,
   ProUpgradeBanner,
   StuckBanner,
+  ChartScroll,
 });

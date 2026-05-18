@@ -767,6 +767,7 @@ const TurnFullVelocityProfile = ({ primary, compare }) => {
 
   return (
     <ChartCard title="VELOCITY PROFILE · 15 M PRE → WALL → 15 M POST">
+      <window.ChartScroll minWidth={W}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet"
            style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 320 }}>
         {/* Y gridlines */}
@@ -866,6 +867,7 @@ const TurnFullVelocityProfile = ({ primary, compare }) => {
           </text>
         ))}
       </svg>
+      </window.ChartScroll>
 
       {/* Insight strip — three coaching-relevant readings derived
           from the chart shape. Renders only when the relevant data
@@ -1259,14 +1261,13 @@ const TurnDetail = ({ primary, compare, diff, story, phases, items, phase, onCha
   </React.Fragment>
 );
 
-// ── TurnPhaseHero (v03.01) ────────────────────────────────────
+// ── TurnPhaseHero (v03.01, node-sentence v03.10) ──────────────
 // Sentence-style hero for the four Turn phase tabs (Approach /
-// Wall / Underwater / Breakout). Mirrors the PhaseHero atom from
-// web-starts.jsx — duplicated locally rather than imported to
-// keep zero coupling between the two modules. Props match the
-// Starts version exactly so future consolidation into shared.jsx
-// is a straight lift if needed.
-const TurnPhaseHero = ({ sentence, highlight, subtext, delta, deltaColor }) => {
+// Wall / Underwater / Breakout). v03.10 — `sentence` is a fully
+// pre-colored React node (primary numbers green, compare numbers
+// purple), built by buildTurnPhaseStory. The hero just renders
+// it — no substring highlight matching anymore.
+const TurnPhaseHero = ({ sentence, subtext }) => {
   const isMobile = (window.useIsMobile || (() => false))();
   if (!sentence) {
     return (
@@ -1280,30 +1281,6 @@ const TurnPhaseHero = ({ sentence, highlight, subtext, delta, deltaColor }) => {
       </div>
     );
   }
-  const highlightColor = (() => {
-    if (deltaColor === 'lime') return 'var(--lime-eff)';
-    if (deltaColor === 'flag') return 'var(--flag-eff)';
-    return 'var(--signal-eff)';
-  })();
-  const renderSentence = () => {
-    if (!highlight || !sentence.includes(highlight)) return sentence;
-    const idx = sentence.indexOf(highlight);
-    const before = sentence.slice(0, idx);
-    const after  = sentence.slice(idx + highlight.length);
-    return [
-      before,
-      React.createElement('span', {
-        key: 'hl',
-        style: { color: highlightColor },
-      }, highlight),
-      after,
-    ];
-  };
-  const deltaTone = (() => {
-    if (deltaColor === 'lime') return 'var(--lime-eff)';
-    if (deltaColor === 'flag') return 'var(--flag-eff)';
-    return 'var(--tx-md)';
-  })();
   return (
     <div style={{ marginBottom: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div className="display" style={{
@@ -1311,7 +1288,7 @@ const TurnPhaseHero = ({ sentence, highlight, subtext, delta, deltaColor }) => {
         lineHeight: 1.2, color: 'var(--tx-hi)',
         letterSpacing: '-0.02em', maxWidth: 620,
       }}>
-        {renderSentence()}
+        {sentence}
       </div>
       {subtext && (
         <p style={{
@@ -1320,17 +1297,6 @@ const TurnPhaseHero = ({ sentence, highlight, subtext, delta, deltaColor }) => {
         }}>
           {subtext}
         </p>
-      )}
-      {delta && (
-        <span className="mono" style={{
-          alignSelf: 'flex-start',
-          padding: '4px 10px', borderRadius: 6,
-          background: 'color-mix(in oklch, ' + deltaTone + ' 14%, transparent)',
-          color: deltaTone,
-          font: '700 11px var(--font-mono)', letterSpacing: 0.04,
-        }}>
-          {delta}
-        </span>
       )}
     </div>
   );
@@ -1558,7 +1524,7 @@ const TurnLast8Sessions = ({ primary, trials }) => {
       }
     }
     const span = +(rawMax - rawMin).toFixed(2);
-    return <>Holding within {span.toFixed(2)} s across last {last8.length} turns.</>;
+    return <>Holding within <span style={{ color: 'var(--lime-eff)' }}>{span.toFixed(2)} s</span> across last {last8.length} turns.</>;
   })();
 
   const W = 480, H = 200, PAD_L = 28, PAD_R = 16, PAD_T = 26, PAD_B = 28;
@@ -1591,6 +1557,7 @@ const TurnLast8Sessions = ({ primary, trials }) => {
           {primaryStroke || 'all'} · same stroke
         </div>
       </div>
+      <window.ChartScroll minWidth={W}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet"
            style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 240 }}>
         <line x1={PAD_L} y1={H - PAD_B} x2={W - PAD_R} y2={H - PAD_B}
@@ -1624,6 +1591,7 @@ const TurnLast8Sessions = ({ primary, trials }) => {
           );
         })}
       </svg>
+      </window.ChartScroll>
     </div>
   );
 };

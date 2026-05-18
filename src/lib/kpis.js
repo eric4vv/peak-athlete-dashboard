@@ -257,7 +257,20 @@
     const out = [];
     rows.forEach(r => {
       const mj = r.metrics_json || {};
-      const enriched = Object.assign({}, r, { mj });
+      // v03.07 — normalize event fields onto the row. v_race_trials
+      // keeps Distance / Style / Course only inside metrics_json
+      // (confirmed against the live dashboard's dedup). optionsFrom()
+      // and applyFilters() read top-level t.distance_m / t.style, so
+      // without this fold-up the FilterBar distance + stroke chips
+      // never populate — selecting anything but "All" is impossible.
+      const enriched = Object.assign({}, r, {
+        mj,
+        distance_m: r.distance_m != null ? r.distance_m
+                  : (mj.Distance != null ? mj.Distance
+                   : (mj.distance != null ? mj.distance : null)),
+        style:  r.style  || mj.Style  || mj.style  || null,
+        course: r.course || mj.Course || mj.course || null,
+      });
 
       if (r.race_uuid) {
         const k = 'r:' + r.race_uuid;
@@ -285,6 +298,13 @@
       const fk = 'f:' + key;
       if (!seen.has(fk)) { seen.add(fk); out.push(enriched); }
     });
+    // v03.07 — explicit newest-first sort. The DB query already
+    // orders by source_date desc, but dedupe iteration + same-day
+    // ties can scramble it; sort here so the trial list is reliably
+    // most-recent-first. source_date is 'YYYY-MM-DD' so a lexical
+    // compare is chronological.
+    out.sort((a, b) =>
+      String(b.source_date || '').localeCompare(String(a.source_date || '')));
     return out;
   }
 

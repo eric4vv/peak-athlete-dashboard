@@ -437,8 +437,11 @@ const Topbar = ({ title, sub, scope, onToggleScope, impersonating, mobile, onOpe
       </button>
     )}
 
-    {/* Search — desktop only. Mobile hides until cmd-K palette is built post-cutover. */}
-    {!mobile && (
+    {/* Search — hidden in v03.06 until the cmd-K palette is wired.
+        Shipping a non-functional input on a live dashboard is worse
+        than shipping no search at all. Restore this block when the
+        palette + global search API exist. */}
+    {false && !mobile && (
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
         padding: '6px 10px', borderRadius: 999,
@@ -468,8 +471,12 @@ const Topbar = ({ title, sub, scope, onToggleScope, impersonating, mobile, onOpe
       <Icon name={scope === 'dark' ? 'spark' : 'dot'} size={15}/>
     </button>
 
-    {/* Bell (visual only for now) — hidden per Batch 9 lock until real notification source exists. */}
-    {!mobile && (
+    {/* Bell — hidden in v03.06. The Batch 9 lock comment said this
+        was already hidden but the `&&` gate was missing, so it was
+        rendering as a non-functional decoration on a live build.
+        Restore when a real notification source exists (coach notes,
+        analysis-ready events, etc). */}
+    {false && !mobile && (
       <div style={{
         width: 36, height: 36, borderRadius: 999,
         border: '1px solid var(--line)',

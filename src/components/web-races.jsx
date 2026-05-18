@@ -2035,6 +2035,30 @@ const MechanicsSection = ({ primary, compare, mode }) => {
   const sr  = K.avgStrokeRate(primary);
   const dps = K.avgDPS(primary);
   const vel = K.avgVelocity(primary);
+  // v03.09 — compare-race mechanics, for the compare-aware narrative.
+  const cSr  = compare ? K.avgStrokeRate(compare) : null;
+  const cDps = compare ? K.avgDPS(compare)        : null;
+  const cVel = compare ? K.avgVelocity(compare)   : null;
+
+  // Compare-target name. Benchmark holder names are never surfaced
+  // (CLAUDE.md) — only the kind. WR shows as "world-record pace".
+  const targetName = compare
+    ? (compare._benchmarkKind === 'PB'     ? 'your best'
+     : compare._benchmarkKind === 'MEDIAN' ? 'your median'
+     : compare._benchmarkKind === 'WR'     ? 'world-record pace'
+                                            : 'the compare race')
+    : null;
+
+  // verdictTail — Approach A comparative clause. `delta` is
+  // primary − compare. Returns { mag, rest } where mag is the
+  // compare-delta magnitude (rendered purple) and rest is the
+  // directional phrase + target. null when nothing to compare.
+  const verdictTail = (delta, aboveWord, belowWord, magStr) => {
+    if (delta == null) return null;
+    if (Math.abs(delta) < 0.005) return { mag: null, rest: 'even with ' + targetName };
+    const isAbove = delta > 0;
+    return { mag: magStr, rest: (isAbove ? aboveWord : belowWord) + ' ' + targetName };
+  };
 
   const tabs = [
     { name: 'Stroke Rate', label: 'spm vs distance',   range: '5 m granularity',  weight: 1 },
@@ -2059,18 +2083,43 @@ const MechanicsSection = ({ primary, compare, mode }) => {
   );
 
   // Narrative — explicit about the relationship to the other two.
+  // v03.10 — every number is a colored span: PRIMARY values green
+  // (--lime-eff), COMPARE-related delta purple (--compare-eff),
+  // matching the chart legend. In compare mode the self-context
+  // tail swaps for the verdict clause.
   const narrative = (() => {
+    const G = (txt) => <span style={{ color: 'var(--lime-eff)' }}>{txt}</span>;
+    const P = (txt) => <span style={{ color: 'var(--compare-eff)' }}>{txt}</span>;
+    const tail = (v) => v.mag
+      ? <> — {P(v.mag)} {v.rest}.</>
+      : <> — {v.rest}.</>;
+
     if (tab === 'Stroke Rate') {
       if (sr == null) return null;
-      return <>Avg stroke rate <span style={{ color: 'var(--lime-eff)' }}>{sr.toFixed(1)} spm</span> — paired with {dps != null ? dps.toFixed(2) + ' m/stroke' : '—'} of DPS, this drove an average velocity of {vel != null ? vel.toFixed(2) + ' m/s' : '—'}.</>;
+      if (compare && cSr != null) {
+        const d = +(sr - cSr).toFixed(1);
+        const v = verdictTail(d, 'above', 'below', Math.abs(d).toFixed(1) + ' spm');
+        return <>Avg stroke rate {G(sr.toFixed(1) + ' spm')}{tail(v)}</>;
+      }
+      return <>Avg stroke rate {G(sr.toFixed(1) + ' spm')} — paired with {G(dps != null ? dps.toFixed(2) + ' m/stroke' : '—')} of DPS, this drove an average velocity of {G(vel != null ? vel.toFixed(2) + ' m/s' : '—')}.</>;
     }
     if (tab === 'DPS') {
       if (dps == null) return null;
-      return <>Avg distance per stroke <span style={{ color: 'var(--lime-eff)' }}>{dps.toFixed(2)} m</span> — at {sr != null ? sr.toFixed(1) + ' spm' : '—'} cadence, that produced {vel != null ? vel.toFixed(2) + ' m/s' : '—'} on average.</>;
+      if (compare && cDps != null) {
+        const d = +(dps - cDps).toFixed(2);
+        const v = verdictTail(d, 'longer than', 'shorter than', Math.abs(d).toFixed(2) + ' m');
+        return <>Avg distance per stroke {G(dps.toFixed(2) + ' m')}{tail(v)}</>;
+      }
+      return <>Avg distance per stroke {G(dps.toFixed(2) + ' m')} — at {G(sr != null ? sr.toFixed(1) + ' spm' : '—')} cadence, that produced {G(vel != null ? vel.toFixed(2) + ' m/s' : '—')} on average.</>;
     }
     if (tab === 'Velocity') {
       if (vel == null) return null;
-      return <>Avg velocity <span style={{ color: 'var(--lime-eff)' }}>{vel.toFixed(2)} m/s</span> — the product of {sr != null ? sr.toFixed(1) + ' spm' : '—'} stroke rate and {dps != null ? dps.toFixed(2) + ' m' : '—'} per-stroke distance.</>;
+      if (compare && cVel != null) {
+        const d = +(vel - cVel).toFixed(2);
+        const v = verdictTail(d, 'faster than', 'slower than', Math.abs(d).toFixed(2) + ' m/s');
+        return <>Avg velocity {G(vel.toFixed(2) + ' m/s')}{tail(v)}</>;
+      }
+      return <>Avg velocity {G(vel.toFixed(2) + ' m/s')} — the product of {G(sr != null ? sr.toFixed(1) + ' spm' : '—')} stroke rate and {G(dps != null ? dps.toFixed(2) + ' m' : '—')} per-stroke distance.</>;
     }
     if (tab === 'Efficiency') {
       // v00.94 — pivoted to focus on iso-curves. v00.95 — copy
@@ -2272,6 +2321,7 @@ const RaceVelocityChart = ({ primary, compare }) => {
 
   return (
     <div>
+      <window.ChartScroll minWidth={W}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet"
            style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 280 }}>
         {/* Y gridlines */}
@@ -2369,6 +2419,7 @@ const RaceVelocityChart = ({ primary, compare }) => {
           </text>
         ))}
       </svg>
+      </window.ChartScroll>
       {/* Legend */}
       <div style={{ display: 'flex', gap: 14, marginTop: 6, flexWrap: 'wrap',
                     font: '500 11px var(--font-ui)', color: 'var(--tx-md)' }}>
@@ -2761,15 +2812,25 @@ const BestLapReferenceChart = ({ primary, compare }) => {
 // Both the PaceProfile pill and the STROKE MECHANICS pill drive
 // the same `userMode` state, so flipping one updates the other
 // instantly.
-const AggModeToggle = ({ mode, onChangeMode }) => (
+// v03.17 — `options` is course-aware, supplied by RaceDetail:
+// short course (25 m laps) gets Per lap / Per 50 m / Per 100 m;
+// long course (50 m laps) gets Per 50 m / Per 100 m (per-lap and
+// per-50 m are the same thing for LCM).
+const MODE_OPTIONS_SC = [
+  { k: 'per-lap',  label: 'Per lap'   },
+  { k: 'per-50m',  label: 'Per 50 m'  },
+  { k: 'per-100m', label: 'Per 100 m' },
+];
+const MODE_OPTIONS_LC = [
+  { k: 'per-50m',  label: 'Per 50 m'  },
+  { k: 'per-100m', label: 'Per 100 m' },
+];
+const AggModeToggle = ({ mode, onChangeMode, options }) => (
   <div style={{
     display: 'inline-flex', borderRadius: 8, overflow: 'hidden',
     border: '1px solid var(--line)', background: 'var(--bg-3)',
   }}>
-    {[
-      { k: 'per-lap',   label: 'Per lap'   },
-      { k: 'per-100m',  label: 'Per 100 m' },
-    ].map(opt => {
+    {(options || MODE_OPTIONS_LC).map(opt => {
       const active = mode === opt.k;
       return (
         <button key={opt.k}
@@ -2829,6 +2890,15 @@ const ZONE_TONE = {
   SL: 'var(--flag-eff)',
   ST: 'var(--tx-md)',
 };
+// v03.13 — short proper-noun labels for the zone strip + on-chart
+// annotation (idea 4 + 5). ZONE_PHRASE is the lowercase narrative
+// form; ZONE_LABEL is the chip / legend form.
+const ZONE_LABEL = {
+  HW: 'Holding Water',
+  GL: 'Gliding',
+  SL: 'Slipping',
+  ST: 'Struggling',
+};
 const buildEfficiencyStory = (laps, medSR, medDPS, opts) => {
   if (!laps || !laps.length) return null;
   // v00.99 — single-dot trial-average case for sprints with no
@@ -2880,12 +2950,18 @@ const buildEfficiencyStory = (laps, medSR, medDPS, opts) => {
   const dominant = uniqueZones.reduce((a, b) => counts[a] > counts[b] ? a : b);
   if (counts[dominant] >= total * 0.7) {
     const outlierLabels = [];
-    zones.forEach((z, i) => { if (z !== dominant) outlierLabels.push(labelOf(laps[i])); });
+    const outlierIdxs = [];
+    zones.forEach((z, i) => {
+      if (z !== dominant) { outlierLabels.push(labelOf(laps[i])); outlierIdxs.push(i); }
+    });
     if (outlierLabels.length === 1) {
       const cap = outlierLabels[0].charAt(0).toUpperCase() + outlierLabels[0].slice(1);
       return {
         text: `${cap} broke the pattern — the rest held ${ZONE_PHRASE[dominant]}.`,
         tone: ZONE_TONE[dominant],
+        // idea 5 — the lone outlier IS the key moment.
+        keyLap: laps[outlierIdxs[0]],
+        keyNote: ZONE_LABEL[zones[outlierIdxs[0]]],
       };
     }
     return {
@@ -2907,21 +2983,29 @@ const buildEfficiencyStory = (laps, medSR, medDPS, opts) => {
     const bz = dominantOf(back);
     if (fz !== bz) {
       const boundary = labelOf(laps[half - 1]);
+      // idea 5 — the first back-half lap is where the new shape lands.
+      const driftLap = laps[half];
       if (fz === 'HW' && (bz === 'SL' || bz === 'ST')) {
         return {
           text: `Held ${ZONE_PHRASE[fz]} through ${boundary} — then drifted to ${ZONE_PHRASE[bz]}.`,
           tone: ZONE_TONE[bz],
+          keyLap: driftLap,
+          keyNote: 'drift → ' + ZONE_LABEL[bz],
         };
       }
       if ((fz === 'SL' || fz === 'ST') && bz === 'HW') {
         return {
           text: `Built into ${ZONE_PHRASE[bz]} on the back half — strong finish.`,
           tone: ZONE_TONE[bz],
+          keyLap: driftLap,
+          keyNote: 'lift → ' + ZONE_LABEL[bz],
         };
       }
       return {
         text: `${ZONE_PHRASE[fz][0].toUpperCase()}${ZONE_PHRASE[fz].slice(1)} on the front half, ${ZONE_PHRASE[bz]} on the back.`,
         tone: ZONE_TONE[bz],
+        keyLap: driftLap,
+        keyNote: '→ ' + ZONE_LABEL[bz],
       };
     }
   }
@@ -2954,10 +3038,14 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
 
   const lapsRawA = sourceFn(primary).filter(l => l.rate != null && l.dps != null);
   const lapsRawB = compare ? sourceFn(compare).filter(l => l.rate != null && l.dps != null) : [];
-  const aggregated = !isSprint && mode === 'per-100m';
-  const lapsA = (aggregated ? aggregateLaps(lapsRawA) : lapsRawA)
+  // v03.16/17 — per-lap / per-50m / per-100m bucketing.
+  // aggregateLaps with 25 is always a no-op (per-lap = raw laps);
+  // 50 merges SC pairs / no-ops LCM; 100 buckets to 100 m.
+  // Sprints (5 m segments) are never lap-aggregated.
+  const _bM = mode === 'per-100m' ? 100 : mode === 'per-lap' ? 25 : 50;
+  const lapsA = (isSprint ? lapsRawA : aggregateLaps(lapsRawA, _bM))
     .filter(l => l.rate != null && l.dps != null);
-  const lapsB = (aggregated ? aggregateLaps(lapsRawB) : lapsRawB)
+  const lapsB = (isSprint ? lapsRawB : aggregateLaps(lapsRawB, _bM))
     .filter(l => l.rate != null && l.dps != null);
   const dotUnit = isSprint ? 'segment' : 'lap';
 
@@ -2977,6 +3065,12 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
   // v00.93 — hover-on-zone: when set, the chart highlights
   // that quadrant by brightening its tint.
   const [hoveredZone, setHoveredZone] = useRacesState(null);
+  // v03.14 — detailed-map toggle. Distance races (15+ laps) plot
+  // metronomic laps that stack on the same coordinate. By default
+  // the scatter shows only KEY laps (start / fastest / slowest /
+  // transition / last); the toggle reveals every lap with shrunk
+  // dots. The per-lap zone strip below always shows all laps.
+  const [detailedMap, setDetailedMap] = useRacesState(false);
 
   // v00.93 — clear selection when the chart's underlying data
   // changes so the panel doesn't keep showing a lap that isn't
@@ -3221,25 +3315,46 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
   // Per-lap connecting line — straight segments (no smoothing
   // since each dot is a discrete lap, not a sample of a
   // continuous signal).
-  // v00.91: lifted threshold from 8 to 16 so per-100m bucketed
-  // long races (e.g. 1500 → 15 buckets) get the story line.
-  const lineThreshold = 16;
+  // v03.14 — line drops above 12 plotted dots (zigzag becomes
+  // noise). Key-laps mode plots ~5 dots so the line still shows
+  // the trajectory; detailed mode on a distance race drops it.
+  const lineThreshold = 12;
   const pathOf = (laps) => laps.length >= 2 && laps.length <= lineThreshold
     ? laps.map((l, i) =>
         (i === 0 ? 'M' : 'L') + xOf(l.rate).toFixed(1) + ',' + yOf(l.dps).toFixed(1)
       ).join(' ')
     : '';
 
-  // v00.91 adaptive dot sizing — when the chart has many laps,
-  // shrink dots so they don't pile on top of each other. Three
-  // tiers match the per-lap chart density rules used elsewhere.
-  const totalDots = lapsA.length + lapsB.length;
-  const dense     = totalDots > 16;
-  const veryDense = totalDots > 32;
-  const dotR_A    = veryDense ? 8  : dense ? 10 : 12;
-  const dotR_B    = veryDense ? 7  : dense ? 9  : 10;
-  const fontA     = veryDense ? 8  : dense ? 9  : 11;
-  const fontB     = veryDense ? 7  : dense ? 8  : 10;
+  // v03.14 — key-lap selection + adaptive dot sizing. Distance
+  // races stack metronomic laps on the same coordinate, so by
+  // default the scatter plots only the KEY laps (first / last /
+  // fastest / slowest / story transition). The `detailedMap`
+  // toggle flips to every-lap with shrunk dots. The per-lap zone
+  // strip below always carries the full lap-by-lap detail.
+  const manyLaps    = lapsA.length > 8;
+  const showAllLaps = !manyLaps || detailedMap;
+  const keyLapsA = (() => {
+    if (showAllLaps || !lapsA.length) return lapsA;
+    const velOf = (l) => (l.rate * l.dps) / 60;
+    const byVel = [...lapsA].sort((a, b) => velOf(b) - velOf(a));
+    const picks = new Set([
+      lapsA[0].lap,
+      lapsA[lapsA.length - 1].lap,
+      byVel[0].lap,
+      byVel[byVel.length - 1].lap,
+    ]);
+    if (story && story.keyLap) picks.add(story.keyLap.lap);
+    return lapsA.filter(l => picks.has(l.lap));
+  })();
+  const plottedA = showAllLaps ? lapsA : keyLapsA;
+
+  const totalDots = plottedA.length + lapsB.length;
+  const dense     = totalDots > 12;
+  const veryDense = totalDots > 22;
+  const dotR_A    = veryDense ? 6  : dense ? 8  : 12;
+  const dotR_B    = veryDense ? 6  : dense ? 7  : 10;
+  const fontA     = veryDense ? 7  : dense ? 8  : 11;
+  const fontB     = veryDense ? 6  : dense ? 7  : 10;
 
   return (
     <div>
@@ -3254,6 +3369,28 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
           <span style={{ color: story.tone }}>{story.text}</span>
         </div>
       )}
+      {/* v03.14 — key-laps / detailed toggle. Only shown for
+          distance races (>8 laps), where plotting every lap
+          stacks metronomic dots on the same coordinate. */}
+      {manyLaps && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <button
+            type="button"
+            onClick={() => setDetailedMap(v => !v)}
+            style={{
+              font: '600 10px var(--font-mono)', letterSpacing: 0.04,
+              padding: '4px 10px', borderRadius: 999, cursor: 'pointer',
+              background: detailedMap ? 'var(--ink)' : 'transparent',
+              color: detailedMap ? 'var(--paper)' : 'var(--tx-md)',
+              border: '1px solid ' + (detailedMap ? 'var(--ink)' : 'var(--line-soft)'),
+            }}>
+            {detailedMap
+              ? 'KEY LAPS'
+              : 'DETAILED MAP · ALL ' + lapsA.length + ' LAPS'}
+          </button>
+        </div>
+      )}
+      <window.ChartScroll minWidth={W}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet"
            style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 400 }}>
         {/* Quadrant tints (lowest layer). v00.93: opacity reacts
@@ -3474,21 +3611,25 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
           </>
         )}
         {/* Primary path */}
-        {pathOf(lapsA) && (
-          <path d={pathOf(lapsA)} fill="none"
+        {pathOf(plottedA) && (
+          <path d={pathOf(plottedA)} fill="none"
                 stroke="var(--lime-eff)" strokeWidth="1.5"
                 strokeDasharray="2 3" opacity="0.65"/>
         )}
-        {lapsA.map(l => {
+        {plottedA.map(l => {
           const isSelected = selectedLap?.side === 'A' && selectedLap?.lap === l.lap;
+          // v03.14 — green fill (primary convention) + a
+          // zone-colored ring so the dot's stroke shape reads
+          // without cross-referencing its quadrant position.
+          const zRing = ZONE_TONE[zoneOfLap(l)];
           return (
             <g key={'A' + l.lap}
               onClick={() => setSelectedLap({ side: 'A', lap: l.lap, data: l })}
               style={{ cursor: 'pointer' }}>
               <circle cx={xOf(l.rate)} cy={yOf(l.dps)} r={dotR_A + (isSelected ? 3 : 0)}
                       fill="var(--lime-eff)"
-                      stroke={isSelected ? 'var(--tx-hi)' : 'none'}
-                      strokeWidth={isSelected ? 2 : 0}/>
+                      stroke={isSelected ? 'var(--tx-hi)' : zRing}
+                      strokeWidth={isSelected ? 3 : 2.5}/>
               <text x={xOf(l.rate)} y={yOf(l.dps) + (fontA / 2 - 1)}
                 fontSize={fontA} fontFamily="var(--font-mono)" fontWeight="700"
                 fill="var(--ink)" textAnchor="middle"
@@ -3498,70 +3639,79 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
             </g>
           );
         })}
-        {/* v00.92 — PB markers (diamond shape, distinct from
-            round lap dots). One per athlete in the chart, in
-            their respective trial color. Marks where the
-            athlete's best historical race at this event sat in
-            the SR × DPS plane — coach reads "are this race's
-            laps on or above the PB combo?" Skipped silently if
-            no historical PB data. */}
-        {pbA && (() => {
-          const cx = xOf(pbA.sr), cy = yOf(pbA.dps);
-          const r = 8;
-          // Diamond path
-          const dia = `M${cx},${cy - r} L${cx + r},${cy} L${cx},${cy + r} L${cx - r},${cy} Z`;
+        {/* v03.14 — PB + Squad diamond markers removed. They
+            marked a single historical (SR, DPS) point, which read
+            as confusing clutter rather than relevant context.
+            The PB / Squad iso-velocity reference curves remain. */}
+        {/* v03.13 (idea 5) — on-chart callout pointing at the key
+            lap the story builder flagged. A leader line + chip so
+            the chart points at its own story. */}
+        {story && story.keyLap && story.keyLap.rate != null && story.keyLap.dps != null && (() => {
+          const kl = story.keyLap;
+          const cx = xOf(kl.rate), cy = yOf(kl.dps);
+          const note = story.keyNote || '';
+          const noteW = note.length * 5.4 + 14;
+          let lx = cx + 16;
+          let ly = cy - 26;
+          if (lx + noteW > PAD_L + innerW) lx = cx - 16 - noteW;
+          if (lx < PAD_L) lx = PAD_L;
+          if (ly < PAD_T + 4) ly = cy + 14;
           return (
-            <g key="pbA">
-              <path d={dia} fill="var(--lime-eff)"
-                stroke="var(--ink)" strokeWidth="2"/>
-              <text x={cx} y={cy - r - 4}
+            <g style={{ pointerEvents: 'none' }}>
+              <line x1={cx} y1={cy} x2={lx + noteW / 2} y2={ly + 8}
+                stroke="var(--tx-md)" strokeWidth="1" opacity="0.55"/>
+              <rect x={lx} y={ly} width={noteW} height={16} rx="3"
+                fill="var(--bg-2)" stroke="var(--line)" strokeWidth="0.75"/>
+              <text x={lx + noteW / 2} y={ly + 11}
                 fontSize="9" fontFamily="var(--font-mono)" fontWeight="700"
-                fill="var(--lime-eff)" textAnchor="middle"
-                letterSpacing="0.06em">
-                PB
-              </text>
-            </g>
-          );
-        })()}
-        {pbB && (() => {
-          const cx = xOf(pbB.sr), cy = yOf(pbB.dps);
-          const r = 7;
-          const dia = `M${cx},${cy - r} L${cx + r},${cy} L${cx},${cy + r} L${cx - r},${cy} Z`;
-          return (
-            <g key="pbB">
-              <path d={dia} fill="var(--compare-eff)"
-                stroke="var(--ink)" strokeWidth="2"/>
-              <text x={cx} y={cy - r - 4}
-                fontSize="9" fontFamily="var(--font-mono)" fontWeight="700"
-                fill="var(--compare-eff)" textAnchor="middle"
-                letterSpacing="0.06em">
-                PB
-              </text>
-            </g>
-          );
-        })()}
-        {/* v01.00 — Squad-best diamond. Drawn smaller than the PB
-            diamond + in signal-color so it doesn't compete with
-            the athlete's own PB. Skipped silently when squad
-            data isn't available (typical for non-coach views). */}
-        {squad && (() => {
-          const cx = xOf(squad.sr), cy = yOf(squad.dps);
-          const r = 6;
-          const dia = `M${cx},${cy - r} L${cx + r},${cy} L${cx},${cy + r} L${cx - r},${cy} Z`;
-          return (
-            <g key="squad">
-              <path d={dia} fill="var(--signal-eff)"
-                stroke="var(--ink)" strokeWidth="2"/>
-              <text x={cx} y={cy - r - 4}
-                fontSize="9" fontFamily="var(--font-mono)" fontWeight="700"
-                fill="var(--signal-eff)" textAnchor="middle"
-                letterSpacing="0.06em">
-                SQUAD
+                fill="var(--tx-hi)" textAnchor="middle">
+                {note}
               </text>
             </g>
           );
         })()}
       </svg>
+      </window.ChartScroll>
+      {/* v03.13 (idea 4) — per-lap zone strip. One cell per lap,
+          colored by stroke-shape zone — reads the shape/fatigue
+          story at a glance, no chart-decoding needed. */}
+      {showShapeLayer && lapsA.length >= 2 && (
+        <div style={{ marginTop: 16 }}>
+          <div className="eyebrow" style={{ color: 'var(--tx-lo)', marginBottom: 6 }}>
+            STROKE SHAPE BY {isSprint ? 'SEGMENT' : 'LAP'}
+          </div>
+          <div style={{ display: 'flex', gap: 3 }}>
+            {lapsA.map(l => {
+              const z = zoneOfLap(l);
+              return (
+                <div key={'zs' + l.lap} title={ZONE_LABEL[z]}
+                  style={{
+                    flex: 1, minWidth: 0, height: 30, borderRadius: 5,
+                    background: 'color-mix(in oklch, ' + ZONE_TONE[z] + ' 78%, transparent)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    font: '700 11px var(--font-mono)', color: 'var(--ink)',
+                  }}>
+                  {l.lap}
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+            {['HW', 'GL', 'SL', 'ST'].map(z => (
+              <span key={'zl' + z} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                font: '500 10px var(--font-ui)', color: 'var(--tx-md)',
+              }}>
+                <span style={{
+                  width: 10, height: 10, borderRadius: 3,
+                  background: 'color-mix(in oklch, ' + ZONE_TONE[z] + ' 78%, transparent)',
+                }}/>
+                {ZONE_LABEL[z]}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       {/* v00.93 — Inspect panel renders when a lap dot is
           clicked. Shows that lap's exact metrics + zone label
           + an inline note. Click again on the same dot or hit
@@ -3788,7 +3938,7 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
 // RaceCompareBars, and StrokeMechanicsTable in unison. The
 // toggle UI itself is now AggModeToggle so it can also render
 // in the StrokeMechanics card header (v00.73).
-const PaceProfile = ({ primary, compare, mode, onChangeMode, showToggle }) => {
+const PaceProfile = ({ primary, compare, mode, onChangeMode, modeOptions, showToggle }) => {
   const compareLabel =
     compare?._benchmarkKind === 'PB' ? 'Personal best'
     : compare?._benchmarkKind === 'MEDIAN' ? 'Median race'
@@ -3798,7 +3948,7 @@ const PaceProfile = ({ primary, compare, mode, onChangeMode, showToggle }) => {
   return (
     <ChartCard
       title="SPLIT-BY-SPLIT STORY"
-      right={showToggle ? <AggModeToggle mode={mode} onChangeMode={onChangeMode}/> : null}>
+      right={showToggle ? <AggModeToggle mode={mode} onChangeMode={onChangeMode} options={modeOptions}/> : null}>
       <LapBars
         primary={primary}
         compare={compare}
@@ -4120,11 +4270,19 @@ const RaceDetail = ({ primary, compare, diff, summary, isPro, onUpgrade }) => {
   // Compute lap count to drive auto default + toggle visibility.
   const laps = primary ? derivePerLap(primary) : [];
   const numLaps = laps.length;
-  const autoMode = numLaps > 16 ? 'per-100m' : 'per-lap';
+  const autoMode = numLaps > 16 ? 'per-100m' : 'per-50m';
   const mode = userMode || autoMode;
-  const lapDist = laps.length ? (laps[0].endD - laps[0].startD) : 0;
-  const lapsPerBucket = lapDist > 0 ? Math.max(1, Math.round(100 / lapDist)) : 1;
-  const showToggle = numLaps >= 4 && lapsPerBucket > 1;
+  // v03.16 — course-aware toggle visibility. Lap distance tells
+  // the course: ~25 m → short course (SCM/SCY), ~50 m → long
+  // course (LCM). Show the Per 50 / Per 100 toggle for SC races
+  // above the 50, and LC races above the 200.
+  const lapDist  = laps.length ? (laps[0].endD - laps[0].startD) : 0;
+  const raceDist = laps.length ? laps[laps.length - 1].endD : 0;
+  const isShortCourse = lapDist > 0 && lapDist < 40;
+  const showToggle = isShortCourse ? raceDist > 50 : raceDist > 200;
+  // v03.17 — short course (25 m laps) offers Per lap / Per 50 m /
+  // Per 100 m; long course (50 m laps) offers Per 50 m / Per 100 m.
+  const modeOptions = isShortCourse ? MODE_OPTIONS_SC : MODE_OPTIONS_LC;
   // totalDelta = totalB - totalA. Positive → primary faster.
   // Chip prefix uses "−" when primary is faster (user-facing convention).
   const compareDelta = compare && diff?.totalDelta != null
@@ -4164,6 +4322,7 @@ const RaceDetail = ({ primary, compare, diff, summary, isPro, onUpgrade }) => {
         compare={compare}
         mode={mode}
         onChangeMode={setUserMode}
+        modeOptions={modeOptions}
         showToggle={showToggle}/>
 
       {/* Mechanics · tabbed drilldown for stroke rate, DPS, velocity.
@@ -4183,7 +4342,7 @@ const RaceDetail = ({ primary, compare, diff, summary, isPro, onUpgrade }) => {
         <ChartCard
           title="STROKE MECHANICS"
           right={showToggle
-            ? <AggModeToggle mode={mode} onChangeMode={setUserMode}/>
+            ? <AggModeToggle mode={mode} onChangeMode={setUserMode} options={modeOptions}/>
             : null}>
           <StrokeMechanicsTable primary={primary} compare={compare} mode={mode}/>
         </ChartCard>

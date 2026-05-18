@@ -181,7 +181,7 @@ const HelpDot = ({ text, placement = 'top', size = 14 }) => {
         style={{
           width: size, height: size, borderRadius: '50%',
           border: '1px solid var(--line)',
-          background: open ? 'var(--bg-1)' : 'var(--bg-3)',
+          background: open ? 'var(--bg)' : 'var(--bg-3)',
           color: 'var(--tx-md)',
           font: '700 9px var(--font-ui)',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -1007,11 +1007,14 @@ function derivePerLap(trial) {
 // granularity tells a different story (faded vs held across 100 m
 // chunks rather than per-lap), which is the right abstraction
 // when the per-lap view is too noisy.
-function aggregateLaps(laps) {
+function aggregateLaps(laps, bucketM = 100) {
   if (!laps || laps.length === 0) return [];
   const lapDist = laps[0].endD - laps[0].startD;
   if (!isFinite(lapDist) || lapDist <= 0) return laps;
-  const lapsPerBucket = Math.max(1, Math.round(100 / lapDist));
+  // v03.16 — bucketM parameterizes the grouping distance (50 or
+  // 100 m). 50 m laps + bucketM 50 → 1 lap/bucket (no-op). 25 m
+  // laps + bucketM 50 → 2 laps/bucket. bucketM 100 → 100 m as before.
+  const lapsPerBucket = Math.max(1, Math.round(bucketM / lapDist));
   // No-op when each "bucket" would be exactly one lap (bucket size
   // 1) — return the input unchanged so the caller doesn't burn
   // cycles on a meaningless grouping.
@@ -1229,8 +1232,11 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
   // rendering below works either way without branching.
   const lapsRaw    = derivePerLap(primary);
   const lapsCmpRaw = compare ? derivePerLap(compare) : [];
-  const laps    = mode === 'per-100m' ? aggregateLaps(lapsRaw)    : lapsRaw;
-  const lapsCmp = mode === 'per-100m' ? aggregateLaps(lapsCmpRaw) : lapsCmpRaw;
+  // v03.16/17 — per-lap / per-50m / per-100m bucketing.
+  // aggregateLaps with 25 is always a no-op (per-lap = raw laps).
+  const _bM = mode === 'per-100m' ? 100 : mode === 'per-lap' ? 25 : 50;
+  const laps    = aggregateLaps(lapsRaw, _bM);
+  const lapsCmp = aggregateLaps(lapsCmpRaw, _bM);
   const cmpByLap = new Map(lapsCmp.map(r => [r.lap, r]));
   const showCompare = !!compare && lapsCmp.length > 0;
 
@@ -1456,8 +1462,11 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
 const StrokeMechanicsTable = ({ primary, compare, mode }) => {
   const lapsRaw    = derivePerLap(primary);
   const lapsCmpRaw = compare ? derivePerLap(compare) : [];
-  const laps    = mode === 'per-100m' ? aggregateLaps(lapsRaw)    : lapsRaw;
-  const lapsCmp = mode === 'per-100m' ? aggregateLaps(lapsCmpRaw) : lapsCmpRaw;
+  // v03.16/17 — per-lap / per-50m / per-100m bucketing.
+  // aggregateLaps with 25 is always a no-op (per-lap = raw laps).
+  const _bM = mode === 'per-100m' ? 100 : mode === 'per-lap' ? 25 : 50;
+  const laps    = aggregateLaps(lapsRaw, _bM);
+  const lapsCmp = aggregateLaps(lapsCmpRaw, _bM);
   const cmpByLap = new Map(lapsCmp.map(r => [r.lap, r]));
   const showCompare = !!compare && lapsCmp.length > 0;
 
@@ -2522,12 +2531,13 @@ const ChartFrame = ({ title, children, legend, empty }) => (
       </div>
     ) : (
       <>
+        <window.ChartScroll minWidth={CHART.W}>
         <svg viewBox={`0 0 ${CHART.W} ${CHART.H}`}
              preserveAspectRatio="xMidYMid meet"
              style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 260 }}>
           {children}
         </svg>
-        {legend}
+        </window.ChartScroll>
       </>
     )}
   </div>
@@ -2765,12 +2775,26 @@ const DPSChart = ({ primary, compare, mode }) => {
       distMid:  (r.startD + r.endD) / 2,
       dps:      r.dps,
     }));
+  // v03.16 — per-50m / per-100m. For the finest granularity that
+  // is a no-op on the lap distance (LCM per-50 = per-lap), keep
+  // K.extractDPS so per-lap fidelity is unchanged; otherwise
+  // bucket via aggregateLaps.
+  const _perLapA = derivePerLap(primary);
+  const _lapDist = _perLapA.length ? (_perLapA[0].endD - _perLapA[0].startD) : 0;
+  const _fineNoOp = _lapDist > 0 && Math.round(50 / _lapDist) <= 1;
+  // v03.17 — per-lap always uses K.extractDPS (raw per-lap DPS).
   const a = mode === 'per-100m'
-    ? reshape(aggregateLaps(derivePerLap(primary)))
-    : K.extractDPS(primary);
+    ? reshape(aggregateLaps(_perLapA, 100))
+    : mode === 'per-lap'
+      ? K.extractDPS(primary)
+      : (_fineNoOp ? K.extractDPS(primary) : reshape(aggregateLaps(_perLapA, 50)));
   const b = mode === 'per-100m'
-    ? (compare ? reshape(aggregateLaps(derivePerLap(compare))) : [])
-    : (compare ? K.extractDPS(compare) : []);
+    ? (compare ? reshape(aggregateLaps(derivePerLap(compare), 100)) : [])
+    : mode === 'per-lap'
+      ? (compare ? K.extractDPS(compare) : [])
+      : (compare
+          ? (_fineNoOp ? K.extractDPS(compare) : reshape(aggregateLaps(derivePerLap(compare), 50)))
+          : []);
   if (!a.length && !b.length) {
     return <ChartFrame empty="No stroke-count data captured."/>;
   }

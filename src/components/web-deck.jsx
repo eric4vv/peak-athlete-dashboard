@@ -1175,7 +1175,7 @@ const NextFocus = ({ athleteUuid }) => {
                   letterSpacing: 0.04,
                   padding: '3px 8px', borderRadius: 999, cursor: 'pointer',
                   background: active ? 'var(--ink)' : 'transparent',
-                  color: active ? 'var(--bg-1)' : 'var(--tx-md)',
+                  color: active ? 'var(--paper)' : 'var(--tx-md)',
                   border: '1px solid ' + (active ? 'var(--ink)' : 'var(--line-soft)'),
                 }}>
                 {s.label}
@@ -1762,7 +1762,7 @@ const SquadFocus = ({ athletes }) => {
                   letterSpacing: 0.04,
                   padding: '3px 8px', borderRadius: 999, cursor: 'pointer',
                   background: active ? 'var(--ink)' : 'transparent',
-                  color: active ? 'var(--bg-1)' : 'var(--tx-md)',
+                  color: active ? 'var(--paper)' : 'var(--tx-md)',
                   border: '1px solid ' + (active ? 'var(--ink)' : 'var(--line-soft)'),
                 }}>
                 {s.label}

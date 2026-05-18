@@ -408,7 +408,7 @@
   "analysis": {
     "filter": {
       "distance":  "Distance",
-      "style":     "Style",
+      "style":     "Stroke",
       "course":    "Course",
       "all":       "All",
       "metersUnit":"m"

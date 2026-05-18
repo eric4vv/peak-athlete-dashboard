@@ -688,16 +688,28 @@ const FlightPathChart = ({ primary, compare }) => {
     </div>
   );
 
-  // Narrative — declarative, what we measured. No apex claim, no
-  // fabricated framing.
+  // Narrative — declarative, what we measured. v03.11 — colored
+  // tokens (primary green, compare delta purple) + compare-aware:
+  // when a compare trial is selected the angle tail swaps for an
+  // entry-distance verdict against the compare.
   const narrative = (() => {
-    const angleFragment = a.angle != null ? <> at <span style={{ color: 'var(--lime-eff)' }}>{a.angle.toFixed(1)}°</span></> : null;
-    return (
-      <>
-        Hip cleared <span style={{ color: 'var(--lime-eff)' }}>{a.takeoff.toFixed(2)} m</span> off the block,
-        entered the water at {a.dist.toFixed(2)} m{angleFragment}.
-      </>
-    );
+    const G = (txt) => <span style={{ color: 'var(--lime-eff)' }}>{txt}</span>;
+    const P = (txt) => <span style={{ color: 'var(--compare-eff)' }}>{txt}</span>;
+    const takeoffStr = a.takeoff.toFixed(2) + ' m';
+    const distStr    = a.dist.toFixed(2) + ' m';
+    if (b && b.dist != null) {
+      const targetName = compare._benchmarkKind === 'PB'     ? 'your best'
+                       : compare._benchmarkKind === 'MEDIAN' ? 'your median'
+                                                              : 'compare';
+      const d = +(a.dist - b.dist).toFixed(2);
+      if (Math.abs(d) < 0.005) {
+        return <>Hip cleared {G(takeoffStr)} off the block, entered at {G(distStr)} — even with {targetName}.</>;
+      }
+      const word = d > 0 ? 'farther than' : 'shorter than';
+      return <>Hip cleared {G(takeoffStr)} off the block, entered at {G(distStr)} — {P(Math.abs(d).toFixed(2) + ' m')} {word} {targetName}.</>;
+    }
+    const angleFragment = a.angle != null ? <> at {G(a.angle.toFixed(1) + '°')}</> : null;
+    return <>Hip cleared {G(takeoffStr)} off the block, entered the water at {G(distStr)}{angleFragment}.</>;
   })();
 
   // Inline legend.
@@ -748,6 +760,7 @@ const FlightPathChart = ({ primary, compare }) => {
         </div>
         {/* Right: side-profile SVG */}
         <div>
+          <window.ChartScroll minWidth={W}>
           <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet"
                style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 260 }}>
             {/* Y gridlines */}
@@ -833,6 +846,7 @@ const FlightPathChart = ({ primary, compare }) => {
               </g>
             )}
           </svg>
+          </window.ChartScroll>
           {legend}
         </div>
       </div>
@@ -932,7 +946,7 @@ const Last8Sessions = ({ primary, trials }) => {
       }
     }
     const span = +(rawMax - rawMin).toFixed(2);
-    return <>Holding within {span.toFixed(2)} s across last {last8.length} starts.</>;
+    return <>Holding within <span style={{ color: 'var(--lime-eff)' }}>{span.toFixed(2)} s</span> across last {last8.length} starts.</>;
   })();
 
   // Layout the SVG bars.
@@ -966,6 +980,7 @@ const Last8Sessions = ({ primary, trials }) => {
           {primaryStroke || 'all'} · same stroke
         </div>
       </div>
+      <window.ChartScroll minWidth={W}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet"
            style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 240 }}>
         {/* Y-axis baseline */}
@@ -1001,6 +1016,7 @@ const Last8Sessions = ({ primary, trials }) => {
           );
         })}
       </svg>
+      </window.ChartScroll>
     </div>
   );
 };
@@ -1090,34 +1106,38 @@ const BlockVelocityChart = ({ primary, compare }) => {
   const peak    = peakOf(seriesA);
   const peakCmp = peakOf(seriesB);
 
-  // Data-driven narrative. Falls back gracefully when stations are
-  // missing — we never invent values. v02.22 — describes WHERE the
-  // peak fell (takeoff vs entry) based on which point won the max.
+  // Data-driven narrative. v02.22 — describes WHERE the peak fell.
+  // v03.11 — colored tokens (primary green, compare delta purple) +
+  // compare-aware: with a compare trial the station list swaps for
+  // a verdict against the compare's peak velocity.
   const narrative = (() => {
     if (!peak) return null;
-    const peakV = peak.y.toFixed(2);
+    const G = (txt) => <span style={{ color: 'var(--lime-eff)' }}>{txt}</span>;
+    const P = (txt) => <span style={{ color: 'var(--compare-eff)' }}>{txt}</span>;
+    const peakV = peak.y.toFixed(2) + ' m/s';
     const peakWhere = peak.label === 'Entry' ? 'at entry' : peak.label === 'Avg 15m' ? 'across 15 m' : 'at takeoff';
+    if (compare && peakCmp) {
+      const targetName = compare._benchmarkKind === 'PB'     ? 'your best'
+                       : compare._benchmarkKind === 'MEDIAN' ? 'your median'
+                                                              : 'compare';
+      const d = +(peak.y - peakCmp.y).toFixed(2);
+      if (Math.abs(d) < 0.005) {
+        return <>Peak {G(peakV)} {peakWhere} — even with {targetName}.</>;
+      }
+      const word = d > 0 ? 'faster than' : 'slower than';
+      return <>Peak {G(peakV)} {peakWhere} — {P(Math.abs(d).toFixed(2) + ' m/s')} {word} {targetName}.</>;
+    }
     if (avg15 && entry && takeoff) {
-      // Show all three; emphasize which one is the actual peak.
-      const others = [];
-      if (peak.label !== 'Takeoff') others.push(takeoff.y.toFixed(2) + ' m/s at takeoff');
-      if (peak.label !== 'Entry'  ) others.push(entry.y.toFixed(2)   + ' m/s at entry');
-      others.push(avg15.y.toFixed(2) + ' m/s avg through 15 m');
-      return (
-        <>
-          Peak <span style={{ color: 'var(--lime-eff)' }}>{peakV} m/s</span> {peakWhere}, {others.join(', ')}.
-        </>
-      );
+      const o1 = peak.label !== 'Takeoff'
+        ? <>{G(takeoff.y.toFixed(2) + ' m/s')} at takeoff, </> : null;
+      const o2 = peak.label !== 'Entry'
+        ? <>{G(entry.y.toFixed(2) + ' m/s')} at entry, </> : null;
+      return <>Peak {G(peakV)} {peakWhere}, {o1}{o2}{G(avg15.y.toFixed(2) + ' m/s')} avg through 15 m.</>;
     }
     if (avg15) {
-      return (
-        <>
-          Peak <span style={{ color: 'var(--lime-eff)' }}>{peakV} m/s</span> {peakWhere},
-          {' '}{avg15.y.toFixed(2)} m/s avg through 15 m.
-        </>
-      );
+      return <>Peak {G(peakV)} {peakWhere}, {G(avg15.y.toFixed(2) + ' m/s')} avg through 15 m.</>;
     }
-    return <>Peak velocity hit <span style={{ color: 'var(--lime-eff)' }}>{peakV} m/s</span> {peakWhere}.</>;
+    return <>Peak velocity hit {G(peakV)} {peakWhere}.</>;
   })();
 
   // Y-scale across both series with 15 % headroom.
@@ -1210,6 +1230,7 @@ const BlockVelocityChart = ({ primary, compare }) => {
         </div>
         {/* Right: distance-anchored SVG line chart */}
         <div>
+          <window.ChartScroll minWidth={W}>
           <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet"
                style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 240 }}>
             {/* Y gridlines */}
@@ -1274,6 +1295,7 @@ const BlockVelocityChart = ({ primary, compare }) => {
               </text>
             )}
           </svg>
+          </window.ChartScroll>
           {legend}
         </div>
       </div>
@@ -1370,7 +1392,7 @@ const BlockSplitBar = ({ primary, compare }) => {
         <div style={{
           width: ((row.push / maxReaction) * 100) + '%',
           background: 'color-mix(in oklch, ' + accent + ' 45%, transparent)',
-          borderLeft: '1px solid var(--bg-1)',
+          borderLeft: '1px solid var(--bg)',
           display: 'flex', alignItems: 'center',
           padding: '0 8px',
           color: 'var(--tx-hi)', font: '600 11px var(--font-mono)',
@@ -1520,28 +1542,17 @@ const UnderwaterVelocityChart = ({ primary, compare }) => {
   );
 };
 
-// ── PhaseHero (v01.55, color logic v01.56) ──────────────────
+// ── PhaseHero (v01.55, node-sentence v03.10) ────────────────
 //
-// Sentence-style hero for phase tabs, matching the HeadlineStory
-// pattern from AthleteDeck (web-deck.jsx:460): big display
-// sentence with one highlight word, subtext beneath, optional
-// compare-delta chip. No giant mono numbers — keeps the visual
-// language consistent with the rest of the app.
-//
-// v01.56 — highlight color reflects performance:
-//   'lime'    → primary is better than compare on this metric
-//   'flag'    → primary is worse
-//   'signal'  → neutral (no compare, or equal)
-// Same logic the delta chip uses, applied to the sentence
-// highlight too so the at-a-glance read matches.
+// Sentence-style hero for phase tabs. v03.10 — `sentence` is a
+// fully pre-colored React node built by the heroProps builder
+// (primary numbers green, compare numbers purple). The hero just
+// renders it — no substring highlight matching, no delta chip.
 //
 // Props:
-//   sentence:  full sentence (may include the highlight word)
-//   highlight: the key word/value to color-highlight
-//   subtext:   secondary copy
-//   delta:     optional Δ chip text (already formatted)
-//   deltaColor:'lime' | 'flag' | null — drives both chip + highlight
-const PhaseHero = ({ sentence, highlight, subtext, delta, deltaColor }) => {
+//   sentence: React node (or plain string for unavailable states)
+//   subtext:  secondary copy
+const PhaseHero = ({ sentence, subtext }) => {
   const isMobile = (window.useIsMobile || (() => false))();
   if (!sentence) {
     return (
@@ -1556,36 +1567,6 @@ const PhaseHero = ({ sentence, highlight, subtext, delta, deltaColor }) => {
       </div>
     );
   }
-  // v01.56 — highlight color follows the same lime/flag/signal
-  // tone the delta chip uses. Default to signal-eff (teal) when
-  // there's no compare or the result is neutral.
-  const highlightColor = (() => {
-    if (deltaColor === 'lime') return 'var(--lime-eff)';
-    if (deltaColor === 'flag') return 'var(--flag-eff)';
-    return 'var(--signal-eff)';
-  })();
-  // Re-implement the highlight split inline since we don't have
-  // direct module access to web-deck's helper from here. Same
-  // logic — find first occurrence, wrap it with accent color.
-  const renderSentence = () => {
-    if (!highlight || !sentence.includes(highlight)) return sentence;
-    const idx = sentence.indexOf(highlight);
-    const before = sentence.slice(0, idx);
-    const after  = sentence.slice(idx + highlight.length);
-    return [
-      before,
-      React.createElement('span', {
-        key: 'hl',
-        style: { color: highlightColor },
-      }, highlight),
-      after,
-    ];
-  };
-  const deltaTone = (() => {
-    if (deltaColor === 'lime') return 'var(--lime-eff)';
-    if (deltaColor === 'flag') return 'var(--flag-eff)';
-    return 'var(--tx-md)';
-  })();
   return (
     <div style={{ marginBottom: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div className="display" style={{
@@ -1593,7 +1574,7 @@ const PhaseHero = ({ sentence, highlight, subtext, delta, deltaColor }) => {
         lineHeight: 1.2, color: 'var(--tx-hi)',
         letterSpacing: '-0.02em', maxWidth: 620,
       }}>
-        {renderSentence()}
+        {sentence}
       </div>
       {subtext && (
         <p style={{
@@ -1602,17 +1583,6 @@ const PhaseHero = ({ sentence, highlight, subtext, delta, deltaColor }) => {
         }}>
           {subtext}
         </p>
-      )}
-      {delta && (
-        <span className="mono" style={{
-          alignSelf: 'flex-start',
-          padding: '4px 10px', borderRadius: 6,
-          background: 'color-mix(in oklch, ' + deltaTone + ' 14%, transparent)',
-          color: deltaTone,
-          font: '700 11px var(--font-mono)', letterSpacing: 0.04,
-        }}>
-          {delta}
-        </span>
       )}
     </div>
   );
@@ -1742,7 +1712,7 @@ const PhaseContributionBar = ({ primary, compare, compareLabel }) => {
               style={{
                 width: w + '%',
                 background: p.color,
-                borderRight: i < PHASES.length - 1 ? '1px solid var(--bg-1)' : 'none',
+                borderRight: i < PHASES.length - 1 ? '1px solid var(--bg)' : 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 font: '600 10px var(--font-mono)',
                 color: 'var(--ink)', letterSpacing: 0.04,
@@ -2055,29 +2025,42 @@ const PhaseDetail = ({ phase, primary, compare }) => {
     : null;
 
   // v01.55 — Hero sentences for Underwater + Surface tabs.
-  // Builds a sentence-with-highlight + subtext + optional compare
-  // delta chip. Matches the HeadlineStory pattern on the Deck
-  // (web-deck.jsx:460-560) so the visual language stays consistent.
+  // v03.10 — `sentence` is a fully pre-colored React node. Every
+  // number is a colored span: PRIMARY values green (--lime-eff),
+  // COMPARE-related values (verdict delta) purple (--compare-eff),
+  // matching the chart legend. In compare mode the self-context
+  // tail swaps for the verdict clause.
   const heroProps = (() => {
     const fmtSec = (v, d = 2) => v == null ? null : v.toFixed(d) + ' s';
-    const buildDeltaChip = (a, b, dir, unit) => {
-      if (a == null || b == null) return { delta: null, color: null };
-      const raw = +(a - b).toFixed(2);
-      if (raw === 0) return { delta: '±0' + (unit ? ' ' + unit : '') + ' vs ' + (compareLabel || 'compare'), color: null };
-      const sign = raw > 0 ? '+' : '';
-      const tone = (dir === 'lower')
-        ? (raw < 0 ? 'lime' : 'flag')
-        : (raw > 0 ? 'lime' : 'flag');
-      return {
-        delta: sign + raw.toFixed(2) + (unit ? ' ' + unit : '') + ' vs ' + (compareLabel || 'compare'),
-        color: tone,
-      };
+    // Colored-span helpers. G = primary (green), P = compare (purple).
+    const G = (txt) => <span style={{ color: 'var(--lime-eff)' }}>{txt}</span>;
+    const P = (txt) => <span style={{ color: 'var(--compare-eff)' }}>{txt}</span>;
+
+    // Compare-target name. Benchmark holder names are never surfaced
+    // (CLAUDE.md) — only the kind.
+    const targetName = compare
+      ? (compare._benchmarkKind === 'PB'     ? 'your best'
+       : compare._benchmarkKind === 'MEDIAN' ? 'your median'
+                                              : 'compare')
+      : null;
+
+    // verdict — Approach A comparative clause. Returns { mag, rest }
+    // where mag is the compare-delta magnitude (purple) and rest is
+    // the directional phrase + target. null when nothing to compare.
+    const verdict = (delta, goodDir, betterWord, worseWord, magStr) => {
+      if (delta == null) return null;
+      if (delta === 0) return { mag: null, rest: 'matching ' + targetName };
+      const better = goodDir === 'higher' ? delta > 0 : delta < 0;
+      return { mag: magStr, rest: (better ? betterWord : worseWord) + ' ' + targetName };
     };
+    // tail — assembles the " — <purple mag> <rest>." verdict node.
+    const tail = (v) => v.mag
+      ? <> — {P(v.mag)} {v.rest}.</>
+      : <> — {v.rest}.</>;
 
     if (showUWHero) {
-      // v02.22 — peak now uses the peakVelocity helper (max of takeoff +
-      // entry samples), matching the corrected Peak Velocity metric and
-      // the BlockVelocityChart's dynamic peak selection.
+      // v02.22 — peak uses the peakVelocity helper (max across all
+      // measured velocity samples), matching the Peak Velocity metric.
       const peak = window.PA_STARTS?.peakVelocity?.(primary) ?? num(primary, 'hor_vel_hip_flight');
       const last = num(primary, 'hor_vel_hip_stroke2');
       const retention = (peak != null && last != null && peak > 0)
@@ -2089,31 +2072,31 @@ const PhaseDetail = ({ phase, primary, compare }) => {
         const cmpLast = compare ? num(compare, 'hor_vel_hip_stroke2') : null;
         const cmpRetention = (cmpPeak != null && cmpLast != null && cmpPeak > 0)
           ? Math.round((cmpLast / cmpPeak) * 100) : null;
-        const chip = buildDeltaChip(retention, cmpRetention, 'higher', '%');
-        const highlight = retention + '%';
+        const hl = retention + '%';
+        const d = cmpRetention != null ? (retention - cmpRetention) : null;
+        const magAbs = Math.abs(d || 0);
+        const v = verdict(d, 'higher', 'above', 'below',
+                          magAbs + ' point' + (magAbs === 1 ? '' : 's'));
         return {
-          sentence: 'You retained ' + highlight + ' of peak velocity through your second stroke.',
-          highlight,
-          // v02.22 — Removed "Strong underwater kickers retain 85-90%+"
-          // peer claim (not data-grounded for this user). Subtext now
-          // only states the measured underwater duration.
+          sentence: v
+            ? <>You retained {G(hl)} of peak velocity{tail(v)}</>
+            : <>You retained {G(hl)} of peak velocity through your second stroke.</>,
           subtext: dur != null ? fmtSec(dur) + ' from entry to breakout.' : '',
-          delta: chip.delta,
-          deltaColor: chip.color,
         };
       }
       // Fallback when velocity columns aren't populated — lead with duration.
       const cmpDur = compare ? underwaterDuration(compare) : null;
-      const chip = buildDeltaChip(dur, cmpDur, 'lower', 's');
       const durStr = dur != null ? dur.toFixed(2) + ' s' : null;
+      const d = (dur != null && cmpDur != null) ? +(dur - cmpDur).toFixed(2) : null;
+      const v = verdict(d, 'lower', 'shorter than', 'longer than',
+                        Math.abs(d || 0).toFixed(2) + ' s');
       return {
-        sentence: durStr
-          ? 'You spent ' + durStr + ' underwater from entry to breakout.'
-          : 'Underwater duration unavailable for this trial.',
-        highlight: durStr,
+        sentence: !durStr
+          ? 'Underwater duration unavailable for this trial.'
+          : v
+            ? <>You spent {G(durStr)} underwater{tail(v)}</>
+            : <>You spent {G(durStr)} underwater from entry to breakout.</>,
         subtext: 'Time from water entry to head breaking the surface.',
-        delta: chip.delta,
-        deltaColor: chip.color,
       };
     }
 
@@ -2127,42 +2110,29 @@ const PhaseDetail = ({ phase, primary, compare }) => {
       if (inverted) {
         const overshoot = Math.abs(surfaceTime).toFixed(2) + ' s';
         return {
-          sentence: 'Stayed underwater past the 15 m mark by ' + overshoot + '.',
-          highlight: overshoot,
+          sentence: <>Stayed underwater past the 15 m mark by {G(overshoot)}.</>,
           subtext: 'Strong underwater kicking — your breakout happened after the 15 m line.',
-          delta: null,
-          deltaColor: null,
         };
       }
       const sharePct = (surfaceTime != null && total != null && total > 0)
         ? Math.round((surfaceTime / total) * 100)
         : null;
-      const cmpSurface = compare ? surfaceToFifteen(compare) : null;
-      const chip = buildDeltaChip(
-        surfaceTime,
-        cmpSurface,
-        'lower', 's',
-      );
       if (sharePct != null && surfaceTime != null) {
         const durStr = surfaceTime.toFixed(2) + ' s';
-        const highlight = durStr;
+        const cmpSurface = compare ? surfaceToFifteen(compare) : null;
+        const d = cmpSurface != null ? +(surfaceTime - cmpSurface).toFixed(2) : null;
+        const v = verdict(d, 'lower', 'tighter than', 'longer than',
+                          Math.abs(d || 0).toFixed(2) + ' s');
         return {
-          sentence: 'Surface phase covered ' + highlight + ' from breakout to 15 m.',
-          highlight,
-          // v02.21 — removed the "most peers spend 18-22%" generic claim
-          // (not data-grounded for this user). Subtext now only states
-          // the measured share of their own time-to-15m.
+          sentence: v
+            ? <>Surface phase covered {G(durStr)}{tail(v)}</>
+            : <>Surface phase covered {G(durStr)} from breakout to 15 m.</>,
           subtext: sharePct + '% of your time to the 15 m mark.',
-          delta: chip.delta,
-          deltaColor: chip.color,
         };
       }
       return {
         sentence: 'Surface phase data unavailable for this trial.',
-        highlight: null,
         subtext: 'Needs breakout time + 15 m split.',
-        delta: null,
-        deltaColor: null,
       };
     }
 

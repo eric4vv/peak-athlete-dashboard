@@ -567,7 +567,14 @@ const PageShell = ({
         />
       )}
 
-      <div style={{ flex: 1, minWidth: 0 }}>
+      {/* v03.22 — overflowX:hidden on the content column so a page
+          whose content momentarily runs wide (admin bar, a chart,
+          a wide grid at an awkward breakpoint) clips here instead
+          of dragging a horizontal scrollbar across the whole
+          dashboard. minWidth:0 lets the flex child shrink; a
+          nested element with its own overflow-x:auto still
+          scrolls internally. */}
+      <div style={{ flex: 1, minWidth: 0, overflowX: 'hidden' }}>
         <Topbar
           title={title} sub={sub} scope={scope} onToggleScope={onToggleScope}
           impersonating={impersonating}

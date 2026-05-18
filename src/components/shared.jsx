@@ -718,6 +718,14 @@ const ChartScroll = ({ minWidth = 460, children }) => {
     <div style={{
       overflowX: 'auto',
       WebkitOverflowScrolling: 'touch',
+      // v03.18 — minWidth:0 + maxWidth:100% so this scroll
+      // container can shrink below its content inside a flex/grid
+      // parent. Without it, flex/grid children default to
+      // min-width:auto and the chart's min-width blows out the
+      // whole page (horizontal scroll on the document) instead of
+      // scrolling inside its own box.
+      minWidth: 0,
+      maxWidth: '100%',
     }}>
       <div style={{ minWidth: minWidth + 'px' }}>
         {children}

@@ -54,7 +54,8 @@ const authStyles = (isMobile) => ({
     background: 'color-mix(in oklch, var(--signal-eff) 14%, transparent)',
     color: 'var(--signal-eff)',
     font: '700 20px var(--font-display)',
-    marginBottom: 18,
+    // v03.19 — centered at the top of the auth card.
+    margin: '0 auto 18px',
   },
   h1: {
     font: '700 ' + (isMobile ? 20 : 24) + 'px var(--font-display)',
@@ -163,7 +164,9 @@ const AuthFrame = ({ title, sub, children }) => {
   return (
     <div style={s.shell}>
       <div style={s.card}>
-        <div style={s.mark}>P</div>
+        <div style={s.mark}>
+          {window.PeakMark ? <window.PeakMark size={24}/> : 'P'}
+        </div>
         <h1 style={s.h1}>{title}</h1>
         {sub && <p style={s.sub}>{sub}</p>}
         {children}
@@ -817,7 +820,9 @@ const ConsentModal = ({ onAccept, onSignOut }) => {
           border: '1px solid var(--line)',
           boxShadow: 'var(--shadow)',
         }}>
-        <div style={s.mark}>P</div>
+        <div style={s.mark}>
+          {window.PeakMark ? <window.PeakMark size={24}/> : 'P'}
+        </div>
         <h1 style={s.h1}>{t('auth.consentModal.title')}</h1>
         <p style={s.sub}>{t('auth.consentModal.sub')}</p>
 

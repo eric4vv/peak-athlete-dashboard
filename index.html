@@ -11,9 +11,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet"/>
 
   <!-- Design tokens (Ink & Signal) -->
-  <link rel="stylesheet" href="styles/tokens.css?v=v03.20"/>
+  <link rel="stylesheet" href="styles/tokens.css?v=v03.21"/>
 
-  <!-- Supabase JS v2 — v03.20 pinned to 2.45.4 (was @2 = latest).
+  <!-- Supabase JS v2 — v03.21 pinned to 2.45.4 (was @2 = latest).
        Pinning locks in the version with navigator.locks-backed
        token refresh, which prevents the visibility-change auth
        refresh wedge that was causing tab-return hangs. -->
@@ -34,47 +34,47 @@
        ════════════════════════════════════════════════════════════ -->
 
   <!-- Prototype libraries (load order matters) -->
-  <!-- ?v=v03.20 cache-buster — bump on every version so edits always refetch. v01.57: Sample dataset full-coverage audit. Per Eric's flag (100 BR + 200 IM rendering with empty stroke charts), audited every column the prototype reads against every sample trial. Found 3 categories of gaps: (1) RACES — 5 of 8 trials had no stroke rates AND no stroke counts; the 200 IM had rates but no strokes. Fixed by adding rates at every 5m (denseRates helper interpolates from sparse waypoints) + stroke counts per lap to all 8 race trials. (2) STARTS — kick_rate and abs_time_deepest_dive were missing on all 5 starts; both feed Underwater tab rows that rendered as "—". (3) TURNS — 10 columns missing on all 5 turns: adaption_time_s, avg_vel_5_0_pre, avg_vel_10_5_pre, avg_vel_15_10_pre, hand_contact_time_s, push_off_time_s, rotation_time_s, stroke_rate_pre_turn, stroke_rate_post_turn, time_5in_15out_s. All filled with realistic varsity-HS values. Preview mode now renders fully populated charts + detail panels on every sample trial regardless of which one the user clicks. -->
-  <script>window.PROTO_VERSION = 'v03.20';</script>
-  <script src="src/lib/supabase.js?v=v03.20"></script>
+  <!-- ?v=v03.21 cache-buster — bump on every version so edits always refetch. v01.57: Sample dataset full-coverage audit. Per Eric's flag (100 BR + 200 IM rendering with empty stroke charts), audited every column the prototype reads against every sample trial. Found 3 categories of gaps: (1) RACES — 5 of 8 trials had no stroke rates AND no stroke counts; the 200 IM had rates but no strokes. Fixed by adding rates at every 5m (denseRates helper interpolates from sparse waypoints) + stroke counts per lap to all 8 race trials. (2) STARTS — kick_rate and abs_time_deepest_dive were missing on all 5 starts; both feed Underwater tab rows that rendered as "—". (3) TURNS — 10 columns missing on all 5 turns: adaption_time_s, avg_vel_5_0_pre, avg_vel_10_5_pre, avg_vel_15_10_pre, hand_contact_time_s, push_off_time_s, rotation_time_s, stroke_rate_pre_turn, stroke_rate_post_turn, time_5in_15out_s. All filled with realistic varsity-HS values. Preview mode now renders fully populated charts + detail panels on every sample trial regardless of which one the user clicks. -->
+  <script>window.PROTO_VERSION = 'v03.21';</script>
+  <script src="src/lib/supabase.js?v=v03.21"></script>
   <!-- i18n — loads en.json + es.json via fetch on boot, exposes
        window.PA_I18N. Loaded early so any later module can call t()
        safely (with key fallback while the dicts arrive). The
        inline window.PROTO_VERSION above must run BEFORE this
        script so loadDicts() uses the real version in the
        cache-buster query string. -->
-  <script src="src/lib/i18n.js?v=v03.20"></script>
-  <script src="src/lib/analytics.js?v=v03.20"></script>
-  <script src="src/lib/story-templates.js?v=v03.20"></script>
-  <script src="src/lib/story-engine.js?v=v03.20"></script>
-  <script src="src/lib/data.js?v=v03.20"></script>
-  <script src="src/lib/requests.js?v=v03.20"></script>
-  <script src="src/lib/useRequests.js?v=v03.20"></script>
+  <script src="src/lib/i18n.js?v=v03.21"></script>
+  <script src="src/lib/analytics.js?v=v03.21"></script>
+  <script src="src/lib/story-templates.js?v=v03.21"></script>
+  <script src="src/lib/story-engine.js?v=v03.21"></script>
+  <script src="src/lib/data.js?v=v03.21"></script>
+  <script src="src/lib/requests.js?v=v03.21"></script>
+  <script src="src/lib/useRequests.js?v=v03.21"></script>
   <!-- Analysis data layer (Races/Starts/Turns reads + compare math) -->
-  <script src="src/lib/kpis.js?v=v03.20"></script>
-  <script src="src/lib/race-compare.js?v=v03.20"></script>
-  <script src="src/lib/starts-kpis.js?v=v03.20"></script>
-  <script src="src/lib/starts-compare.js?v=v03.20"></script>
-  <script src="src/lib/turns-kpis.js?v=v03.20"></script>
-  <script src="src/lib/turns-compare.js?v=v03.20"></script>
+  <script src="src/lib/kpis.js?v=v03.21"></script>
+  <script src="src/lib/race-compare.js?v=v03.21"></script>
+  <script src="src/lib/starts-kpis.js?v=v03.21"></script>
+  <script src="src/lib/starts-compare.js?v=v03.21"></script>
+  <script src="src/lib/turns-kpis.js?v=v03.21"></script>
+  <script src="src/lib/turns-compare.js?v=v03.21"></script>
   <!-- Super-admin data helpers — is_admin RPC + v_all_teams + athletes loader -->
-  <script src="src/lib/admin.js?v=v03.20"></script>
+  <script src="src/lib/admin.js?v=v03.21"></script>
   <!-- Team onboarding helpers — lookup / create / join, used by
        TeamOnboardingModal in Batch 1c (v01.27). -->
-  <script src="src/lib/teams.js?v=v03.20"></script>
+  <script src="src/lib/teams.js?v=v03.21"></script>
 
   <!-- Athlete groups (Batch 7c, v01.41) — DB-backed via
        athlete_groups + athlete_group_members. Replaces the
        prototype's localStorage groups. Includes a one-time
        silent migration helper that runs from web-races on
        team load. -->
-  <script src="src/lib/groups.js?v=v03.20"></script>
+  <script src="src/lib/groups.js?v=v03.21"></script>
 
   <!-- Competition opt-in (Batch 8b, v01.45) — wraps the
        competition_opt_ins + competition_entries write path
        used by WebBoard's OptInPanel. Pro gate enforced
        client-side (live's pattern). -->
-  <script src="src/lib/competition.js?v=v03.20"></script>
+  <script src="src/lib/competition.js?v=v03.21"></script>
 
   <!-- Preview Pro mode (v01.50) — global state + sample dataset
        for the "preview Pro features" experience. preview.js
@@ -83,65 +83,65 @@
        fictional varsity-HS-level athlete dataset used as the
        sample. Loaded before web-races/starts/turns so they can
        swap their real trials in render. -->
-  <script src="src/lib/preview.js?v=v03.20"></script>
-  <script src="src/lib/sample-data.js?v=v03.20"></script>
+  <script src="src/lib/preview.js?v=v03.21"></script>
+  <script src="src/lib/sample-data.js?v=v03.21"></script>
 
   <!-- Pulse AI (v01.61) — minimal port from live v02.29. State +
        Supabase calls live in pulse.js; FAB + drawer components
        in pulse-ai.jsx. Admin-gated by ai_coach_access table. -->
-  <script src="src/lib/pulse.js?v=v03.20"></script>
+  <script src="src/lib/pulse.js?v=v03.21"></script>
 
   <!-- Shared React atoms (Icon, PeakMark, BigNumber, Delta, sparks) -->
-  <script type="text/babel" data-presets="react" src="src/components/shared.jsx?v=v03.20"></script>
+  <script type="text/babel" data-presets="react" src="src/components/shared.jsx?v=v03.21"></script>
 
   <!-- Auth screens (SignInCard, SignUpCard, VerifySentCard,
        ForgotCard, ResetCard, ConsentModal, AuthScreen router).
        Must load BEFORE the App definition below so window.AuthScreen
        is on window when AuthGate first renders. Batch 1b shipped
        across v01.10 (foundation) → v01.13 (consent modal). -->
-  <script type="text/babel" data-presets="react" src="src/components/auth.jsx?v=v03.20"></script>
+  <script type="text/babel" data-presets="react" src="src/components/auth.jsx?v=v03.21"></script>
 
   <!-- Web shell (Sidebar, Topbar, PageShell) -->
-  <script type="text/babel" data-presets="react" src="src/components/web-shell.jsx?v=v03.20"></script>
+  <script type="text/babel" data-presets="react" src="src/components/web-shell.jsx?v=v03.21"></script>
 
   <!-- Admin "view as athlete" banner — must load BEFORE the App
        definition below so window.AdminBar is on window when the
        AuthGate renders. -->
-  <script type="text/babel" data-presets="react" src="src/components/admin-bar.jsx?v=v03.20"></script>
+  <script type="text/babel" data-presets="react" src="src/components/admin-bar.jsx?v=v03.21"></script>
 
   <!-- Request-Analysis modals (Buy + Upload) — must load BEFORE
        web-deck.jsx so BuyAnalysisModal / UploadModal are on window. -->
-  <script type="text/babel" data-presets="react" src="src/components/request-modals.jsx?v=v03.20"></script>
+  <script type="text/babel" data-presets="react" src="src/components/request-modals.jsx?v=v03.21"></script>
 
   <!-- Team onboarding modal (Join existing / Create new). Must load
        BEFORE web-deck.jsx so window.TeamOnboardingModal is ready
        when CoachDeck's "no team yet" state renders. v01.27 (Batch 1c). -->
-  <script type="text/babel" data-presets="react" src="src/components/team-onboarding.jsx?v=v03.20"></script>
+  <script type="text/babel" data-presets="react" src="src/components/team-onboarding.jsx?v=v03.21"></script>
 
   <!-- Account modal (tabbed Subscription / Profile / Preferences /
        Notifications). Rendered as a sibling of PageShell from the
        App component below, opened by the Sidebar user-card click.
        Must load BEFORE the App definition. v01.27 (Batch 2 — money path). -->
-  <script type="text/babel" data-presets="react" src="src/components/account-modal.jsx?v=v03.20"></script>
+  <script type="text/babel" data-presets="react" src="src/components/account-modal.jsx?v=v03.21"></script>
 
   <!-- Analysis shell (FilterBar, SelectionSlots, DetailPane, etc.)
        — must load BEFORE web-races.jsx so atoms are on window. -->
-  <script type="text/babel" data-presets="react" src="src/components/analysis-shell.jsx?v=v03.20"></script>
+  <script type="text/babel" data-presets="react" src="src/components/analysis-shell.jsx?v=v03.21"></script>
 
   <!-- Pages -->
-  <script type="text/babel" data-presets="react" src="src/components/web-deck.jsx?v=v03.20"></script>
-  <script type="text/babel" data-presets="react" src="src/components/web-races.jsx?v=v03.20"></script>
-  <script type="text/babel" data-presets="react" src="src/components/web-starts.jsx?v=v03.20"></script>
-  <script type="text/babel" data-presets="react" src="src/components/web-turns.jsx?v=v03.20"></script>
-  <script type="text/babel" data-presets="react" src="src/components/web-board.jsx?v=v03.20"></script>
+  <script type="text/babel" data-presets="react" src="src/components/web-deck.jsx?v=v03.21"></script>
+  <script type="text/babel" data-presets="react" src="src/components/web-races.jsx?v=v03.21"></script>
+  <script type="text/babel" data-presets="react" src="src/components/web-starts.jsx?v=v03.21"></script>
+  <script type="text/babel" data-presets="react" src="src/components/web-turns.jsx?v=v03.21"></script>
+  <script type="text/babel" data-presets="react" src="src/components/web-board.jsx?v=v03.21"></script>
   <!-- Admin queue page (Race Requests) — Batch 5 (v01.27). Loads
        window.WebAdmin used by App routing when isRaceAdmin or
        isSuperAdmin and active === 'admin'. -->
-  <script type="text/babel" data-presets="react" src="src/components/web-admin.jsx?v=v03.20"></script>
+  <script type="text/babel" data-presets="react" src="src/components/web-admin.jsx?v=v03.21"></script>
 
   <!-- Pulse AI components (v01.61) — FAB + Drawer. Loads
        window.PulseFab, mounted once by App in AuthGate. -->
-  <script type="text/babel" data-presets="react" src="src/components/pulse-ai.jsx?v=v03.20"></script>
+  <script type="text/babel" data-presets="react" src="src/components/pulse-ai.jsx?v=v03.21"></script>
 
   <style>
     /* ── Boot + auth gate styles ── */
@@ -274,7 +274,7 @@
   <script type="text/babel" data-presets="react">
     const { useState, useEffect } = React;
 
-    const PROTO_VERSION = 'v03.20';
+    const PROTO_VERSION = 'v03.21';
     // v01.27 — SignInCard moved to src/components/auth.jsx. AuthGate
     // below routes through window.AuthScreen (the mode router that
     // owns Login / SignUp / Forgot / Reset state). The pre-React
@@ -418,7 +418,7 @@
       // RLS authorizes only owners for those UPDATEs; this client
       // flag just hides the UI so non-owners don't hit a 403.
       const [isTeamOwner, setIsTeamOwner] = useState(false);
-      // v03.20 — Lifted BuyAnalysisModal state. Owned at App level
+      // v03.21 — Lifted BuyAnalysisModal state. Owned at App level
       // so the RequestAnalysisInline button in the sidebar opens the
       // buy modal regardless of which page is active. Mirrors the
       // mobile prototype's v02.18 lift. AthleteDeck retains its own
@@ -502,14 +502,14 @@
 
       const persona = role === 'coach' ? 'coach' : 'athlete';
 
-      // v03.20 — Source quota state for the lifted BuyAnalysisModal.
+      // v03.21 — Source quota state for the lifted BuyAnalysisModal.
       // Called unconditionally per Rules of Hooks. Passes null for
       // coaches/no-athlete profiles; the hook returns idle state in
       // that case. AthleteDeck also calls this same hook with the
       // same key — usePARequests is expected to dedupe internally.
       const buyModalRequestsState = (window.usePARequests || (() => ({})))(profile?.athlete_uuid || null);
 
-      // v03.20 — Buy modal event listener. Fires for pa:open-modal
+      // v03.21 — Buy modal event listener. Fires for pa:open-modal
       // with detail.modal === 'buy'. AthleteDeck retains its own
       // listener for 'upload' (deck-internal flow). Both events flow
       // through the same dispatch surface; each listener filters by
@@ -681,7 +681,7 @@
           />
         )}
 
-        {/* v03.20 — Lifted BuyAnalysisModal. Mounted at App level so
+        {/* v03.21 — Lifted BuyAnalysisModal. Mounted at App level so
             it's reachable from any surface (sidebar RequestAnalysis
             button on any tab, Coach Board upgrade, future entry
             points), not just AthleteDeck. Dev override flags from
@@ -784,7 +784,7 @@
         // events (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, USER_UPDATED)
         // route through the standard session refresh.
         //
-        // v03.20 — DEFER refreshProfile() out of the callback with
+        // v03.21 — DEFER refreshProfile() out of the callback with
         // setTimeout(0). Supabase-js holds an internal auth lock
         // while firing subscriber callbacks; calling any
         // supabase.from(...) query directly inside the callback

@@ -102,6 +102,16 @@
 
 /* ── Reset + base ── */
 *, *::before, *::after { box-sizing: border-box; }
+/* v03.21 — overflow-x:hidden on html+body. The dashboard ships
+   inside an iframe on mypeakathlete.com/blank-3; any element that
+   momentarily exceeds the viewport width would otherwise give the
+   whole iframe a horizontal scrollbar. This is the same fix the
+   live v02.29 dashboard carried (body overflow-x:hidden) — the
+   v03 rebuild dropped it. width:100% caps the document box. */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
 body {
   margin: 0;
   font-family: var(--font-ui);

@@ -711,28 +711,16 @@ const ConfirmHost = () => {
 // no desktop regression risk).
 //
 // Usage: <ChartScroll minWidth={W}><svg .../></ChartScroll>
-const ChartScroll = ({ minWidth = 460, children }) => {
-  const isMobile = (window.useIsMobile || (() => false))();
-  if (!isMobile) return children;
-  return (
-    <div style={{
-      overflowX: 'auto',
-      WebkitOverflowScrolling: 'touch',
-      // v03.18 — minWidth:0 + maxWidth:100% so this scroll
-      // container can shrink below its content inside a flex/grid
-      // parent. Without it, flex/grid children default to
-      // min-width:auto and the chart's min-width blows out the
-      // whole page (horizontal scroll on the document) instead of
-      // scrolling inside its own box.
-      minWidth: 0,
-      maxWidth: '100%',
-    }}>
-      <div style={{ minWidth: minWidth + 'px' }}>
-        {children}
-      </div>
-    </div>
-  );
-};
+// v03.20 — REVERTED to a passthrough. The horizontal-scroll
+// approach (v03.12-v03.18) caused charts to overflow their cards
+// and the document to scroll horizontally across the various
+// flex/grid layout contexts on web + mobile. Charts now simply
+// render at width:100% and scale to fit their card — the
+// behavior before the iPhone-Pro readability experiment. The
+// "small charts on a phone" cosmetic issue is accepted for now;
+// if revisited, do it without a layout-affecting wrapper (e.g.
+// larger in-SVG font sizes), not horizontal scroll.
+const ChartScroll = ({ children }) => children;
 
 // ── StuckBanner (v03.04) ──────────────────────────────────────
 // Non-blocking top banner that appears when the supabase client

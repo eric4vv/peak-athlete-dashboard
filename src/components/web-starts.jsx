@@ -1105,6 +1105,11 @@ const BlockVelocityChart = ({ primary, compare }) => {
   const avg15   = at(seriesA, 'Avg 15m');
   const peak    = peakOf(seriesA);
   const peakCmp = peakOf(seriesB);
+  // v03.23 — compare-trial counterparts so the mini-KPI tiles can
+  // show primary + compare side by side, not primary alone.
+  const takeoffCmp = at(seriesB, 'Takeoff');
+  const entryCmp   = at(seriesB, 'Entry');
+  const avg15Cmp   = at(seriesB, 'Avg 15m');
 
   // Data-driven narrative. v02.22 — describes WHERE the peak fell.
   // v03.11 — colored tokens (primary green, compare delta purple) +
@@ -1151,20 +1156,36 @@ const BlockVelocityChart = ({ primary, compare }) => {
   // X-axis: fixed 0..15 m so the spatial scale is intuitive.
   const xMin = 0, xMax = 15;
 
-  // Mini-KPI tile.
-  const Mini = ({ label, value, unit }) => (
-    <div>
-      <div className="eyebrow" style={{ fontSize: 9, color: 'var(--tx-lo)' }}>{label}</div>
-      <div style={{ font: '700 18px var(--font-mono)', color: 'var(--tx-hi)', marginTop: 4 }}>
-        {value != null ? value.toFixed(2) : '—'}
-        {value != null && unit && (
-          <span style={{ fontSize: 11, color: 'var(--tx-lo)', fontWeight: 500, marginLeft: 3 }}>
-            {unit}
-          </span>
+  // Mini-KPI tile. v03.23 — shows primary (green) + compare
+  // (purple) + delta, matching the chart's Primary/Compare line
+  // colors. Velocity: higher is better, so a positive delta
+  // (primary faster) tints lime, negative tints flag.
+  const Mini = ({ label, value, cmp, unit }) => {
+    const u = (sz) => unit
+      ? <span style={{ fontSize: sz, color: 'var(--tx-lo)', fontWeight: 500, marginLeft: 3 }}>{unit}</span>
+      : null;
+    const d = (value != null && cmp != null) ? +(value - cmp).toFixed(2) : null;
+    const dColor = d == null || d === 0 ? 'var(--tx-md)'
+                 : d > 0 ? 'var(--lime-eff)' : 'var(--flag-eff)';
+    return (
+      <div>
+        <div className="eyebrow" style={{ fontSize: 9, color: 'var(--tx-lo)' }}>{label}</div>
+        <div style={{ font: '700 18px var(--font-mono)', color: 'var(--lime-eff)', marginTop: 4 }}>
+          {value != null ? value.toFixed(2) : '—'}{value != null && u(11)}
+        </div>
+        {cmp != null && (
+          <div style={{ font: '700 13px var(--font-mono)', color: 'var(--compare-eff)', marginTop: 2 }}>
+            {cmp.toFixed(2)}{u(10)}
+          </div>
+        )}
+        {d != null && (
+          <div style={{ font: '700 11px var(--font-mono)', color: dColor, marginTop: 2 }}>
+            {(d > 0 ? '+' : '') + d.toFixed(2)}{u(9)}
+          </div>
         )}
       </div>
-    </div>
-  );
+    );
+  };
 
   // Inline legend in lime + compare-eff.
   const legend = (
@@ -1222,10 +1243,10 @@ const BlockVelocityChart = ({ primary, compare }) => {
               displayed (max of the two samples). User sees the comparison
               between takeoff and entry directly. */}
           <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-            <Mini label="Peak"     value={peak    ? peak.y    : null} unit="m/s"/>
-            <Mini label="Takeoff"  value={takeoff ? takeoff.y : null} unit="m/s"/>
-            <Mini label="Entry"    value={entry   ? entry.y   : null} unit="m/s"/>
-            <Mini label="Avg 15 m" value={avg15   ? avg15.y   : null} unit="m/s"/>
+            <Mini label="Peak"     value={peak    ? peak.y    : null} cmp={peakCmp    ? peakCmp.y    : null} unit="m/s"/>
+            <Mini label="Takeoff"  value={takeoff ? takeoff.y : null} cmp={takeoffCmp ? takeoffCmp.y : null} unit="m/s"/>
+            <Mini label="Entry"    value={entry   ? entry.y   : null} cmp={entryCmp   ? entryCmp.y   : null} unit="m/s"/>
+            <Mini label="Avg 15 m" value={avg15   ? avg15.y   : null} cmp={avg15Cmp   ? avg15Cmp.y   : null} unit="m/s"/>
           </div>
         </div>
         {/* Right: distance-anchored SVG line chart */}

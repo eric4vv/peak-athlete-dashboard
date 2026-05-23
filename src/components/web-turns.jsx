@@ -184,6 +184,8 @@ const WebTurns = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsPr
 
   const [phase,   setPhase]   = useTurnsState('Approach');
   const [filters, setFilters] = useTurnsState({ distance: null, style: null, course: null });
+  // v03.28 — collapsible trial list (same pattern as Sessions clip list).
+  const [trialListCollapsed, setTrialListCollapsed] = useTurnsState(false);
 
   // ── Resolve athlete_uuid (admin override aware) ──────────────
   useTurnsEffect(() => {
@@ -419,28 +421,53 @@ const WebTurns = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsPr
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : 'minmax(280px, 360px) 1fr',
+        gridTemplateColumns: isMobile
+          ? '1fr'
+          : (trialListCollapsed ? '56px 1fr' : 'minmax(280px, 360px) 1fr'),
         gap: 16, alignItems: 'start',
       }}>
-        {/* LEFT: trial picker */}
-        <ChartCard
-          title={t('analysis.trials.title')}
-          right={
-            <span className="mono" style={{ fontSize: 11, color: 'var(--tx-lo)' }}>
-              {t('analysis.trials.filterCount', { filtered: filtered.length, total: effectiveTrials.length })}
-            </span>
-          }>
-          <TrialList
-            trials={filtered}
-            slotAKey={slotAKey}
-            slotBKey={slotBKind ? null : slotBKey}
-            onAssign={onAssign}
-            emptyMessage="No turns match these filters."
-            helpers={turnsHelpers}
-            isPro={isPro}
-            onUpgrade={onUpgrade}
-          />
-        </ChartCard>
+        {/* LEFT: trial picker — collapsible on desktop (v03.28).
+            Collapsed mode replaces the ChartCard with a thin rail. */}
+        {!isMobile && trialListCollapsed ? (
+          <div style={{
+            background: 'var(--bg-2)',
+            border: '1px solid var(--line-soft)',
+            borderRadius: 12, padding: '6px 4px',
+          }}>
+            <TrialList
+              trials={filtered}
+              slotAKey={slotAKey}
+              slotBKey={slotBKind ? null : slotBKey}
+              onAssign={onAssign}
+              emptyMessage="No turns match these filters."
+              helpers={turnsHelpers}
+              isPro={isPro}
+              onUpgrade={onUpgrade}
+              collapsed
+              onToggleCollapsed={() => setTrialListCollapsed(false)}
+            />
+          </div>
+        ) : (
+          <ChartCard
+            title={t('analysis.trials.title')}
+            right={
+              <span className="mono" style={{ fontSize: 11, color: 'var(--tx-lo)' }}>
+                {t('analysis.trials.filterCount', { filtered: filtered.length, total: effectiveTrials.length })}
+              </span>
+            }>
+            <TrialList
+              trials={filtered}
+              slotAKey={slotAKey}
+              slotBKey={slotBKind ? null : slotBKey}
+              onAssign={onAssign}
+              emptyMessage="No turns match these filters."
+              helpers={turnsHelpers}
+              isPro={isPro}
+              onUpgrade={onUpgrade}
+              onToggleCollapsed={isMobile ? null : (() => setTrialListCollapsed(true))}
+            />
+          </ChartCard>
+        )}
 
         {/* RIGHT: detail */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
@@ -763,6 +790,32 @@ const TurnFullVelocityProfile = ({ primary, compare }) => {
   const streamlineDecay = (postStart && postEnd)
     ? +(postStart.y - postEnd.y).toFixed(2) : null;
 
+  // v03.43 — compare-trial counterparts so each KPI tile can
+  // show primary + compare + delta side by side (matching the
+  // Starts mini-KPI pattern shipped at v03.23).
+  const peakCmp = seriesB.length
+    ? seriesB.reduce((max, p) => p.y > max.y ? p : max, seriesB[0])
+    : null;
+  const preEndCmp    = seriesB.find(p => p.x === 2);
+  const postStartCmp = seriesB.find(p => p.x === 3);
+  const postEndCmp   = seriesB.find(p => p.x === 5);
+  const pushOffGainCmp = (preEndCmp && postStartCmp)
+    ? +(postStartCmp.y - preEndCmp.y).toFixed(2) : null;
+  const streamlineDecayCmp = (postStartCmp && postEndCmp)
+    ? +(postStartCmp.y - postEndCmp.y).toFixed(2) : null;
+
+  // Delta colour helper. `goodWhen` = 'higher' (peak/push-off
+  // gain — primary faster than compare is good) OR 'lower'
+  // (streamline decay — primary loses less velocity is good).
+  const deltaColor = (d, goodWhen) => {
+    if (d == null || d === 0) return 'var(--tx-md)';
+    const better = goodWhen === 'higher' ? d > 0 : d < 0;
+    return better ? 'var(--lime-eff)' : 'var(--flag-eff)';
+  };
+  const fmtDelta = (d) => d == null
+    ? null
+    : (d > 0 ? '+' : '') + d.toFixed(2);
+
   const yTicks = [yMax, (yMax + yMin) / 2, yMin];
 
   return (
@@ -880,7 +933,9 @@ const TurnFullVelocityProfile = ({ primary, compare }) => {
         paddingTop: 14,
         borderTop: '1px solid var(--line-soft)',
       }}>
-        {peak && (
+        {peak && (() => {
+          const dPeak = (peakCmp != null) ? +(peak.y - peakCmp.y).toFixed(2) : null;
+          return (
           <div>
             <div className="eyebrow" style={{
               fontSize: 9, color: 'var(--tx-lo)', letterSpacing: 0.08,
@@ -897,6 +952,30 @@ const TurnFullVelocityProfile = ({ primary, compare }) => {
                 fontWeight: 500, marginLeft: 3,
               }}>m/s</span>
             </div>
+            {peakCmp != null && (
+              <div style={{
+                font: '700 13px var(--font-mono)',
+                color: 'var(--compare-eff)', marginTop: 2,
+              }}>
+                {peakCmp.y.toFixed(2)}
+                <span style={{
+                  fontSize: 10, color: 'var(--tx-lo)',
+                  fontWeight: 500, marginLeft: 3,
+                }}>m/s</span>
+              </div>
+            )}
+            {dPeak != null && (
+              <div style={{
+                font: '700 11px var(--font-mono)',
+                color: deltaColor(dPeak, 'higher'), marginTop: 2,
+              }}>
+                {fmtDelta(dPeak)}
+                <span style={{
+                  fontSize: 9, color: 'var(--tx-lo)',
+                  fontWeight: 500, marginLeft: 3,
+                }}>m/s</span>
+              </div>
+            )}
             <div style={{
               font: '500 11px var(--font-ui)', color: 'var(--tx-lo)',
               marginTop: 3,
@@ -904,8 +983,11 @@ const TurnFullVelocityProfile = ({ primary, compare }) => {
               at {peak.label} m {peak.side}
             </div>
           </div>
-        )}
-        {pushOffGain != null && (
+          );
+        })()}
+        {pushOffGain != null && (() => {
+          const dGain = (pushOffGainCmp != null) ? +(pushOffGain - pushOffGainCmp).toFixed(2) : null;
+          return (
           <div>
             <div className="eyebrow" style={{
               fontSize: 9, color: 'var(--tx-lo)', letterSpacing: 0.08,
@@ -923,6 +1005,30 @@ const TurnFullVelocityProfile = ({ primary, compare }) => {
                 fontWeight: 500, marginLeft: 3,
               }}>m/s</span>
             </div>
+            {pushOffGainCmp != null && (
+              <div style={{
+                font: '700 13px var(--font-mono)',
+                color: 'var(--compare-eff)', marginTop: 2,
+              }}>
+                {(pushOffGainCmp > 0 ? '+' : '') + pushOffGainCmp.toFixed(2)}
+                <span style={{
+                  fontSize: 10, color: 'var(--tx-lo)',
+                  fontWeight: 500, marginLeft: 3,
+                }}>m/s</span>
+              </div>
+            )}
+            {dGain != null && (
+              <div style={{
+                font: '700 11px var(--font-mono)',
+                color: deltaColor(dGain, 'higher'), marginTop: 2,
+              }}>
+                {fmtDelta(dGain)}
+                <span style={{
+                  fontSize: 9, color: 'var(--tx-lo)',
+                  fontWeight: 500, marginLeft: 3,
+                }}>m/s</span>
+              </div>
+            )}
             <div style={{
               font: '500 11px var(--font-ui)', color: 'var(--tx-lo)',
               marginTop: 3,
@@ -930,8 +1036,15 @@ const TurnFullVelocityProfile = ({ primary, compare }) => {
               vs approach into wall
             </div>
           </div>
-        )}
-        {streamlineDecay != null && (
+          );
+        })()}
+        {streamlineDecay != null && (() => {
+          // Both decays are stored as positive numbers (postStart - postEnd);
+          // displayed as negative (a velocity LOSS) in the UI. For the delta,
+          // compare the raw decay magnitudes: less decay (lower value) is
+          // better. d = primary - compare; d < 0 means primary lost less.
+          const dDecay = (streamlineDecayCmp != null) ? +(streamlineDecay - streamlineDecayCmp).toFixed(2) : null;
+          return (
           <div>
             <div className="eyebrow" style={{
               fontSize: 9, color: 'var(--tx-lo)', letterSpacing: 0.08,
@@ -951,6 +1064,30 @@ const TurnFullVelocityProfile = ({ primary, compare }) => {
                 fontWeight: 500, marginLeft: 3,
               }}>m/s</span>
             </div>
+            {streamlineDecayCmp != null && (
+              <div style={{
+                font: '700 13px var(--font-mono)',
+                color: 'var(--compare-eff)', marginTop: 2,
+              }}>
+                −{Math.abs(streamlineDecayCmp).toFixed(2)}
+                <span style={{
+                  fontSize: 10, color: 'var(--tx-lo)',
+                  fontWeight: 500, marginLeft: 3,
+                }}>m/s</span>
+              </div>
+            )}
+            {dDecay != null && (
+              <div style={{
+                font: '700 11px var(--font-mono)',
+                color: deltaColor(dDecay, 'lower'), marginTop: 2,
+              }}>
+                {fmtDelta(dDecay)}
+                <span style={{
+                  fontSize: 9, color: 'var(--tx-lo)',
+                  fontWeight: 500, marginLeft: 3,
+                }}>m/s</span>
+              </div>
+            )}
             <div style={{
               font: '500 11px var(--font-ui)', color: 'var(--tx-lo)',
               marginTop: 3,
@@ -958,7 +1095,8 @@ const TurnFullVelocityProfile = ({ primary, compare }) => {
               0–5 m → 10–15 m post
             </div>
           </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* Legend */}
@@ -1255,6 +1393,18 @@ const TurnDetail = ({ primary, compare, diff, story, phases, items, phase, onCha
         compare?._benchmarkKind === 'WR'     ? 'World record'  :
         'Compare'
       }
+      /* v03.44 / v03.47 — Save-to-Library wiring. v_turn_kpis
+         doesn't expose turn_uuid (kpis.js has dead code that
+         references it); record_uuid is the universal trial id. */
+      trialKind="turn"
+      primaryTrialUuid={primary?.record_uuid}
+      primaryTeamUuid={primary?.team_uuid}
+      primaryTrialDate={primary?.source_date}
+      primaryTrialTitle={window.PA_TURNS.turnTitle(primary)}
+      compareTrialUuid={compare && !compare._benchmarkKind ? compare.record_uuid : null}
+      compareTeamUuid={compare?.team_uuid}
+      compareTrialDate={compare?.source_date}
+      compareTrialTitle={compare && !compare._benchmarkKind ? window.PA_TURNS.turnTitle(compare) : null}
       isPro={isPro}
       onUpgrade={onUpgrade}
     />

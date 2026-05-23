@@ -205,6 +205,9 @@ const WebStarts = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsP
   // Filters
   const [filters, setFilters] = useStartsState({ distance: null, style: null, course: null });
 
+  // v03.28 — collapsible trial list (same pattern as Sessions / Turns).
+  const [trialListCollapsed, setTrialListCollapsed] = useStartsState(false);
+
   // v00.48: reset slot + filter selections whenever the resolved
   // athlete changes. Prevents stale slotAKey from one athlete
   // bleeding through to another's trials list when an admin
@@ -473,29 +476,53 @@ const WebStarts = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsP
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : 'minmax(280px, 360px) 1fr',
+        gridTemplateColumns: isMobile
+          ? '1fr'
+          : (trialListCollapsed ? '56px 1fr' : 'minmax(280px, 360px) 1fr'),
         gap: 16,
         alignItems: 'start',
       }}>
-        {/* ── LEFT: trials picker card ──────────────────────── */}
-        <ChartCard
-          title={t('analysis.trials.title')}
-          right={
-            <span className="mono" style={{ fontSize: 11, color: 'var(--tx-lo)' }}>
-              {t('analysis.trials.filterCount', { filtered: filtered.length, total: effectiveTrials.length })}
-            </span>
-          }>
-          <TrialList
-            trials={filtered}
-            slotAKey={slotAKey}
-            slotBKey={slotBKind ? null : slotBKey}
-            onAssign={onAssign}
-            emptyMessage="No starts match these filters."
-            helpers={startsHelpers}
-            isPro={isPro}
-            onUpgrade={onUpgrade}
-          />
-        </ChartCard>
+        {/* ── LEFT: trials picker card — collapsible on desktop (v03.28) ── */}
+        {!isMobile && trialListCollapsed ? (
+          <div style={{
+            background: 'var(--bg-2)',
+            border: '1px solid var(--line-soft)',
+            borderRadius: 12, padding: '6px 4px',
+          }}>
+            <TrialList
+              trials={filtered}
+              slotAKey={slotAKey}
+              slotBKey={slotBKind ? null : slotBKey}
+              onAssign={onAssign}
+              emptyMessage="No starts match these filters."
+              helpers={startsHelpers}
+              isPro={isPro}
+              onUpgrade={onUpgrade}
+              collapsed
+              onToggleCollapsed={() => setTrialListCollapsed(false)}
+            />
+          </div>
+        ) : (
+          <ChartCard
+            title={t('analysis.trials.title')}
+            right={
+              <span className="mono" style={{ fontSize: 11, color: 'var(--tx-lo)' }}>
+                {t('analysis.trials.filterCount', { filtered: filtered.length, total: effectiveTrials.length })}
+              </span>
+            }>
+            <TrialList
+              trials={filtered}
+              slotAKey={slotAKey}
+              slotBKey={slotBKind ? null : slotBKey}
+              onAssign={onAssign}
+              emptyMessage="No starts match these filters."
+              helpers={startsHelpers}
+              isPro={isPro}
+              onUpgrade={onUpgrade}
+              onToggleCollapsed={isMobile ? null : (() => setTrialListCollapsed(true))}
+            />
+          </ChartCard>
+        )}
 
         {/* ── RIGHT: detail column ──────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
@@ -588,6 +615,18 @@ const StartDetail = ({ primary, compare, diff, story, phases, items, phase, onCh
         compare?._benchmarkKind === 'WR'     ? 'World record'  :
         'Compare'
       }
+      /* v03.44 / v03.47 — Save-to-Library wiring. v_start_kpis
+         doesn't expose start_uuid (despite kpis.js dead code that
+         references it); record_uuid is the universal trial id. */
+      trialKind="start"
+      primaryTrialUuid={primary?.record_uuid}
+      primaryTeamUuid={primary?.team_uuid}
+      primaryTrialDate={primary?.source_date}
+      primaryTrialTitle={window.PA_STARTS.startTitle(primary)}
+      compareTrialUuid={compare && !compare._benchmarkKind ? compare.record_uuid : null}
+      compareTeamUuid={compare?.team_uuid}
+      compareTrialDate={compare?.source_date}
+      compareTrialTitle={compare && !compare._benchmarkKind ? window.PA_STARTS.startTitle(compare) : null}
       isPro={isPro}
       onUpgrade={onUpgrade}
     />

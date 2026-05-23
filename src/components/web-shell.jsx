@@ -18,12 +18,16 @@
 // `id` is the route key (matches App's active state). `icon` is
 // the shared.jsx Icon name. `i18nKey` resolves through PA_I18N.
 
+// v03.24 — Sessions added to the Analysis group, between races
+// and the rankings/team blocks. Video Sessions feature Phase 1
+// (read-only shell, empty state for users with no sessions yet).
 const NAV_ATHLETE = [
   { labelKey: 'pages.subHome',     items: [{ id: 'deck',    icon: 'home',   i18nKey: 'pages.home.athlete' }] },
   { labelKey: 'pages.subAnalysis', items: [
-    { id: 'starts',  icon: 'starts', i18nKey: 'pages.starts' },
-    { id: 'turns',   icon: 'turns',  i18nKey: 'pages.turns' },
-    { id: 'races',   icon: 'races',  i18nKey: 'pages.races' },
+    { id: 'starts',   icon: 'starts',   i18nKey: 'pages.starts' },
+    { id: 'turns',    icon: 'turns',    i18nKey: 'pages.turns' },
+    { id: 'races',    icon: 'races',    i18nKey: 'pages.races' },
+    { id: 'sessions', icon: 'video',    i18nKey: 'pages.sessions' },
   ]},
   { labelKey: 'pages.subRankings', items: [{ id: 'board',   icon: 'board',  i18nKey: 'pages.board' }] },
   { labelKey: 'pages.subTeam',     items: [{ id: 'team',    icon: 'team',   i18nKey: 'pages.team.athlete' }] },
@@ -32,9 +36,10 @@ const NAV_ATHLETE = [
 const NAV_COACH = [
   { labelKey: 'pages.subHome',     items: [{ id: 'deck',    icon: 'home',   i18nKey: 'pages.home.coach' }] },
   { labelKey: 'pages.subAnalysis', items: [
-    { id: 'starts',  icon: 'starts', i18nKey: 'pages.starts' },
-    { id: 'turns',   icon: 'turns',  i18nKey: 'pages.turns' },
-    { id: 'races',   icon: 'races',  i18nKey: 'pages.races' },
+    { id: 'starts',   icon: 'starts',   i18nKey: 'pages.starts' },
+    { id: 'turns',    icon: 'turns',    i18nKey: 'pages.turns' },
+    { id: 'races',    icon: 'races',    i18nKey: 'pages.races' },
+    { id: 'sessions', icon: 'video',    i18nKey: 'pages.sessions' },
   ]},
   { labelKey: 'pages.subTeam',     items: [{ id: 'team',    icon: 'team',   i18nKey: 'pages.team.coach' }] },
   { labelKey: 'pages.subRankings', items: [{ id: 'board',   icon: 'board',  i18nKey: 'pages.board' }] },

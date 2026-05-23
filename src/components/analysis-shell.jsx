@@ -527,8 +527,52 @@ const TrialRow = ({ trial, state, onAssign, helpers = DEFAULT_HELPERS, locked = 
   );
 };
 
-const TrialList = ({ trials, slotAKey, slotBKey, onAssign, emptyMessage, helpers = DEFAULT_HELPERS, isPro = true, onUpgrade }) => {
+const TrialList = ({
+  trials, slotAKey, slotBKey, onAssign, emptyMessage,
+  helpers = DEFAULT_HELPERS, isPro = true, onUpgrade,
+  // v03.28 — optional collapse controls. When `onToggleCollapsed`
+  // is provided, the list renders a chevron toggle and switches
+  // to a thin rail view when `collapsed` is true. Each tab
+  // (web-races, web-starts, web-turns) owns the state and also
+  // narrows the parent grid column when collapsed.
+  collapsed = false,
+  onToggleCollapsed = null,
+}) => {
   const t = (window.useT || (() => (k) => k))();
+  const Icon = window.Icon;
+
+  // Collapsed rail — just chevron + count. No rows. The user
+  // expands first to switch trials. Slot indicators are visible
+  // on the right-hand detail panel anyway, so we don't repeat
+  // them here.
+  if (collapsed && onToggleCollapsed) {
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', gap: 10,
+        padding: '6px 0',
+      }}>
+        <button type="button" onClick={onToggleCollapsed}
+          title="Show trial list"
+          style={{
+            font: '600 11px var(--font-ui)',
+            padding: '6px 8px', borderRadius: 999, cursor: 'pointer',
+            background: 'transparent', color: 'var(--tx-md)',
+            border: '1px solid var(--line-soft)',
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+          }}>
+          {Icon && <Icon name="chev" size={11}/>}
+        </button>
+        <div style={{
+          font: '700 9px var(--font-mono)', letterSpacing: 0.08,
+          color: 'var(--tx-lo)', writingMode: 'vertical-rl',
+          transform: 'rotate(180deg)', padding: '6px 0',
+        }}>
+          TRIALS · {(trials || []).length}
+        </div>
+      </div>
+    );
+  }
   // v01.50 — Preview-aware empty state. When the user has zero
   // trials AND isn't already in preview mode, surface the
   // "Preview with sample data" CTA so new users can experience
@@ -595,6 +639,29 @@ const TrialList = ({ trials, slotAKey, slotBKey, onAssign, emptyMessage, helpers
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* v03.28 — Hide chevron at the top. Lets the coach
+          reclaim ~280 px for charts / video by collapsing the
+          trial list to a thin rail. Only shown when the parent
+          tab provides onToggleCollapsed. */}
+      {onToggleCollapsed && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button type="button" onClick={onToggleCollapsed}
+            title="Hide trial list"
+            style={{
+              font: '600 11px var(--font-ui)',
+              padding: '4px 9px', borderRadius: 999, cursor: 'pointer',
+              background: 'transparent', color: 'var(--tx-md)',
+              border: '1px solid var(--line-soft)',
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+            }}>
+            {Icon && (
+              <Icon name="chev" size={11}
+                style={{ transform: 'rotate(180deg)' }}/>
+            )}
+            Hide
+          </button>
+        </div>
+      )}
       {/* v01.49 — Pro upsell strip on top of the list when there
           are locked sessions. Two CTAs: Upgrade (paid) and
           Try Pro (preview mode, v01.50). */}
@@ -1805,6 +1872,287 @@ const RaceCompareBars = ({ primary, compare, mode }) => {
 // Per CLAUDE.md (2026-05-05): NEVER log the signed URL. NEVER expose
 // the benchmark holder name; the compare label must come from the
 // caller (e.g. "World record"), not from holder_name.
+// ── AddTrialToSessionButton (v03.46) ─────────────────────────
+// Replaces the v03.44 auto-promote "Save to Library" pattern
+// with an explicit picker. Coach (or athlete) now picks which
+// session the trial gets added to, or creates a new one inline.
+//
+// Pill states:
+//   - "+ Add trial to session" → opens picker popover
+//   - "In session ↗"           → click jumps to Sessions tab
+//                                and pre-opens the clip
+//
+// Picker shows the trial's athlete's sessions + a "+ Create
+// new session" row that opens an inline form (same fields as
+// the standalone CreateSessionModal: title + date + notes).
+const AddTrialToSessionButton = ({
+  trialKind, trialUuid,
+  athleteUuid, teamUuid,
+  trialVideoKey, trialDate, trialTitle,
+}) => {
+  const Hooks = (window.React || React);
+  const SA = window.PA_SESSIONS;
+  const t = (window.useT || (() => (k) => k))();
+  const [state, setState] = Hooks.useState('loading'); // 'loading'|'absent'|'saved'|'saving'
+  const [clipUuid, setClipUuid] = Hooks.useState(null);
+  const [showPicker, setShowPicker] = Hooks.useState(false);
+  const [sessions, setSessions] = Hooks.useState([]);
+  const [sessionsLoading, setSessionsLoading] = Hooks.useState(false);
+  const [creating, setCreating] = Hooks.useState(false); // inline "new session" form mode
+  const [newTitle, setNewTitle] = Hooks.useState('');
+  const [newDate, setNewDate]   = Hooks.useState(trialDate || new Date().toISOString().slice(0, 10));
+
+  // Re-check whether a clip exists for this trial on every key change.
+  Hooks.useEffect(() => {
+    if (!SA?.findClipForTrial || !trialKind || !trialUuid) {
+      setState('absent'); setClipUuid(null); return;
+    }
+    let cancelled = false;
+    setState('loading');
+    (async () => {
+      const { data } = await SA.findClipForTrial(trialKind, trialUuid);
+      if (cancelled) return;
+      if (data) {
+        setClipUuid(data.clip_uuid);
+        setState('saved');
+      } else {
+        setClipUuid(null);
+        setState('absent');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [trialKind, trialUuid]);
+
+  // Load athlete's sessions when picker opens.
+  Hooks.useEffect(() => {
+    if (!showPicker || !athleteUuid || !SA?.listSessionsForAthlete) return;
+    let cancelled = false;
+    setSessionsLoading(true);
+    (async () => {
+      const { data } = await SA.listSessionsForAthlete(athleteUuid);
+      if (!cancelled) {
+        setSessions(data || []);
+        setSessionsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [showPicker, athleteUuid]);
+
+  const promoteInto = async (sessionUuid) => {
+    setState('saving');
+    setShowPicker(false);
+    setCreating(false);
+    const { clipUuid: newId, error } = await SA.promoteTrialToClip({
+      trialKind, trialUuid,
+      athleteUuid, teamUuid,
+      trialVideoKey, trialDate,
+      title: trialTitle,
+      sessionUuid,
+    });
+    if (error || !newId) {
+      setState('absent');
+      alert(t('sessions.couldNotSave') + ((error && error.message) || 'unknown'));
+      return;
+    }
+    setClipUuid(newId);
+    setState('saved');
+  };
+
+  const onClickPill = () => {
+    if (state === 'saving' || state === 'loading') return;
+    if (state === 'saved' && clipUuid) {
+      try {
+        window.dispatchEvent(new CustomEvent('pa:open-sessions-clip',
+          { detail: { clipUuid } }));
+      } catch (_) {}
+      return;
+    }
+    setShowPicker(s => !s);
+  };
+
+  const onSubmitNewSession = async () => {
+    if (!newTitle.trim()) return;
+    const { data, error } = await SA.createSession({
+      athleteUuid, teamUuid,
+      title:       newTitle,
+      sessionDate: newDate,
+    });
+    if (error || !data) {
+      alert(t('sessions.couldNotCreate') + ((error && error.message) || 'unknown'));
+      return;
+    }
+    await promoteInto(data.session_uuid);
+  };
+
+  if (!trialKind || !trialUuid || !athleteUuid || !trialVideoKey) {
+    // Helpful one-liner when the pill silently fails to render —
+    // logs which input was missing so we can spot column-name
+    // mismatches between v_race / v_start / v_turn views and the
+    // analysis-tab wiring without a screen-by-screen audit.
+    try {
+      console.warn('[AddTrialToSessionButton] hidden, missing inputs:', {
+        trialKind, trialUuid, athleteUuid,
+        hasVideoKey: !!trialVideoKey,
+      });
+    } catch (_) {}
+    return null;
+  }
+
+  const saved   = state === 'saved';
+  const saving  = state === 'saving';
+  const loading = state === 'loading';
+
+  return (
+    <span style={{ position: 'relative', display: 'inline-block' }}>
+      <button type="button" onClick={onClickPill}
+        disabled={saving || loading}
+        title={saved
+          ? t('sessions.pickerInSessionTooltip')
+          : t('sessions.pickerAddTooltip')}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '6px 10px', borderRadius: 8,
+          border: '1px solid ' + (saved ? 'var(--signal-eff)' : 'var(--line)'),
+          background: saved
+            ? 'color-mix(in oklch, var(--signal-eff) 14%, var(--bg-2))'
+            : 'var(--bg-2)',
+          color: saved ? 'var(--signal-eff)' : 'var(--tx-md)',
+          font: '600 11px var(--font-ui)', letterSpacing: 0.04,
+          cursor: (saving || loading) ? 'wait' : 'pointer',
+          opacity: (saving || loading) ? 0.6 : 1,
+          textTransform: 'uppercase',
+          whiteSpace: 'nowrap',
+        }}>
+        {saving ? t('sessions.addingBtn')
+          : loading ? '…'
+          : saved ? t('sessions.inSessionBtn')
+          : t('sessions.addTrialBtn')}
+      </button>
+
+      {showPicker && !saved && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+          minWidth: 260, maxWidth: 340,
+          background: 'var(--bg-2)', border: '1px solid var(--line-soft)',
+          borderRadius: 10, boxShadow: '0 12px 28px rgba(0,0,0,0.35)',
+          padding: 6, zIndex: 30,
+          display: 'flex', flexDirection: 'column', gap: 4,
+        }}>
+          <div className="eyebrow" style={{
+            color: 'var(--tx-lo)', padding: '6px 8px 4px',
+          }}>
+            {t('sessions.pickerHeader')}
+          </div>
+
+          {/* + Create new — top of the list */}
+          {!creating && (
+            <button type="button"
+              onClick={() => setCreating(true)}
+              style={{
+                textAlign: 'left',
+                padding: '7px 9px', borderRadius: 8, cursor: 'pointer',
+                background: 'transparent',
+                color: 'var(--signal-eff)',
+                border: '1px dashed color-mix(in oklch, var(--signal-eff) 50%, transparent)',
+                font: '700 11px var(--font-ui)', letterSpacing: 0.04,
+              }}>
+              {t('sessions.pickerCreateNew')}
+            </button>
+          )}
+          {creating && (
+            <div style={{
+              padding: 8, borderRadius: 8,
+              background: 'color-mix(in oklch, var(--signal-eff) 6%, var(--bg-3))',
+              border: '1px solid color-mix(in oklch, var(--signal-eff) 40%, transparent)',
+              display: 'flex', flexDirection: 'column', gap: 6,
+            }}>
+              <input type="text" value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder={t('sessions.pickerSessionTitle')}
+                autoFocus
+                style={{
+                  padding: '6px 8px', borderRadius: 6,
+                  border: '1px solid var(--line)', background: 'var(--bg-3)',
+                  color: 'var(--tx-hi)', font: '500 12px var(--font-ui)',
+                }}/>
+              <input type="date" value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                style={{
+                  padding: '6px 8px', borderRadius: 6,
+                  border: '1px solid var(--line)', background: 'var(--bg-3)',
+                  color: 'var(--tx-hi)', font: '500 12px var(--font-ui)',
+                }}/>
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => setCreating(false)}
+                  style={{
+                    padding: '5px 9px', borderRadius: 6, cursor: 'pointer',
+                    background: 'transparent', color: 'var(--tx-md)',
+                    border: '1px solid var(--line-soft)',
+                    font: '600 10px var(--font-ui)',
+                  }}>Cancel</button>
+                <button type="button" onClick={onSubmitNewSession}
+                  disabled={!newTitle.trim()}
+                  style={{
+                    padding: '5px 11px', borderRadius: 6,
+                    cursor: !newTitle.trim() ? 'default' : 'pointer',
+                    background: 'var(--signal-eff)', color: 'var(--ink)',
+                    border: 'none', font: '700 10px var(--font-ui)',
+                    opacity: !newTitle.trim() ? 0.5 : 1,
+                  }}>{t('sessions.pickerCreateAndAdd')}</button>
+              </div>
+            </div>
+          )}
+
+          {/* Divider */}
+          <div style={{ height: 1, background: 'var(--line-soft)', margin: '4px 6px' }}/>
+
+          {/* Existing sessions */}
+          {sessionsLoading ? (
+            <div style={{
+              font: '500 11px var(--font-ui)', color: 'var(--tx-lo)',
+              padding: '8px 10px', textAlign: 'center',
+            }}>Loading…</div>
+          ) : sessions.length === 0 ? (
+            <div style={{
+              font: '500 11px var(--font-ui)', color: 'var(--tx-lo)',
+              padding: '8px 10px', textAlign: 'center', lineHeight: 1.5,
+            }}>
+              {t('sessions.pickerNoSessions')}
+            </div>
+          ) : (
+            sessions.map(s => (
+              <button key={s.session_uuid} type="button"
+                onClick={() => promoteInto(s.session_uuid)}
+                style={{
+                  textAlign: 'left',
+                  padding: '7px 9px', borderRadius: 8, cursor: 'pointer',
+                  background: 'transparent', color: 'var(--tx-hi)',
+                  border: 'none',
+                  font: '500 12px var(--font-ui)',
+                  display: 'flex', flexDirection: 'column', gap: 2,
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-3)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}>
+                <span style={{
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {s.title || 'Session'}
+                </span>
+                <span className="mono" style={{
+                  font: '500 9px var(--font-mono)', color: 'var(--tx-lo)',
+                  letterSpacing: 0.04,
+                }}>
+                  {(s.session_date || '').toUpperCase()}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </span>
+  );
+};
+
 const VideoCard = ({
   title = 'VIDEO', aspect = '16 / 9', hint, children,
   // primary
@@ -1812,6 +2160,12 @@ const VideoCard = ({
   // compare
   compareVideoKey, compareLabel,
   compareAthleteUuid, compareRequestUuid, compareIsBenchmark,
+  // v03.44 — Save to Library props. Optional; when present the
+  // VideoCard header shows the "Save" pill. trialKind is the
+  // primary determinant: omit it and no pill renders.
+  trialKind,
+  primaryTrialUuid, primaryTeamUuid, primaryTrialDate, primaryTrialTitle,
+  compareTrialUuid, compareTeamUuid, compareTrialDate, compareTrialTitle,
   // gating
   isPro, onUpgrade,
 }) => {
@@ -2047,6 +2401,30 @@ const VideoCard = ({
         flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>{title}</span>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        {/* v03.44 — Save to Library. Active slot determines which
+            trial gets promoted: primary if showing the primary
+            video, compare if the user flipped to the compare clip.
+            Benchmarks have no trialUuid → the button hides itself.
+            Skipped when Pro-gated (no point offering features
+            behind a paywall flow). */}
+        {!proGated && trialKind && (() => {
+          const activeTrialUuid  = useCompare ? compareTrialUuid  : primaryTrialUuid;
+          const activeTeamUuid   = useCompare ? compareTeamUuid   : primaryTeamUuid;
+          const activeTrialDate  = useCompare ? compareTrialDate  : primaryTrialDate;
+          const activeTrialTitle = useCompare ? compareTrialTitle : primaryTrialTitle;
+          if (!activeTrialUuid || activeIsBenchmark) return null;
+          return (
+            <AddTrialToSessionButton
+              trialKind={trialKind}
+              trialUuid={activeTrialUuid}
+              athleteUuid={activeAthleteUuid}
+              teamUuid={activeTeamUuid}
+              trialVideoKey={activeKey}
+              trialDate={activeTrialDate}
+              trialTitle={activeTrialTitle}
+            />
+          );
+        })()}
         {showDownload && (
           <button
             type="button" onClick={onDownload} disabled={downloading}

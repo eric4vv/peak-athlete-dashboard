@@ -1587,6 +1587,9 @@ const WebRaces = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsPr
   // Filters
   const [filters, setFilters] = useRacesState({ distance: null, style: null, course: null });
 
+  // v03.28 — collapsible trial list (same pattern as Sessions / Starts / Turns).
+  const [trialListCollapsed, setTrialListCollapsed] = useRacesState(false);
+
   // ── Resolve athlete_uuid ─────────────────────────────────────
   // v00.48: super-admin override via adminAthleteUuid prop. When
   // set, the v_my_athlete lookup is skipped and we render the
@@ -1867,28 +1870,51 @@ const WebRaces = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsPr
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : 'minmax(280px, 360px) 1fr',
+        gridTemplateColumns: isMobile
+          ? '1fr'
+          : (trialListCollapsed ? '56px 1fr' : 'minmax(280px, 360px) 1fr'),
         gap: 16,
         alignItems: 'start',
       }}>
-        {/* ── LEFT: trials picker card ──────────────────────── */}
-        <ChartCard
-          title={t('analysis.trials.title')}
-          right={
-            <span className="mono" style={{ fontSize: 11, color: 'var(--tx-lo)' }}>
-              {t('analysis.trials.filterCount', { filtered: filtered.length, total: effectiveTrials.length })}
-            </span>
-          }>
-          <TrialList
-            trials={filtered}
-            slotAKey={slotAKey}
-            slotBKey={slotBKind ? null : slotBKey}
-            onAssign={onAssign}
-            emptyMessage="No races match these filters."
-            isPro={isPro}
-            onUpgrade={onUpgrade}
-          />
-        </ChartCard>
+        {/* ── LEFT: trials picker card — collapsible on desktop (v03.28) ── */}
+        {!isMobile && trialListCollapsed ? (
+          <div style={{
+            background: 'var(--bg-2)',
+            border: '1px solid var(--line-soft)',
+            borderRadius: 12, padding: '6px 4px',
+          }}>
+            <TrialList
+              trials={filtered}
+              slotAKey={slotAKey}
+              slotBKey={slotBKind ? null : slotBKey}
+              onAssign={onAssign}
+              emptyMessage="No races match these filters."
+              isPro={isPro}
+              onUpgrade={onUpgrade}
+              collapsed
+              onToggleCollapsed={() => setTrialListCollapsed(false)}
+            />
+          </div>
+        ) : (
+          <ChartCard
+            title={t('analysis.trials.title')}
+            right={
+              <span className="mono" style={{ fontSize: 11, color: 'var(--tx-lo)' }}>
+                {t('analysis.trials.filterCount', { filtered: filtered.length, total: effectiveTrials.length })}
+              </span>
+            }>
+            <TrialList
+              trials={filtered}
+              slotAKey={slotAKey}
+              slotBKey={slotBKind ? null : slotBKey}
+              onAssign={onAssign}
+              emptyMessage="No races match these filters."
+              isPro={isPro}
+              onUpgrade={onUpgrade}
+              onToggleCollapsed={isMobile ? null : (() => setTrialListCollapsed(true))}
+            />
+          </ChartCard>
+        )}
 
         {/* ── RIGHT: design-reference composition ──────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
@@ -4382,6 +4408,20 @@ const RaceDetail = ({ primary, compare, diff, summary, isPro, onUpgrade }) => {
           compare?._benchmarkKind === 'WR'     ? 'World record'  :
           'Compare'
         }
+        /* v03.44 / v03.47 — Save-to-Library wiring. record_uuid is
+           the universal trial identifier across v_race/start/turn —
+           switched from race_uuid for consistency with the other
+           tabs. Compare slot only carries trial info when it's a
+           real trial (not a PB/Median/WR benchmark). */
+        trialKind="race"
+        primaryTrialUuid={primary?.record_uuid}
+        primaryTeamUuid={primary?.team_uuid}
+        primaryTrialDate={primary?.source_date}
+        primaryTrialTitle={window.PA_KPIS.raceTitle(primary)}
+        compareTrialUuid={compare && !compare._benchmarkKind ? compare.record_uuid : null}
+        compareTeamUuid={compare?.team_uuid}
+        compareTrialDate={compare?.source_date}
+        compareTrialTitle={compare && !compare._benchmarkKind ? window.PA_KPIS.raceTitle(compare) : null}
         isPro={isPro}
         onUpgrade={onUpgrade}
       />

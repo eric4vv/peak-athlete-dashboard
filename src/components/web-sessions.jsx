@@ -223,7 +223,10 @@ const WebSessions = ({ session, authUserId, lang, adminAthleteUuid, isPro, onUpg
   // v03.46 — Per-card delete from the Sessions list.
   const onDeleteFromList = async (s) => {
     const msg = t('sessions.cardDeleteConfirm', { title: SA.sessionTitle(s) || 'this session' });
-    if (!window.confirm(msg)) return;
+    const ok2 = window.PA_CONFIRM
+      ? await window.PA_CONFIRM.ask({ message: msg, isDanger: true, confirmLabel: t('sessions.detailDelete') })
+      : window.confirm(msg);
+    if (!ok2) return;
     const { ok, error } = await SA.deleteSession(s.session_uuid);
     if (!ok) {
       alert(t('sessions.couldNotDelete') + ((error && error.message) || 'unknown'));
@@ -947,7 +950,10 @@ const SessionDetail = ({
           clipWord: clipCount === 1 ? t('sessions.clipOne') : t('sessions.clipMany'),
         })
       : t('sessions.detailDeleteConfirmEmpty');
-    if (!window.confirm(msg)) return;
+    const proceed = window.PA_CONFIRM
+      ? await window.PA_CONFIRM.ask({ message: msg, isDanger: true, confirmLabel: t('sessions.detailDelete') })
+      : window.confirm(msg);
+    if (!proceed) return;
     setDeleting(true);
     const { ok, error } = await SA.deleteSession(sessionUuid);
     setDeleting(false);
@@ -965,7 +971,10 @@ const SessionDetail = ({
   // clip was active.
   const onDeleteClip = async (clip) => {
     if (!clip || !clip.clip_uuid) return;
-    if (!window.confirm(t('sessions.deleteClipConfirm'))) return;
+    const proceed = window.PA_CONFIRM
+      ? await window.PA_CONFIRM.ask({ message: t('sessions.deleteClipConfirm'), isDanger: true, confirmLabel: t('sessions.deleteClip') })
+      : window.confirm(t('sessions.deleteClipConfirm'));
+    if (!proceed) return;
     const { ok, error } = await SA.deleteClip(clip.clip_uuid);
     if (!ok) {
       alert(t('sessions.couldNotDelete') + ((error && error.message) || 'unknown'));
@@ -1652,7 +1661,10 @@ const ClipWorkspace = ({
   // also disappears from any clip it was on.
   const onDeleteTagFromLibrary = async (tag) => {
     if (!tag || !tag.tag_uuid) return;
-    if (!window.confirm(t('sessions.deleteTagConfirm', { name: tag.name }))) return;
+    const proceed = window.PA_CONFIRM
+      ? await window.PA_CONFIRM.ask({ message: t('sessions.deleteTagConfirm', { name: tag.name }), isDanger: true, confirmLabel: t('sessions.deleteTagTooltip') })
+      : window.confirm(t('sessions.deleteTagConfirm', { name: tag.name }));
+    if (!proceed) return;
     const { ok, error } = await SA.deleteTag(tag.tag_uuid);
     if (!ok) {
       alert('Could not delete tag: ' + (error?.message || 'unknown'));
@@ -1707,7 +1719,10 @@ const ClipWorkspace = ({
     else                    await reloadNotes();
   };
   const removeNote = async (note, side) => {
-    if (!window.confirm(t('sessions.deleteNoteConfirm'))) return;
+    const proceed = window.PA_CONFIRM
+      ? await window.PA_CONFIRM.ask({ message: t('sessions.deleteNoteConfirm'), isDanger: true, confirmLabel: t('sessions.deleteNote') })
+      : window.confirm(t('sessions.deleteNoteConfirm'));
+    if (!proceed) return;
     const { ok, error } = await SA.deleteClipNote(note.note_uuid);
     if (!ok) {
       alert(t('sessions.couldNotDelete') + ((error && error.message) || 'unknown error'));
@@ -1764,7 +1779,10 @@ const ClipWorkspace = ({
     else await reloadPrimaryAnnots();
   };
   const removeAnnotation = async (annot, which) => {
-    if (!window.confirm(t('sessions.deleteAnnotationConfirm'))) return;
+    const proceed = window.PA_CONFIRM
+      ? await window.PA_CONFIRM.ask({ message: t('sessions.deleteAnnotationConfirm'), isDanger: true, confirmLabel: t('sessions.deleteAnnotation') })
+      : window.confirm(t('sessions.deleteAnnotationConfirm'));
+    if (!proceed) return;
     const { ok, error } = await SA.deleteClipAnnotation(annot.annotation_uuid);
     if (!ok) {
       alert(t('sessions.couldNotDelete') + ((error && error.message) || 'unknown error'));
@@ -3479,4 +3497,4 @@ const NoteRow = ({ note, isAuthor, onSeek, onDelete }) => {
 
 window.WebSessions = WebSessions;
 
-try { console.log('[web-sessions] loaded (v03.56)'); } catch (_) {}
+try { console.log('[web-sessions] loaded (v03.57)'); } catch (_) {}

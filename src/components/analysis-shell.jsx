@@ -1872,6 +1872,126 @@ const RaceCompareBars = ({ primary, compare, mode }) => {
 // Per CLAUDE.md (2026-05-05): NEVER log the signed URL. NEVER expose
 // the benchmark holder name; the compare label must come from the
 // caller (e.g. "World record"), not from holder_name.
+// ── NotifyAthleteButton (v03.58) ─────────────────────────────
+// Super-admin-only pill that fires the notify-trial-complete
+// edge function to email the athlete "Your start/turn analysis
+// is ready". Reads + writes `notified_at` on the underlying
+// trial row to track the once-sent state so the button can
+// show "Notified · MMM DD" after sending. Race trials are
+// skipped — they go through the existing race_requests
+// completion flow which has its own email trigger.
+const NotifyAthleteButton = ({
+  trialKind, trialUuid, athleteUuid, eventName,
+  notifiedAt: initialNotifiedAt,
+}) => {
+  const Hooks  = (window.React || React);
+  const t      = (window.useT  || (() => (k) => k))();
+  const client = window.supabaseClient;
+  const [admin, setAdmin]   = Hooks.useState({ isSuperAdmin: false });
+  const [sending, setSending] = Hooks.useState(false);
+  const [notifiedAt, setNotifiedAt] = Hooks.useState(initialNotifiedAt || null);
+
+  Hooks.useEffect(() => { setNotifiedAt(initialNotifiedAt || null); }, [initialNotifiedAt]);
+  Hooks.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (window.PA_ADMIN && window.PA_ADMIN.checkAdmin) {
+        const a = await window.PA_ADMIN.checkAdmin();
+        if (!cancelled) setAdmin(a || { isSuperAdmin: false });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!admin.isSuperAdmin) return null;
+  if (!trialKind || !trialUuid || !athleteUuid) return null;
+  // race kind — existing notify-analysis-complete flow already
+  // emails on completion; don't surface a second button.
+  if (trialKind === 'race') return null;
+
+  const alreadyNotified = !!notifiedAt;
+  const sentDateLabel = notifiedAt
+    ? new Date(notifiedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+    : '';
+
+  const onClick = async () => {
+    if (sending) return;
+    const msg = alreadyNotified
+      ? t('analysis.notify.confirmResend')
+      : t('analysis.notify.confirmSend');
+    const proceed = window.PA_CONFIRM
+      ? await window.PA_CONFIRM.ask({ message: msg, confirmLabel: t('analysis.notify.confirmLabel') })
+      : window.confirm(msg);
+    if (!proceed) return;
+    setSending(true);
+    try {
+      const { data: sessionData } = await client.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) {
+        alert(t('analysis.notify.notSignedIn'));
+        setSending(false);
+        return;
+      }
+      const SUPABASE_URL = client?.supabaseUrl || 'https://wbqgshvbopfukwyqsndq.supabase.co';
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/notify-trial-complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          Authorization:   `Bearer ${token}`,
+          apikey:          client?.supabaseKey || '',
+        },
+        body: JSON.stringify({ trialKind, trialUuid, athleteUuid, eventName }),
+      });
+      const out = await resp.json().catch(() => ({}));
+      if (!resp.ok || !out.ok) {
+        alert(t('analysis.notify.failed') + (out?.error || `HTTP ${resp.status}`));
+        setSending(false);
+        return;
+      }
+      // v03.59 — table names per the existing import scripts:
+      // `start_raw` and `turn_raw`, not `starts` / `turns`.
+      const table   = trialKind === 'start' ? 'start_raw'  : 'turn_raw';
+      const uuidCol = trialKind === 'start' ? 'start_uuid' : 'turn_uuid';
+      const nowIso = new Date().toISOString();
+      const { error: upErr } = await client
+        .from(table)
+        .update({ notified_at: nowIso })
+        .eq(uuidCol, trialUuid);
+      if (upErr) console.warn('[notify-trial-complete] DB update failed:', upErr);
+      setNotifiedAt(nowIso);
+    } catch (e) {
+      alert(t('analysis.notify.failed') + String((e && e.message) || e));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <button type="button" onClick={onClick} disabled={sending}
+      title={alreadyNotified
+        ? t('analysis.notify.tooltipSent', { date: sentDateLabel })
+        : t('analysis.notify.tooltipSend')}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '6px 10px', borderRadius: 8,
+        border: '1px solid ' + (alreadyNotified ? 'var(--lime-eff)' : 'var(--line)'),
+        background: alreadyNotified
+          ? 'color-mix(in oklch, var(--lime-eff) 14%, var(--bg-2))'
+          : 'var(--bg-2)',
+        color: alreadyNotified ? 'var(--lime-eff)' : 'var(--tx-md)',
+        font: '600 11px var(--font-ui)', letterSpacing: 0.04,
+        cursor: sending ? 'wait' : 'pointer',
+        opacity: sending ? 0.6 : 1,
+        textTransform: 'uppercase',
+        whiteSpace: 'nowrap',
+      }}>
+      {sending ? t('analysis.notify.sending')
+        : alreadyNotified ? `✓ ${t('analysis.notify.sentShort')} · ${sentDateLabel}`
+        : t('analysis.notify.send')}
+    </button>
+  );
+};
+
 // ── AddTrialToSessionButton (v03.46) ─────────────────────────
 // Replaces the v03.44 auto-promote "Save to Library" pattern
 // with an explicit picker. Coach (or athlete) now picks which
@@ -2166,6 +2286,9 @@ const VideoCard = ({
   trialKind,
   primaryTrialUuid, primaryTeamUuid, primaryTrialDate, primaryTrialTitle,
   compareTrialUuid, compareTeamUuid, compareTrialDate, compareTrialTitle,
+  // v03.58 — notify-athlete props. notified_at flows in from
+  // each tab's trial row so the button can show its sent state.
+  primaryNotifiedAt, compareNotifiedAt,
   // gating
   isPro, onUpgrade,
 }) => {
@@ -2408,21 +2531,31 @@ const VideoCard = ({
             Skipped when Pro-gated (no point offering features
             behind a paywall flow). */}
         {!proGated && trialKind && (() => {
-          const activeTrialUuid  = useCompare ? compareTrialUuid  : primaryTrialUuid;
-          const activeTeamUuid   = useCompare ? compareTeamUuid   : primaryTeamUuid;
-          const activeTrialDate  = useCompare ? compareTrialDate  : primaryTrialDate;
-          const activeTrialTitle = useCompare ? compareTrialTitle : primaryTrialTitle;
+          const activeTrialUuid    = useCompare ? compareTrialUuid    : primaryTrialUuid;
+          const activeTeamUuid     = useCompare ? compareTeamUuid     : primaryTeamUuid;
+          const activeTrialDate    = useCompare ? compareTrialDate    : primaryTrialDate;
+          const activeTrialTitle   = useCompare ? compareTrialTitle   : primaryTrialTitle;
+          const activeNotifiedAt   = useCompare ? compareNotifiedAt   : primaryNotifiedAt;
           if (!activeTrialUuid || activeIsBenchmark) return null;
           return (
-            <AddTrialToSessionButton
-              trialKind={trialKind}
-              trialUuid={activeTrialUuid}
-              athleteUuid={activeAthleteUuid}
-              teamUuid={activeTeamUuid}
-              trialVideoKey={activeKey}
-              trialDate={activeTrialDate}
-              trialTitle={activeTrialTitle}
-            />
+            <>
+              <NotifyAthleteButton
+                trialKind={trialKind}
+                trialUuid={activeTrialUuid}
+                athleteUuid={activeAthleteUuid}
+                eventName={activeTrialTitle}
+                notifiedAt={activeNotifiedAt}
+              />
+              <AddTrialToSessionButton
+                trialKind={trialKind}
+                trialUuid={activeTrialUuid}
+                athleteUuid={activeAthleteUuid}
+                teamUuid={activeTeamUuid}
+                trialVideoKey={activeKey}
+                trialDate={activeTrialDate}
+                trialTitle={activeTrialTitle}
+              />
+            </>
           );
         })()}
         {showDownload && (

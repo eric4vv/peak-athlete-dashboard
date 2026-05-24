@@ -513,6 +513,18 @@
       "turnsEyebrow":  "NO TURNS YET",
       "turnsTitle":    "Book a turn analysis session",
       "turnsBody":     "Once a turn is processed, approach time, rotation, push-off, and breakout will appear here."
+    },
+    "notify": {
+      "send":          "Notify athlete",
+      "sentShort":     "Notified",
+      "sending":       "Sending…",
+      "tooltipSend":   "Email the athlete that their analysis is ready",
+      "tooltipSent":   "Notified · {date}",
+      "confirmSend":   "Email the athlete that their analysis is ready?",
+      "confirmResend": "Email the athlete again? They've already been notified.",
+      "confirmLabel":  "Send email",
+      "notSignedIn":   "Not signed in.",
+      "failed":        "Could not send email: "
     }
   },
   "pulse": {

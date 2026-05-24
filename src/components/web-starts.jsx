@@ -627,6 +627,10 @@ const StartDetail = ({ primary, compare, diff, story, phases, items, phase, onCh
       compareTeamUuid={compare?.team_uuid}
       compareTrialDate={compare?.source_date}
       compareTrialTitle={compare && !compare._benchmarkKind ? window.PA_STARTS.startTitle(compare) : null}
+      /* v03.58 — notified_at flows in from the trial row so the
+         NotifyAthleteButton can show its sent state. */
+      primaryNotifiedAt={primary?.notified_at}
+      compareNotifiedAt={compare && !compare._benchmarkKind ? compare.notified_at : null}
       isPro={isPro}
       onUpgrade={onUpgrade}
     />

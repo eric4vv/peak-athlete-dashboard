@@ -513,6 +513,18 @@
       "turnsEyebrow":  "AÚN SIN VUELTAS",
       "turnsTitle":    "Reserva una sesión de análisis de vueltas",
       "turnsBody":     "Una vez procesada una vuelta, aparecerán aquí el tiempo de aproximación, rotación, empuje y breakout."
+    },
+    "notify": {
+      "send":          "Notificar atleta",
+      "sentShort":     "Notificado",
+      "sending":       "Enviando…",
+      "tooltipSend":   "Enviar correo al atleta de que su análisis está listo",
+      "tooltipSent":   "Notificado · {date}",
+      "confirmSend":   "¿Enviar correo al atleta de que su análisis está listo?",
+      "confirmResend": "¿Volver a enviar correo? Ya se le notificó.",
+      "confirmLabel":  "Enviar correo",
+      "notSignedIn":   "No has iniciado sesión.",
+      "failed":        "No se pudo enviar el correo: "
     }
   },
   "pulse": {

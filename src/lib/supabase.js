@@ -131,7 +131,11 @@
   // athletes.consent_accepted_at + consent_version for quick lookup.
   // Both apps stay in sync via the shared DB.
 
-  const CONSENT_VERSION = 'v1.0';
+  // v03.61 — bumped to v2.0 for the pre-launch ToS amendments
+  // (COPPA <13 language, mobile IAP terms, GDPR/CCPA user rights,
+  // explicit data-deletion timing, privacy-policy reference).
+  // Existing users will be re-prompted on next login.
+  const CONSENT_VERSION = 'v2.0';
 
   async function checkConsent(requiredVersion = CONSENT_VERSION) {
     const { data, error } = await client.rpc('check_user_consent', {

@@ -839,7 +839,7 @@ const ConsentModal = ({ onAccept, onSignOut }) => {
           <p style={{ margin: 0, font: '500 13px var(--font-ui)', color: 'var(--tx-md)', lineHeight: 1.55 }}>
             {t('auth.consentModal.tosBody')}
             {' '}
-            <a href="https://www.mypeakathlete.com/terms" target="_blank" rel="noopener noreferrer"
+            <a href="https://www.mypeakathlete.com/privacy-policy" target="_blank" rel="noopener noreferrer"
               style={{ color: 'var(--signal-eff)', textDecoration: 'none' }}>
               {t('auth.consentModal.tosLink')}
             </a>
@@ -857,7 +857,7 @@ const ConsentModal = ({ onAccept, onSignOut }) => {
           <p style={{ margin: 0, font: '500 13px var(--font-ui)', color: 'var(--tx-md)', lineHeight: 1.55 }}>
             {t('auth.consentModal.privBody')}
             {' '}
-            <a href="https://www.mypeakathlete.com/privacy" target="_blank" rel="noopener noreferrer"
+            <a href="https://www.mypeakathlete.com/privacy-policy" target="_blank" rel="noopener noreferrer"
               style={{ color: 'var(--signal-eff)', textDecoration: 'none' }}>
               {t('auth.consentModal.privLink')}
             </a>

@@ -482,8 +482,8 @@ const WebStarts = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsP
         gap: 16,
         alignItems: 'start',
       }}>
-        {/* ── LEFT: trials picker card — collapsible on desktop (v03.28) ── */}
-        {!isMobile && trialListCollapsed ? (
+        {/* ── LEFT: trials picker card — collapsible on desktop + mobile (v03.64) ── */}
+        {trialListCollapsed ? (
           <div style={{
             background: 'var(--bg-2)',
             border: '1px solid var(--line-soft)',
@@ -519,7 +519,8 @@ const WebStarts = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsP
               helpers={startsHelpers}
               isPro={isPro}
               onUpgrade={onUpgrade}
-              onToggleCollapsed={isMobile ? null : (() => setTrialListCollapsed(true))}
+              // v03.64 — Toggle active on mobile too.
+              onToggleCollapsed={() => setTrialListCollapsed(true)}
             />
           </ChartCard>
         )}

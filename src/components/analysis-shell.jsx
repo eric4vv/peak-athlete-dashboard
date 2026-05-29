@@ -545,7 +545,36 @@ const TrialList = ({
   // expands first to switch trials. Slot indicators are visible
   // on the right-hand detail panel anyway, so we don't repeat
   // them here.
+  // v03.64 — Mobile-specific collapsed UI: a horizontal pill
+  // instead of the vertical rail (vertical rail only saves space
+  // on multi-column desktop layouts). The pill fills the row and
+  // taps to expand.
   if (collapsed && onToggleCollapsed) {
+    const isMobile = window.useIsMobile && window.useIsMobile();
+    const trialCount = (trials || []).length;
+    if (isMobile) {
+      return (
+        <button type="button" onClick={onToggleCollapsed}
+          title="Show trial list"
+          style={{
+            display: 'flex', width: '100%',
+            alignItems: 'center', justifyContent: 'space-between',
+            font: '700 12px var(--font-mono)', letterSpacing: 0.08,
+            padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
+            background: 'var(--bg-2)', color: 'var(--tx-md)',
+            border: '1px solid var(--line-soft)',
+          }}>
+          <span>TRIALS · {trialCount}</span>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            color: 'var(--tx-lo)', font: '500 11px var(--font-ui)',
+          }}>
+            Tap to expand
+            {Icon && <Icon name="chev" size={12}/>}
+          </span>
+        </button>
+      );
+    }
     return (
       <div style={{
         display: 'flex', flexDirection: 'column',
@@ -568,7 +597,7 @@ const TrialList = ({
           color: 'var(--tx-lo)', writingMode: 'vertical-rl',
           transform: 'rotate(180deg)', padding: '6px 0',
         }}>
-          TRIALS · {(trials || []).length}
+          TRIALS · {trialCount}
         </div>
       </div>
     );

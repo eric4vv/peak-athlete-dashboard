@@ -426,9 +426,10 @@ const WebTurns = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsPr
           : (trialListCollapsed ? '56px 1fr' : 'minmax(280px, 360px) 1fr'),
         gap: 16, alignItems: 'start',
       }}>
-        {/* LEFT: trial picker — collapsible on desktop (v03.28).
-            Collapsed mode replaces the ChartCard with a thin rail. */}
-        {!isMobile && trialListCollapsed ? (
+        {/* LEFT: trial picker — collapsible on desktop + mobile (v03.64).
+            Collapsed mode replaces the ChartCard with a thin rail (desktop)
+            or a horizontal pill (mobile). */}
+        {trialListCollapsed ? (
           <div style={{
             background: 'var(--bg-2)',
             border: '1px solid var(--line-soft)',
@@ -464,7 +465,8 @@ const WebTurns = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsPr
               helpers={turnsHelpers}
               isPro={isPro}
               onUpgrade={onUpgrade}
-              onToggleCollapsed={isMobile ? null : (() => setTrialListCollapsed(true))}
+              // v03.64 — Toggle active on mobile too.
+              onToggleCollapsed={() => setTrialListCollapsed(true)}
             />
           </ChartCard>
         )}

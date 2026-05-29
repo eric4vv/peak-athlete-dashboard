@@ -1876,8 +1876,8 @@ const WebRaces = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsPr
         gap: 16,
         alignItems: 'start',
       }}>
-        {/* ── LEFT: trials picker card — collapsible on desktop (v03.28) ── */}
-        {!isMobile && trialListCollapsed ? (
+        {/* ── LEFT: trials picker card — collapsible on desktop + mobile (v03.64) ── */}
+        {trialListCollapsed ? (
           <div style={{
             background: 'var(--bg-2)',
             border: '1px solid var(--line-soft)',
@@ -1911,7 +1911,8 @@ const WebRaces = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsPr
               emptyMessage="No races match these filters."
               isPro={isPro}
               onUpgrade={onUpgrade}
-              onToggleCollapsed={isMobile ? null : (() => setTrialListCollapsed(true))}
+              // v03.64 — Toggle active on mobile too.
+              onToggleCollapsed={() => setTrialListCollapsed(true)}
             />
           </ChartCard>
         )}
@@ -3077,14 +3078,10 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
 
   // v00.92 — show-more toggle for iso-velocity curve density.
   const [showMoreCurves, setShowMoreCurves] = useRacesState(false);
-  // v00.92 — per-event PB for primary + compare athletes.
-  const [pbA, setPbA] = useRacesState(null);
-  const [pbB, setPbB] = useRacesState(null);
-  // v01.00 — squad reference (fastest race at this event among
-  // visible team athletes). RLS-gated, so for athletes this will
-  // typically be empty; for coaches it surfaces their team's
-  // best — the squad frontier the swimmer is chasing.
-  const [squad, setSquad] = useRacesState(null);
+  // v03.64 — Event PB + Squad Best markers removed. The chart now
+  // shows only the swimmer's lap dots, iso-curves, and zones —
+  // cleaner read of THIS race's mechanics without the comparison
+  // benchmarks competing for visual attention.
   // v00.93 — click-to-inspect: which lap dot is selected for
   // the detail panel below the chart. { side: 'A'|'B', lap }
   const [selectedLap, setSelectedLap] = useRacesState(null);
@@ -3117,118 +3114,10 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
   const styleC  = compare?.style      || mjC.Style    || mjC.style;
   const courseC = compare?.course     || mjC.Course   || mjC.course;
 
-  // Fetch each athlete's PB trial at this event. Skips the marker
-  // entirely if the athlete has no historical race at the event.
-  useRacesEffect(() => {
-    let cancelled = false;
-    const fetchPb = async (athleteUuid, dist, style, course) => {
-      if (!athleteUuid || !dist || !style) return null;
-      if (!window.PA_KPIS || !window.PA_KPIS.listRaceTrials) return null;
-      try {
-        const { data } = await window.PA_KPIS.listRaceTrials(athleteUuid, { limit: 200 });
-        const matches = (data || []).filter(t =>
-          Number(t.distance_m) === Number(dist) &&
-          String(t.style || '').toLowerCase() === String(style || '').toLowerCase() &&
-          (!course || String(t.course || '').toUpperCase() === String(course || '').toUpperCase())
-        );
-        if (!matches.length) return null;
-        const sorted = matches.slice().sort((a, b) =>
-          (window.PA_KPIS.raceTotalTime(a) || Infinity) -
-          (window.PA_KPIS.raceTotalTime(b) || Infinity)
-        );
-        const best = sorted[0];
-        const sr  = window.PA_KPIS.avgStrokeRate(best);
-        let   dps = window.PA_KPIS.avgDPS(best);
-        const vel = window.PA_KPIS.avgVelocity(best);
-        const raceTime = window.PA_KPIS.raceTotalTime(best);
-        // v00.97 — when avgDPS is null (typical on 50 m sprints
-        // whose Templo exports skip per-lap stroke counts), fall
-        // back to the derived form `60 × velocity / SR` — the
-        // same identity the sprint-mode chart already uses for
-        // segment dots, so PB marker stays in the same
-        // coordinate system as the data.
-        if (dps == null && sr != null && vel != null && sr > 0) {
-          dps = (60 * vel) / sr;
-        }
-        if (sr == null || dps == null) return null;
-        return { sr, dps, vel, raceTime };
-      } catch (e) { return null; }
-    };
-
-    // v01.00 — squad-best lookup. Finds the fastest race at the
-    // primary's event among athletes visible to the signed-in
-    // user (RLS-gated). For coaches that means their team's
-    // best; for solo athletes it'll usually return null (only
-    // their own data is visible) and the marker is silently
-    // skipped. We deliberately exclude primary's own athlete
-    // from the search so the squad reference doesn't shadow
-    // the PB marker.
-    const fetchSquadBest = async (excludeUuid, dist, style, course) => {
-      if (!dist || !style) return null;
-      try {
-        const { data, error } = await window.supabaseClient
-          .from('v_race_kpis')
-          .select('athlete_uuid, race_time_s, distance_m, style, course, source_date')
-          .eq('distance_m', dist)
-          .not('race_time_s', 'is', null)
-          .order('race_time_s', { ascending: true })
-          .limit(50);
-        if (error || !data || !data.length) return null;
-        const filtered = data.filter(r => {
-          if (excludeUuid && r.athlete_uuid === excludeUuid) return false;
-          if (String(r.style || '').toLowerCase() !== String(style || '').toLowerCase()) return false;
-          if (course && String(r.course || '').toUpperCase() !== String(course).toUpperCase()) return false;
-          return true;
-        });
-        if (!filtered.length) return null;
-        const fastest = filtered[0];
-        // Resolve the full v_race_trials row for stroke metrics.
-        if (!window.PA_KPIS || !window.PA_KPIS.listRaceTrials) return null;
-        const { data: trials } = await window.PA_KPIS.listRaceTrials(
-          fastest.athlete_uuid, { limit: 200 }
-        );
-        const matches = (trials || []).filter(t =>
-          Number(t.distance_m) === Number(fastest.distance_m) &&
-          String(t.style || '').toLowerCase() === String(fastest.style || '').toLowerCase() &&
-          (!fastest.course || String(t.course || '').toUpperCase()
-            === String(fastest.course || '').toUpperCase())
-        );
-        if (!matches.length) return null;
-        // Closest by race_time_s match.
-        const target = parseFloat(fastest.race_time_s);
-        let best = matches[0];
-        const totalOf = (r) => window.PA_KPIS.raceTotalTime
-          ? (window.PA_KPIS.raceTotalTime(r) ?? Infinity) : Infinity;
-        let bestDiff = Math.abs(totalOf(best) - target);
-        matches.forEach(m => {
-          const d = Math.abs(totalOf(m) - target);
-          if (d < bestDiff) { best = m; bestDiff = d; }
-        });
-        const sr  = window.PA_KPIS.avgStrokeRate(best);
-        let   dps = window.PA_KPIS.avgDPS(best);
-        const vel = window.PA_KPIS.avgVelocity(best);
-        if (dps == null && sr != null && vel != null && sr > 0) {
-          dps = (60 * vel) / sr;
-        }
-        if (sr == null || dps == null) return null;
-        return { sr, dps, vel, raceTime: target, athleteUuid: fastest.athlete_uuid };
-      } catch (e) { return null; }
-    };
-
-    (async () => {
-      const a = await fetchPb(primary?.athlete_uuid, distP, styleP, courseP);
-      if (!cancelled) setPbA(a);
-      const b = compare ? await fetchPb(compare.athlete_uuid, distC, styleC, courseC) : null;
-      if (!cancelled) setPbB(b);
-      // Squad reference — tries to find the team's fastest at this
-      // event. Excludes primary's athlete to avoid duplicating
-      // the PB marker.
-      const sq = await fetchSquadBest(primary?.athlete_uuid, distP, styleP, courseP);
-      if (!cancelled) setSquad(sq);
-    })();
-    return () => { cancelled = true; };
-  }, [primary?.athlete_uuid, distP, styleP, courseP,
-      compare?.athlete_uuid, distC, styleC, courseC]);
+  // v03.64 — Removed: PB + Squad Best lookup useEffect (mirrors
+  // mobile v02.23). The chart now focuses on the mechanics of
+  // THIS race without comparison overlays. Git history at v03.63
+  // has the prior implementation if it needs to come back later.
 
   // v00.99 — sprints accept 1 dot (trial-average fallback when
   // Templo didn't capture intermediate splits). Distance races
@@ -3254,9 +3143,7 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
   // stroke shape.
   const allSR_data  = allLaps.map(l => l.rate);
   const allDPS_data = allLaps.map(l => l.dps);
-  if (pbA) { allSR_data.push(pbA.sr); allDPS_data.push(pbA.dps); }
-  if (pbB) { allSR_data.push(pbB.sr); allDPS_data.push(pbB.dps); }
-  if (squad) { allSR_data.push(squad.sr); allDPS_data.push(squad.dps); }
+  // v03.64 — PB / squad-best contributions removed.
   const srMin  = Math.min(...allSR_data);
   const srMax  = Math.max(...allSR_data);
   const dpsMin = Math.min(...allDPS_data);
@@ -3271,9 +3158,7 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
   // Default 3 curves bracketing the data; "show more" expands
   // to 5. Round to one decimal for clean labels.
   const allVels = allLaps.map(l => l.rate * l.dps / 60);
-  if (pbA && pbA.vel != null) allVels.push(pbA.vel);
-  if (pbB && pbB.vel != null) allVels.push(pbB.vel);
-  if (squad && squad.vel != null) allVels.push(squad.vel);
+  // v03.64 — PB / squad velocities removed from the iso-curve range.
   const vMin = Math.min(...allVels);
   const vMax = Math.max(...allVels);
   const round1 = (v) => Math.round(v * 10) / 10;
@@ -3501,74 +3386,7 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
             </g>
           );
         })}
-        {/* v01.00 — Reference iso-curves (PB + squad). Same
-            hyperbola math as the generic iso-curves above, but
-            drawn in their reference colors so the eye reads
-            them as personal/team frontiers, not generic
-            velocity guides. Above-the-curve = matching/beating
-            that reference's pace. */}
-        {[
-          pbA   ? { v: pbA.vel,   color: 'var(--lime-eff)',     label: 'PB',    width: 1.5 } : null,
-          pbB   ? { v: pbB.vel,   color: 'var(--compare-eff)',  label: 'PB',    width: 1.5 } : null,
-          squad ? { v: squad.vel, color: 'var(--signal-eff)',   label: 'SQUAD', width: 1.4 } : null,
-        ].filter(Boolean).map((ref, idx) => {
-          if (!ref.v || !isFinite(ref.v)) return null;
-          const constant = ref.v * 60;
-          const samples = 40;
-          const segs = [];
-          let path = '';
-          for (let i = 0; i <= samples; i++) {
-            const sr = xMin + (xMax - xMin) * i / samples;
-            const dps = constant / sr;
-            if (dps < yMin || dps > yMax) {
-              if (segs.length >= 2) {
-                path += segs.map((p, k) =>
-                  (k === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)
-                ).join(' ') + ' ';
-              }
-              segs.length = 0;
-              continue;
-            }
-            segs.push([xOf(sr), yOf(dps)]);
-          }
-          if (segs.length >= 2) {
-            path += segs.map((p, k) =>
-              (k === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)
-            ).join(' ');
-          }
-          // Label at top of curve (left edge) so it doesn't collide
-          // with the generic curves' right-edge labels.
-          let labelPt = null;
-          for (let i = 0; i <= samples; i++) {
-            const sr = xMin + (xMax - xMin) * i / samples;
-            const dps = constant / sr;
-            if (dps >= yMin && dps <= yMax) {
-              const cx = xOf(sr), cy = yOf(dps);
-              if (cx >= PAD_L + 6 && cy >= PAD_T + 8) {
-                labelPt = { cx, cy }; break;
-              }
-            }
-          }
-          return (
-            <g key={'ref' + idx}>
-              <path d={path} fill="none"
-                stroke={ref.color} strokeWidth={ref.width}
-                strokeDasharray="6 4" opacity="0.85"/>
-              {labelPt && (
-                <g>
-                  <rect x={labelPt.cx - 2} y={labelPt.cy - 9}
-                    width={ref.label === 'SQUAD' ? 60 : 50} height={12} rx="2"
-                    fill="var(--bg-2)" opacity="0.92"/>
-                  <text x={labelPt.cx + 2} y={labelPt.cy + 1}
-                    fontSize="9" fontFamily="var(--font-mono)" fontWeight="700"
-                    fill={ref.color} textAnchor="start" letterSpacing="0.06em">
-                    {ref.label} · {ref.v.toFixed(2)} m/s
-                  </text>
-                </g>
-              )}
-            </g>
-          );
-        })}
+        {/* v03.64 — Reference iso-curves for PB + squad removed. */}
         {/* Median crosshairs — v01.01: skipped when there's
             only 1 dot (median collapses to the dot itself,
             crosshair through a single point conveys nothing). */}
@@ -3753,7 +3571,7 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
         const sideColor = selectedLap.side === 'A'
           ? 'var(--lime-eff)'
           : 'var(--compare-eff)';
-        const lapPb = selectedLap.side === 'A' ? pbA : pbB;
+        // v03.64 — lapPb callout removed alongside PB markers.
         return (
           <div className="card" style={{
             marginTop: 10, padding: 14,
@@ -3816,15 +3634,7 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
                   </div>
                 )}
               </div>
-              {lapPb && lapPb.vel != null && (
-                <div style={{
-                  marginTop: 4, font: '500 12px var(--font-ui)', color: 'var(--tx-md)',
-                }}>
-                  {lapVel >= lapPb.vel
-                    ? <>Above PB pace ({lapPb.vel.toFixed(2)} m/s) — <span style={{ color: 'var(--lime-eff)' }}>+{(lapVel - lapPb.vel).toFixed(2)} m/s</span></>
-                    : <>Below PB pace ({lapPb.vel.toFixed(2)} m/s) — <span style={{ color: 'var(--flag-eff)' }}>−{(lapPb.vel - lapVel).toFixed(2)} m/s</span></>}
-                </div>
-              )}
+              {/* v03.64 — PB-pace comparison line removed. */}
             </div>
             <button onClick={() => setSelectedLap(null)} style={{
               background: 'transparent', border: 'none', color: 'var(--tx-lo)',
@@ -3897,26 +3707,7 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
           </svg>
           <span style={{ color: 'var(--tx-md)' }}>= {dotUnit} number</span>
         </span>
-        {/* PB diamond key — only shown when at least one PB resolved */}
-        {(pbA || pbB) && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" style={{ display: 'block' }}>
-              <path d="M7,1 L13,7 L7,13 L1,7 Z"
-                fill="var(--lime-eff)" stroke="var(--ink)" strokeWidth="1.5"/>
-            </svg>
-            <span style={{ color: 'var(--tx-md)' }}>= event PB · dashed line = PB pace</span>
-          </span>
-        )}
-        {/* v01.00 — Squad-best diamond + frontier curve key */}
-        {squad && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <svg width="12" height="12" viewBox="0 0 12 12" style={{ display: 'block' }}>
-              <path d="M6,1 L11,6 L6,11 L1,6 Z"
-                fill="var(--signal-eff)" stroke="var(--ink)" strokeWidth="1.5"/>
-            </svg>
-            <span style={{ color: 'var(--tx-md)' }}>= squad best · {squad.vel.toFixed(2)} m/s</span>
-          </span>
-        )}
+        {/* v03.64 — PB diamond + squad-best legend keys removed. */}
         {/* Trial colors */}
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span style={{

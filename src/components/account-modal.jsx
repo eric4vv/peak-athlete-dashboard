@@ -371,6 +371,193 @@ const ProfilePanel = ({ profile, role, session }) => {
       }}>
         {t('account.profile.editingHint')}
       </p>
+
+      {/* v03.64 — Account deletion section. Required by Play Console
+          data-deletion compliance and the privacy policy v2.0 commitment.
+          Visually separated + type-to-confirm pattern. Hard-delete via
+          the delete-account edge function (uses service_role server-side). */}
+      <DeleteAccountSection session={session}/>
+    </div>
+  );
+};
+
+// ── DeleteAccountSection (v03.64) ─────────────────────────────
+// Self-contained subsection at the bottom of the Profile tab.
+// Click "Delete my account" → confirmation modal with type-to-
+// confirm guard → calls the delete-account edge function → on
+// success, signs out and returns the user to the auth screen.
+const DeleteAccountSection = ({ session }) => {
+  const t = (window.useT || (() => (k) => k))();
+  const [open, setOpen] = useAcctState(false);
+  const [confirmText, setConfirmText] = useAcctState('');
+  const [busy, setBusy] = useAcctState(false);
+  const [error, setError] = useAcctState(null);
+
+  const reset = () => { setOpen(false); setConfirmText(''); setError(null); setBusy(false); };
+
+  const onConfirm = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const SUPABASE_URL = window.PA_AUTH?.SUPABASE_URL
+        || 'https://wbqgshvbopfukwyqsndq.supabase.co';
+      const token = session?.access_token;
+      if (!token) {
+        setError('Sign out and back in, then try again.');
+        setBusy(false);
+        return;
+      }
+      const res = await fetch(SUPABASE_URL + '/functions/v1/delete-account', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type':  'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        setError(data?.error || 'Could not delete the account. Try again, or email eric@mypeakathlete.com.');
+        setBusy(false);
+        return;
+      }
+      try { await window.PA_AUTH?.signOut?.(); } catch (_) {}
+      try { window.location.reload(); } catch (_) {}
+    } catch (e) {
+      setError((e && e.message) || 'Network error.');
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div style={{
+      marginTop: 24, paddingTop: 18,
+      borderTop: '1px solid var(--line-soft)',
+    }}>
+      <div className="eyebrow" style={{ color: 'var(--flag-eff)', marginBottom: 8 }}>
+        DANGER ZONE
+      </div>
+      <p style={{
+        margin: '0 0 12px', font: '500 12px var(--font-ui)', color: 'var(--tx-md)',
+        lineHeight: 1.55,
+      }}>
+        Permanently delete your account and all associated data — profile, athletic metrics, video uploads, coach notes, and subscription history. This action cannot be undone.
+      </p>
+      <button type="button"
+        onClick={() => setOpen(true)}
+        style={{
+          background: 'transparent',
+          color: 'var(--flag-eff)',
+          border: '1px solid var(--flag-eff)',
+          padding: '8px 14px', borderRadius: 8,
+          font: '600 12px var(--font-ui)',
+          cursor: 'pointer',
+        }}>
+        Delete my account
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'color-mix(in oklch, var(--ink) 70%, transparent)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 2000, padding: 20,
+        }} onClick={(e) => { if (e.target === e.currentTarget && !busy) reset(); }}>
+          <div style={{
+            background: 'var(--bg-2)',
+            border: '1px solid var(--flag-eff)',
+            borderRadius: 12, padding: 24,
+            maxWidth: 440, width: '100%',
+          }}>
+            <h3 style={{
+              margin: '0 0 12px',
+              font: '700 18px var(--font-display)',
+              color: 'var(--flag-eff)',
+              letterSpacing: '-0.01em',
+            }}>
+              Delete your account?
+            </h3>
+            <p style={{
+              margin: '0 0 14px', font: '500 13px var(--font-ui)', color: 'var(--tx-hi)',
+              lineHeight: 1.55,
+            }}>
+              This will permanently delete:
+            </p>
+            <ul style={{
+              margin: '0 0 16px 20px', padding: 0,
+              font: '500 12px var(--font-ui)', color: 'var(--tx-md)', lineHeight: 1.7,
+            }}>
+              <li>Your account and profile</li>
+              <li>All race, start, and turn metrics</li>
+              <li>Uploaded video files</li>
+              <li>Coach notes and session history</li>
+              <li>Subscription state (cancel separately in your billing provider first if active)</li>
+            </ul>
+            <p style={{
+              margin: '0 0 14px', font: '500 12px var(--font-ui)', color: 'var(--tx-md)',
+              lineHeight: 1.55,
+            }}>
+              Type <strong style={{ color: 'var(--tx-hi)', fontFamily: 'var(--font-mono)' }}>DELETE</strong> to confirm:
+            </p>
+            <input type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              disabled={busy}
+              autoFocus
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                padding: '10px 12px', borderRadius: 8,
+                background: 'var(--bg-3)',
+                border: '1px solid var(--line)',
+                color: 'var(--tx-hi)',
+                font: '600 14px var(--font-mono)',
+                letterSpacing: '0.1em',
+                marginBottom: 16,
+              }}/>
+            {error && (
+              <p style={{
+                margin: '0 0 14px', padding: '10px 12px',
+                background: 'color-mix(in oklch, var(--flag-eff) 12%, transparent)',
+                border: '1px solid color-mix(in oklch, var(--flag-eff) 40%, transparent)',
+                borderRadius: 6,
+                font: '500 12px var(--font-ui)', color: 'var(--flag-eff)',
+              }}>
+                {error}
+              </p>
+            )}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button type="button"
+                onClick={reset}
+                disabled={busy}
+                style={{
+                  background: 'transparent',
+                  color: 'var(--tx-md)',
+                  border: '1px solid var(--line)',
+                  padding: '9px 16px', borderRadius: 8,
+                  font: '600 12px var(--font-ui)',
+                  cursor: busy ? 'wait' : 'pointer',
+                }}>
+                Cancel
+              </button>
+              <button type="button"
+                onClick={onConfirm}
+                disabled={busy || confirmText !== 'DELETE'}
+                style={{
+                  background: confirmText === 'DELETE' ? 'var(--flag-eff)' : 'var(--bg-3)',
+                  color: confirmText === 'DELETE' ? 'var(--ink)' : 'var(--tx-lo)',
+                  border: 'none',
+                  padding: '9px 16px', borderRadius: 8,
+                  font: '700 12px var(--font-ui)',
+                  cursor: (busy || confirmText !== 'DELETE') ? 'not-allowed' : 'pointer',
+                  opacity: busy ? 0.6 : 1,
+                  transition: 'background 0.12s, color 0.12s',
+                }}>
+                {busy ? 'Deleting…' : 'Delete forever'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

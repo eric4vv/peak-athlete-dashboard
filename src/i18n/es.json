@@ -379,12 +379,15 @@
       "feature3":          "Coach Pulse AI — 50 consultas / mes",
       "feature4":          "Suscripción a clasificaciones de competencia",
       "feature5":          "Análisis del equipo + alertas de plantilla",
-      "manageBilling":     "Gestionar facturación",
-      "opening":           "Abriendo…",
-      "upgradeToPro":      "Actualizar a Pro",
-      "cancelSubscription":"Cancelar suscripción",
-      "portalError":       "No se pudo abrir el portal de Stripe.",
-      "billingByStripe":   "La facturación la gestiona Stripe. Gestionar facturación abre el portal de Stripe en una pestaña nueva."
+      "manageBilling":          "Gestionar facturación",
+      "manageSubscription":     "Gestionar suscripción",
+      "restorePurchases":       "Restaurar compras",
+      "opening":                "Abriendo…",
+      "upgradeToPro":           "Actualizar a Pro",
+      "cancelSubscription":     "Cancelar suscripción",
+      "portalError":            "No se pudo abrir el portal de Stripe.",
+      "billingByStripe":        "La facturación la gestiona Stripe. Gestionar facturación abre el portal de Stripe en una pestaña nueva.",
+      "nativeManageDisclaimer": "Gestionar suscripción abre la página de suscripciones de Google Play. Las cancelaciones y reembolsos se gestionan ahí."
     },
     "profile": {
       "title":        "TU PERFIL",

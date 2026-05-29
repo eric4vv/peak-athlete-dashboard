@@ -379,12 +379,15 @@
       "feature3":          "Pulse AI coach — 50 queries / month",
       "feature4":          "Competition leaderboards opt-in",
       "feature5":          "Coach-team analytics + roster flags",
-      "manageBilling":     "Manage billing",
-      "opening":           "Opening…",
-      "upgradeToPro":      "Upgrade to Pro",
-      "cancelSubscription":"Cancel subscription",
-      "portalError":       "Could not open Stripe portal.",
-      "billingByStripe":   "Billing is handled by Stripe. Manage Billing opens Stripe's hosted portal in a new tab."
+      "manageBilling":          "Manage billing",
+      "manageSubscription":     "Manage subscription",
+      "restorePurchases":       "Restore purchases",
+      "opening":                "Opening…",
+      "upgradeToPro":           "Upgrade to Pro",
+      "cancelSubscription":     "Cancel subscription",
+      "portalError":            "Could not open Stripe portal.",
+      "billingByStripe":        "Billing is handled by Stripe. Manage Billing opens Stripe's hosted portal in a new tab.",
+      "nativeManageDisclaimer": "Manage Subscription opens Google Play's subscription page. Cancellations and refunds are handled there."
     },
     "profile": {
       "title":        "YOUR PROFILE",

@@ -1977,6 +1977,22 @@ const RaceSummaryRail = ({ primary, compare }) => {
   const pVel  = K.avgVelocity(primary);
   const pSt   = K.totalStrokes(primary);
   const pFBH  = frontBackHalfDelta(primary);
+  // v03.65 — Reaction time from race metrics_json. Templo race
+  // exports include `Leaving block` (time from start signal to
+  // swimmer leaving the block) — that's what coaches mean when
+  // they say "reaction time" for a race. Distinct from the
+  // standalone Start trial's `reaction_time_s` (signal → first
+  // movement), which is finer-grained but requires a separate
+  // start upload.
+  const reactOf = (t) => {
+    if (!t) return null;
+    const mj = t.mj || t.metrics_json || {};
+    const raw = mj['Leaving block'] ?? mj['leaving_block'] ?? null;
+    const n = raw == null ? null : parseFloat(raw);
+    return (n != null && !isNaN(n)) ? n : null;
+  };
+  const pReact = reactOf(primary);
+  const cReact = reactOf(compare);
 
   const cTime = compare ? K.raceTotalTime(compare) : null;
   const cSR   = compare ? K.avgStrokeRate(compare) : null;
@@ -2030,6 +2046,10 @@ const RaceSummaryRail = ({ primary, compare }) => {
       d: delta(pTime, cTime, 2),
       vCompare: cTime == null ? null : K.fmtTime(cTime, 2),
       tip: 'Total race time, last populated split. Lower is faster.' },
+    { k: 'Reaction Time', v: round(pReact, 2), u: 's', goodDir: 'down',
+      d: delta(pReact, cReact, 2),
+      vCompare: cReact == null ? null : round(cReact, 2),
+      tip: 'Time from the start signal to leaving the block. Captured per race trial. Elite swimmers are typically in the 0.60–0.75 s range.' },
     { k: 'Avg Stroke Rate', v: round(pSR, 1), u: 'spm', goodDir: 'up',
       d: delta(pSR, cSR, 1),
       vCompare: cSR == null ? null : round(cSR, 1),

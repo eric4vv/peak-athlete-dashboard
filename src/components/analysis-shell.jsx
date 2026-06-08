@@ -1451,7 +1451,7 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
                   padding: dense ? '0 6px' : '0 10px', minWidth: dense ? 48 : 64,
                 }}>
                   <span className="mono" style={{
-                    fontSize: timeFont, fontWeight: 700, color: 'var(--ink)',
+                    fontSize: timeFont, fontWeight: 700, color: 'var(--ink)', lineHeight: 1,
                   }}>
                     {K.fmtTime(l.t, 2)}
                   </span>
@@ -1475,7 +1475,7 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
                     padding: dense ? '0 6px' : '0 8px', minWidth: dense ? 44 : 60,
                   }}>
                     <span className="mono" style={{
-                      fontSize: timeFont, fontWeight: 700, color: 'var(--ink)',
+                      fontSize: timeFont, fontWeight: 700, color: 'var(--ink)', lineHeight: 1, lineHeight: 1,
                     }}>
                       {K.fmtTime(l.t, 2)}
                     </span>
@@ -1494,7 +1494,7 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
                     padding: dense ? '0 6px' : '0 8px', minWidth: dense ? 44 : 60,
                   }}>
                     <span className="mono" style={{
-                      fontSize: timeFont, fontWeight: 700, color: 'var(--ink)',
+                      fontSize: timeFont, fontWeight: 700, color: 'var(--ink)', lineHeight: 1, lineHeight: 1,
                     }}>
                       {K.fmtTime(c.t, 2)}
                     </span>

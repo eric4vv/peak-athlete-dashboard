@@ -1003,20 +1003,28 @@ function derivePerLap(trial) {
   const rates  = K.extractStrokeRates(mj);
   if (!splits.length) return [];
 
-  const totalDist = splits[splits.length - 1].distance;
-  const numLaps   = counts.length || Math.max(1, Math.round(totalDist / 25));
-  const lapLen    = totalDist / numLaps;
+  // v03.66 — SCY unit fix. Templo labels split columns "Split N m"
+  // for all course types, but SCY races measure those at YARD
+  // positions. We use TRUE meters for velocity / DPS math and
+  // keep the labeled value for the display string + splits lookup
+  // so visualizations match Templo's column headers.
+  const course      = K.courseOf ? K.courseOf(trial) : null;
+  const totalLabel  = splits[splits.length - 1].distance;
+  const totalDist   = K.actualMeters ? K.actualMeters(totalLabel, course) : totalLabel;
+  const numLaps     = counts.length || Math.max(1, Math.round(totalLabel / 25));
+  const lapLen      = totalDist / numLaps;         // TRUE meters per lap
+  const lapLenLabel = totalLabel / numLaps;        // labeled (for display + splits lookup)
 
   const out = [];
   for (let l = 1; l <= numLaps; l++) {
-    const startD = (l - 1) * lapLen;
-    const endD   = l * lapLen;
+    const startDLabel = (l - 1) * lapLenLabel;
+    const endDLabel   = l * lapLenLabel;
 
     // Cumulative time at lap boundary (nearest split at or below endD)
-    const cumAtEnd   = splits.filter(s => s.distance <= endD + 0.5).pop();
+    const cumAtEnd   = splits.filter(s => s.distance <= endDLabel + 0.5).pop();
     const cumAtStart = l === 1
       ? { cumTime: 0 }
-      : (splits.filter(s => s.distance <= startD + 0.5).pop() || { cumTime: 0 });
+      : (splits.filter(s => s.distance <= startDLabel + 0.5).pop() || { cumTime: 0 });
     if (!cumAtEnd) continue;
     const segTime = +(cumAtEnd.cumTime - cumAtStart.cumTime).toFixed(2);
 
@@ -1024,23 +1032,21 @@ function derivePerLap(trial) {
     const c = counts.find(cc => cc.lap === l);
     const count = c ? c.count : null;
 
-    // Average stroke rate over this lap's 5m buckets
-    const inLap = rates.filter(r => r.distance > startD && r.distance <= endD);
+    // Average stroke rate over this lap's 5m buckets (LABELED positions)
+    const inLap = rates.filter(r => r.distance > startDLabel && r.distance <= endDLabel);
     const rate  = inLap.length
       ? +(inLap.reduce((a, r) => a + r.rate, 0) / inLap.length).toFixed(1)
       : null;
 
-    // Distance per stroke
+    // Distance per stroke — TRUE meters / strokes (SCY-correct)
     const dps = count ? +(lapLen / count).toFixed(2) : null;
 
     out.push({
       lap: l,
-      label: 'Lap ' + l + ' · ' + startD.toFixed(0) + '–' + endD.toFixed(0) + 'm',
+      label: 'Lap ' + l + ' · ' + startDLabel.toFixed(0) + '–' + endDLabel.toFixed(0) + 'm',
       t: segTime, count, rate, dps,
-      // v00.53: explicit start/end distances. Used by aggregateLaps
-      // to group consecutive laps into 100 m buckets without
-      // inferring lap distance from totalDistance / numLaps.
-      startD, endD,
+      // startD / endD remain in LABELED meters (positional / axis use)
+      startD: startDLabel, endD: endDLabel,
     });
   }
 
@@ -1281,17 +1287,17 @@ function derivePerSegment(trial, preferredSize) {
     return [];
   }
 
+  // v03.66 — SCY fix: convert labeled segment size to true meters
+  // for the velocity calc.
+  const courseSeg     = K.courseOf ? K.courseOf(trial) : null;
+  const segmentSizeM  = K.actualMeters ? K.actualMeters(segmentSize, courseSeg) : segmentSize;
+
   const out = [];
   let prevT = 0;
   ordered.forEach((s, idx) => {
     const segT   = s.cumTime - prevT;
-    const startD = s.distance - segmentSize;
-    const endD   = s.distance;
-    // SR — prefer END distance, fall back to start. SR can
-    // legitimately be 0 on segments without strokes (underwater
-    // off the dive, touch). v00.99 — fall back to the trial's
-    // avg SR if the segment has no in-segment SR sample so we
-    // still render a dot with a defensible value.
+    const startD = s.distance - segmentSize;   // LABELED (axes / lookups)
+    const endD   = s.distance;                  // LABELED
     let rate = rateByDist.get(endD) != null
       ? rateByDist.get(endD)
       : rateByDist.get(startD);
@@ -1300,7 +1306,7 @@ function derivePerSegment(trial, preferredSize) {
       if (fallback != null && fallback > 0) rate = fallback;
     }
     if (rate != null && rate > 0 && segT > 0) {
-      const vel = segmentSize / segT;
+      const vel = segmentSizeM / segT;      // TRUE m/s for SCY
       const dps = (60 * vel) / rate;
       out.push({
         lap: idx + 1,
@@ -1376,7 +1382,12 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
   //                sub-line, abbreviated label "L{n}"
   //   > 32 laps  → very compact: minimum bars, every-2nd-row time
   //                label hide on long bars, compressed grid columns
-  const dense       = laps.length > 16;
+  // v03.67 — mobile (<768 CSS px) forces dense mode regardless of
+  // lap count. Default layout's 160+1fr+90+100 = 410 px of fixed
+  // columns overflows a typical iPhone Safari viewport, squeezing
+  // the bar column to ~0 px and clipping split-time labels.
+  const isMobile    = (window.useIsMobile || (() => false))();
+  const dense       = laps.length > 16 || isMobile;
   const veryDense   = laps.length > 32;
   const rowGap      = veryDense ? 3  : dense ? 6  : 18;
   const soloH       = veryDense ? 10 : dense ? 14 : 26;
@@ -1388,7 +1399,10 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
                                 : '160px 1fr 90px 100px';
   const labelFont   = veryDense ? '9px'  : dense ? '11px' : '13px';
   const timeFont    = veryDense ? 9      : dense ? 10     : 11;
-  const showSubLine = !dense;
+  // v03.67 — keep the "X strokes · Y spm" subline on short races
+  // even when mobile forces dense mode. Only hide once there are
+  // genuinely too many rows (the original > 16 trigger).
+  const showSubLine = !veryDense && laps.length <= 16;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap }}>
@@ -1434,7 +1448,7 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
                   width: ((l.t / max) * 100) + '%',
                   background: color, borderRadius: dense ? 4 : 6,
                   display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-                  padding: dense ? '0 6px' : '0 10px', minWidth: dense ? 36 : 52,
+                  padding: dense ? '0 6px' : '0 10px', minWidth: dense ? 48 : 64,
                 }}>
                   <span className="mono" style={{
                     fontSize: timeFont, fontWeight: 700, color: 'var(--ink)',
@@ -1458,7 +1472,7 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
                     width: ((l.t / max) * 100) + '%',
                     background: color, borderRadius: 4,
                     display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-                    padding: dense ? '0 6px' : '0 8px', minWidth: dense ? 32 : 50,
+                    padding: dense ? '0 6px' : '0 8px', minWidth: dense ? 44 : 60,
                   }}>
                     <span className="mono" style={{
                       fontSize: timeFont, fontWeight: 700, color: 'var(--ink)',
@@ -1477,7 +1491,7 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
                     width: ((c.t / max) * 100) + '%',
                     background: 'var(--compare-eff)', borderRadius: 4,
                     display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-                    padding: dense ? '0 6px' : '0 8px', minWidth: dense ? 32 : 50,
+                    padding: dense ? '0 6px' : '0 8px', minWidth: dense ? 44 : 60,
                   }}>
                     <span className="mono" style={{
                       fontSize: timeFont, fontWeight: 700, color: 'var(--ink)',

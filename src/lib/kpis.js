@@ -21,6 +21,31 @@
 
   const client = window.supabaseClient;
 
+  // ── SCY unit fix (v03.66) ────────────────────────────────────
+  // Templo labels split columns "Split 25 m" / "Split 50 m" / etc.
+  // for ALL course types — including SCY. For an SCY race the
+  // labeled "25 m" is actually 25 yards = 22.86 m. Treating it as
+  // 25 m makes every velocity / DPS calc overstate by 1/0.9144
+  // (~+9.36%) for SCY races.
+  //
+  // FIX: convert labeled distance → true meters via this helper
+  // anywhere downstream math depends on real distance (velocity,
+  // DPS, segment density). Display labels intentionally still
+  // show the labeled value (e.g., "25m") so visualizations match
+  // Templo's column headers — a follow-up "Option B" pass will
+  // upgrade display labels to course-aware units.
+  const YD_TO_M = 0.9144;
+  function actualMeters(labeled, course) {
+    const c = String(course || '').toUpperCase();
+    return c === 'SCY' ? labeled * YD_TO_M : labeled;
+  }
+
+  function courseOf(trial) {
+    if (!trial) return null;
+    const mj = trial.mj || trial.metrics_json || {};
+    return trial.course || mj.Course || mj.course || null;
+  }
+
   // ── Extractors ────────────────────────────────────────────────
   // Pure, no Supabase. Accept metrics_json blob, return sorted arrays.
 
@@ -165,8 +190,10 @@
     const mj    = trial.mj || trial.metrics_json || {};
     const counts = extractStrokeCounts(mj);
     if (!counts.length) return [];
-    const totalDist = parseFloat(trial.distance_m || mj.Distance || mj.distance);
-    if (!totalDist || isNaN(totalDist)) return [];
+    const labeled = parseFloat(trial.distance_m || mj.Distance || mj.distance);
+    if (!labeled || isNaN(labeled)) return [];
+    // v03.66 — SCY fix: convert labeled total to true meters.
+    const totalDist = actualMeters(labeled, courseOf(trial));
     // numLaps is what was captured, not what the race truly has.
     // For DPS we want per-lap distance to reflect real lap lengths,
     // so use the highest captured lap index as numLaps.
@@ -206,10 +233,12 @@
   // a summary tile; per-segment velocity remains in the chart.
   function avgVelocity(trial) {
     if (!trial) return null;
-    const totalDist = parseFloat(trial.distance_m
+    const labeled = parseFloat(trial.distance_m
       || trial.mj?.Distance || trial.metrics_json?.Distance);
     const t = raceTotalTime(trial);
-    if (!totalDist || !t || t <= 0) return null;
+    if (!labeled || !t || t <= 0) return null;
+    // v03.66 — SCY fix: convert labeled distance to true meters.
+    const totalDist = actualMeters(labeled, courseOf(trial));
     return totalDist / t;
   }
 
@@ -369,6 +398,8 @@
     raceTotalTime, raceTitle, raceDate,
     avgStrokeRate, avgDPS, avgVelocity, totalStrokes,
     fmtTime,
+    // v03.66 — SCY unit helpers
+    actualMeters, courseOf,
     // filters / selection
     applyFilters, optionsFrom, trialKey, findByKey,
   };

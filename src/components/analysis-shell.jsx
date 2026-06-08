@@ -1389,9 +1389,9 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
   const isMobile    = (window.useIsMobile || (() => false))();
   const dense       = laps.length > 16 || isMobile;
   const veryDense   = laps.length > 32;
-  const rowGap      = veryDense ? 3  : dense ? 6  : 18;
-  const soloH       = veryDense ? 10 : dense ? 14 : 26;
-  const cmpH        = veryDense ? 8  : dense ? 12 : 16;
+  const rowGap      = veryDense ? 3  : dense ? 8  : 18;
+  const soloH       = veryDense ? 10 : dense ? 20 : 26;
+  const cmpH        = veryDense ? 8  : dense ? 16 : 16;
   const cmpGap      = veryDense ? 2  : dense ? 4  : 6;
   const cmpBarTotal = cmpH * 2 + cmpGap;
   const labelTplCol = veryDense ? '46px 1fr 46px 50px'
@@ -1475,7 +1475,7 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
                     padding: dense ? '0 6px' : '0 8px', minWidth: dense ? 44 : 60,
                   }}>
                     <span className="mono" style={{
-                      fontSize: timeFont, fontWeight: 700, color: 'var(--ink)', lineHeight: 1, lineHeight: 1,
+                      fontSize: timeFont, fontWeight: 700, color: 'var(--ink)', lineHeight: 1,
                     }}>
                       {K.fmtTime(l.t, 2)}
                     </span>
@@ -1494,7 +1494,7 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
                     padding: dense ? '0 6px' : '0 8px', minWidth: dense ? 44 : 60,
                   }}>
                     <span className="mono" style={{
-                      fontSize: timeFont, fontWeight: 700, color: 'var(--ink)', lineHeight: 1, lineHeight: 1,
+                      fontSize: timeFont, fontWeight: 700, color: 'var(--ink)', lineHeight: 1,
                     }}>
                       {K.fmtTime(c.t, 2)}
                     </span>

@@ -35,7 +35,7 @@
           .from('video_sessions')
           .select('session_uuid, athlete_uuid, team_uuid, source, ' +
                   'session_date, title, notes, coach_shared_to_squad, ' +
-                  'athlete_shared_to_pool, created_at');
+                  'athlete_shared_to_pool, created_at, notified_at');
         if (athleteUuid) q = q.eq('athlete_uuid', athleteUuid);
         return q
           .order('session_date', { ascending: false })

@@ -833,8 +833,8 @@ const RaceHeadlineCard = ({ primary, compare, diff, summary }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between',
                     alignItems: 'flex-start', gap: 24 }}>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div className="eyebrow" style={{ marginBottom: 8, color: 'var(--tx-lo)' }}>
-            {K.raceTitle(primary).toUpperCase()}
+          <div style={{ marginBottom: 8 }}>
+            <TrialNameEditor kind="race" trial={primary} title={K.raceTitle(primary)}/>
           </div>
           <div className="display" style={{
             fontSize: 38, lineHeight: 1.05, letterSpacing: '-0.025em',
@@ -887,6 +887,117 @@ const Headline = ({ eyebrow, title, sub, right }) => (
     {right}
   </div>
 );
+
+// ── TrialNameEditor (v03.72) ──────────────────────────────────
+// Inline rename control for a race / start / turn trial. Renders
+// the trial's eyebrow title with a small pencil; clicking opens an
+// inline input (Save / Cancel / Clear). Writes via the
+// set_trial_custom_name RPC (PA_TRIALS.setCustomName) which enforces
+// athlete/coach/admin permission server-side — so even though the
+// pencil shows for any signed-in viewer, an unauthorized rename is
+// rejected by the DB and surfaced as an inline error.
+//
+// Props:
+//   kind        'race' | 'start' | 'turn'
+//   trial       the trial row (must carry a *_uuid / record_uuid)
+//   title       current display title (already custom-name-aware)
+//   onRenamed   optional () => void  — parent may refetch
+const TrialNameEditor = ({ kind, trial, title, onRenamed }) => {
+  const PT = window.PA_TRIALS;
+  const uuid = PT ? PT.trialId(trial) : null;
+  const current = (trial && (trial.custom_name || (trial.mj || trial.metrics_json || {})['Custom Name'])) || '';
+  const [editing, setEditing] = React.useState(false);
+  const [val, setVal]   = React.useState(current);
+  const [busy, setBusy] = React.useState(false);
+  const [err, setErr]   = React.useState(null);
+  // Local override so the new label shows instantly after save without
+  // waiting for a parent refetch.
+  const [shown, setShown] = React.useState(null);
+
+  if (!PT || !uuid) {
+    return (
+      <div className="eyebrow" style={{ color: 'var(--tx-lo)' }}>
+        {(shown || title || '').toUpperCase()}
+      </div>
+    );
+  }
+
+  const open = () => { setVal(current || ''); setErr(null); setEditing(true); };
+
+  const save = async (clear) => {
+    setBusy(true); setErr(null);
+    const next = clear ? '' : val;
+    const { error } = await PT.setCustomName(kind, uuid, next);
+    setBusy(false);
+    if (error) { setErr(error.message || 'Could not rename'); return; }
+    setShown(clear ? null : (next.trim() || null));
+    setEditing(false);
+    if (onRenamed) { try { onRenamed(); } catch (_) {} }
+  };
+
+  if (!editing) {
+    const label = (shown != null ? shown : title) || '';
+    return (
+      <div className="eyebrow"
+           style={{ color: 'var(--tx-lo)', display: 'flex', alignItems: 'center',
+                    gap: 8, minWidth: 0 }}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {label.toUpperCase()}
+        </span>
+        <button type="button" onClick={open} title="Rename this trial"
+          aria-label="Rename this trial"
+          style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center',
+                   justifyContent: 'center', width: 22, height: 22, padding: 0,
+                   borderRadius: 6, border: '1px solid var(--line)',
+                   background: 'transparent', color: 'var(--tx-md)', cursor: 'pointer' }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+               strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+          </svg>
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 420 }}>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          type="text" value={val} maxLength={80} autoFocus disabled={busy}
+          onChange={(e) => setVal(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') save(false); if (e.key === 'Escape') setEditing(false); }}
+          placeholder="Custom name (e.g. meet name)"
+          style={{ flex: 1, minWidth: 180, padding: '7px 10px', borderRadius: 8,
+                   border: '1px solid var(--line)', background: 'var(--bg-3)',
+                   color: 'var(--tx-hi)', font: '500 13px var(--font-ui)', outline: 'none' }}/>
+        <button type="button" onClick={() => save(false)} disabled={busy}
+          style={{ padding: '7px 12px', borderRadius: 8, border: 'none',
+                   background: 'var(--signal-eff)', color: 'var(--ink)',
+                   font: '700 12px var(--font-ui)', cursor: 'pointer' }}>
+          {busy ? '…' : 'Save'}
+        </button>
+        <button type="button" onClick={() => setEditing(false)} disabled={busy}
+          style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid var(--line)',
+                   background: 'transparent', color: 'var(--tx-md)',
+                   font: '600 12px var(--font-ui)', cursor: 'pointer' }}>
+          Cancel
+        </button>
+        {current && (
+          <button type="button" onClick={() => save(true)} disabled={busy}
+            title="Clear custom name (revert to default)"
+            style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid var(--line)',
+                     background: 'transparent', color: 'var(--flag-eff)',
+                     font: '600 12px var(--font-ui)', cursor: 'pointer' }}>
+            Clear
+          </button>
+        )}
+      </div>
+      {err && <div style={{ font: '500 12px var(--font-ui)', color: 'var(--flag-eff)' }}>{err}</div>}
+    </div>
+  );
+};
 
 // ── Race story derivation ─────────────────────────────────────
 // Packs everything the Headline needs into one object so the page
@@ -1993,14 +2104,21 @@ const NotifyAthleteButton = ({
       }
       // v03.59 — table names per the existing import scripts:
       // `start_raw` and `turn_raw`, not `starts` / `turns`.
-      const table   = trialKind === 'start' ? 'start_raw'  : 'turn_raw';
-      const uuidCol = trialKind === 'start' ? 'start_uuid' : 'turn_uuid';
+      // v03.73 — `session` kind: the edge function stamps
+      // video_sessions.notified_at server-side (service role), so the
+      // client does NOT write it here (avoids needing a video_sessions
+      // UPDATE policy). start/turn keep the existing client write,
+      // which relies on their super_admin UPDATE policy.
       const nowIso = new Date().toISOString();
-      const { error: upErr } = await client
-        .from(table)
-        .update({ notified_at: nowIso })
-        .eq(uuidCol, trialUuid);
-      if (upErr) console.warn('[notify-trial-complete] DB update failed:', upErr);
+      if (trialKind === 'start' || trialKind === 'turn') {
+        const table   = trialKind === 'start' ? 'start_raw'  : 'turn_raw';
+        const uuidCol = trialKind === 'start' ? 'start_uuid' : 'turn_uuid';
+        const { error: upErr } = await client
+          .from(table)
+          .update({ notified_at: nowIso })
+          .eq(uuidCol, trialUuid);
+        if (upErr) console.warn('[notify-trial-complete] DB update failed:', upErr);
+      }
       setNotifiedAt(nowIso);
     } catch (e) {
       alert(t('analysis.notify.failed') + String((e && e.message) || e));
@@ -3138,9 +3256,80 @@ const LineAxes = ({ xLabels, yLabels, yMax }) => {
 // xLabels override (optional) replaces the default "<xMin> m / <xMax> m"
 // axis labels — useful when the x axis is categorical (e.g. velocity
 // stations: "Hands entry · Kick 1 · 3 Kicks · Stroke 1 · Stroke 2").
+// ── ChartHoverLayer (v03.71) ──────────────────────────────────
+// Reusable hover/tap tooltip layer for ANY line chart. Each caller
+// passes already-pixel-mapped points (cx, cy) plus the underlying
+// data values (dataX, dataY) and the units to render. The layer
+// owns its own hover state and renders:
+//   1. invisible 14px-radius hit targets (comfortable mobile tap)
+//   2. a 2-line tooltip ({dataX}{xUnit} over {dataY}{unit}) that
+//      flips below the point near the top edge and clamps to the
+//      chart's horizontal bounds.
+// Drop one <ChartHoverLayer/> AFTER a chart's line/axes so it wins
+// pointer events. Geometry (PAD_*, W) is read from the shared CHART
+// constant so every chart clamps identically.
+//
+// pointsA / pointsB: [{ cx, cy, dataX, dataY }]
+// fmt: (dataY) => string   ·  unit / xUnit: tooltip suffixes
+// geom: optional { W, PAD_L, PAD_R, PAD_T } when the host chart uses
+//       its own viewBox geometry instead of the shared CHART constant
+//       (custom charts in web-races/starts/turns do). Defaults to CHART.
+const ChartHoverLayer = ({ pointsA = [], pointsB = [], colorA, colorB, fmt, unit = '', xUnit = 'm', geom }) => {
+  const { PAD_L, PAD_R, PAD_T, W } = geom || CHART;
+  const cA = colorA || CHART.COLOR_A;
+  const cB = colorB || CHART.COLOR_B;
+  const f = fmt || ((v) => Number(v).toFixed(1));
+  const [hovered, setHovered] = React.useState(null);
+  const hit = (p, isA) => ({
+    onMouseEnter: () => setHovered({ x: p.cx, y: p.cy, dataX: p.dataX, dataY: p.dataY, isA }),
+    onMouseLeave: () => setHovered(null),
+    onTouchStart: (e) => { e.preventDefault(); setHovered({ x: p.cx, y: p.cy, dataX: p.dataX, dataY: p.dataY, isA }); },
+  });
+  return (
+    <>
+      {pointsA.map((p, i) => (
+        <circle key={'hitA' + i} cx={p.cx} cy={p.cy} r="14"
+          fill="transparent" style={{ cursor: 'pointer' }} {...hit(p, true)}/>
+      ))}
+      {pointsB.map((p, i) => (
+        <circle key={'hitB' + i} cx={p.cx} cy={p.cy} r="14"
+          fill="transparent" style={{ cursor: 'pointer' }} {...hit(p, false)}/>
+      ))}
+      {hovered && (() => {
+        const TIP_W = 78, TIP_H = 32;
+        const flipBelow = hovered.y < PAD_T + 36;
+        const ty = flipBelow ? hovered.y + 12 : hovered.y - TIP_H - 12;
+        const tx = Math.max(PAD_L, Math.min(W - PAD_R - TIP_W, hovered.x - TIP_W / 2));
+        return (
+          <g pointerEvents="none">
+            <circle cx={hovered.x} cy={hovered.y} r="5"
+              fill={hovered.isA ? cA : cB} stroke="var(--bg-2)" strokeWidth="2"/>
+            <rect x={tx} y={ty} width={TIP_W} height={TIP_H}
+              fill="var(--bg-2)" stroke="var(--line)" strokeWidth="1" rx="4"/>
+            <text x={tx + TIP_W / 2} y={ty + 12} textAnchor="middle"
+              fill="var(--tx-lo)" fontSize="9" fontFamily="var(--font-mono)">
+              {hovered.dataX}{xUnit}
+            </text>
+            <text x={tx + TIP_W / 2} y={ty + 25} textAnchor="middle"
+              fill="var(--tx-hi)" fontSize="12" fontWeight="600" fontFamily="var(--font-mono)">
+              {f(hovered.dataY)}{unit}
+            </text>
+          </g>
+        );
+      })()}
+    </>
+  );
+};
+
 const LineOverlay = ({
   seriesA, seriesB, xMax, xMin, yMax, yMin, yUnit, yFormat,
   colorA, colorB, dashB, xLabelsOverride, showDots,
+  // v03.70 — tooltip on hover/tap. Per-chart unit overrides for the
+  // tooltip body (y-axis labels stay terse via yUnit; the tooltip can
+  // be more descriptive, e.g. " spm" for stroke rate, " m/s" for
+  // velocity). tooltipXUnit defaults to "m" since every chart here
+  // is distance-on-x.
+  tooltipUnit, tooltipXUnit = 'm',
 }) => {
   const { PAD_L, PAD_R, PAD_T, PAD_B, W, H } = CHART;
   const cA = colorA || CHART.COLOR_A;
@@ -3150,6 +3339,7 @@ const LineOverlay = ({
   const yRange = (yMax - yMin) || 1;
   const xOf = (v) => PAD_L + ((v - xMin) / xRange) * (W - PAD_L - PAD_R);
   const yOf = (v) => PAD_T + (1 - (v - yMin) / yRange) * (H - PAD_T - PAD_B);
+  const tipUnit = tooltipUnit != null ? tooltipUnit : (yUnit || '');
 
   const toPath = (arr) => arr.length
     ? window.PA_SVG.smoothPath(arr.map(p => [xOf(p.x), yOf(p.y)]))
@@ -3218,6 +3408,14 @@ const LineOverlay = ({
           { y: PAD_T + (H - PAD_T - PAD_B)/2, text: fmt((yMax + yMin)/2) + (yUnit || '') },
           { y: H - PAD_B,                     text: fmt(yMin) + (yUnit || '') },
         ]}/>
+      {/* v03.71 — hover/tap value tooltip via shared ChartHoverLayer.
+          Drawn AFTER axes so the invisible hit targets win pointer
+          events. Both series get targets even when dots are auto-
+          hidden on long races (showDots=false) — values still read. */}
+      <ChartHoverLayer
+        pointsA={seriesA.map(p => ({ cx: xOf(p.x), cy: yOf(p.y), dataX: p.x, dataY: p.y }))}
+        pointsB={seriesB.map(p => ({ cx: xOf(p.x), cy: yOf(p.y), dataX: p.x, dataY: p.y }))}
+        colorA={cA} colorB={cB} fmt={fmt} unit={tipUnit} xUnit={tooltipXUnit}/>
     </>
   );
 };
@@ -3250,6 +3448,7 @@ const SplitsChart = ({ primary, compare }) => {
                    xMin={0} xMax={xMax}
                    yMin={0} yMax={yMax}
                    yUnit="s" yFormat={(v) => v.toFixed(1)}
+                   tooltipUnit=" s"
                    {...RACE_CHART_COLORS}/>
     </ChartFrame>
   );
@@ -3274,6 +3473,7 @@ const StrokeRateChart = ({ primary, compare }) => {
                    xMin={0} xMax={xMax}
                    yMin={Math.max(0, rawMin - pad)} yMax={rawMax + pad}
                    yUnit="" yFormat={(v) => v.toFixed(0)}
+                   tooltipUnit=" spm"
                    {...RACE_CHART_COLORS}/>
     </ChartFrame>
   );
@@ -3301,6 +3501,7 @@ const VelocityChart = ({ primary, compare }) => {
                    xMin={0} xMax={xMax}
                    yMin={Math.max(0, rawMin - pad)} yMax={rawMax + pad}
                    yFormat={(v) => v.toFixed(2)}
+                   tooltipUnit=" m/s"
                    {...RACE_CHART_COLORS}/>
     </ChartFrame>
   );
@@ -3640,6 +3841,10 @@ Object.assign(window, {
   TrialRow, TrialList,
   // card primitives
   ChartCard, RaceHeadlineCard, DetailPane,
+  // v03.72 — inline trial rename control
+  TrialNameEditor,
+  // v03.73 — notify-athlete pill (also used by Video Sessions)
+  NotifyAthleteButton,
   // design-reference atoms (v00.17c)
   Headline, LapBars, StrokeMechanicsTable, RaceCompareBars,
   buildRaceStory, derivePerLap, aggregateLaps, derivePerSegment,
@@ -3651,6 +3856,8 @@ Object.assign(window, {
   SplitsTable, SegmentDeltaTable,
   // shared chart primitives (exposed in case Starts/Turns want them raw)
   ChartFrame, Legend, LineOverlay, LineAxes, CHART,
+  // v03.71 — reusable hover/tap value tooltip layer for custom line charts
+  ChartHoverLayer,
 });
 
 try { console.log('[analysis-shell] loaded (v01.50)'); } catch (_) {}

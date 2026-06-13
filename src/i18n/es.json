@@ -254,6 +254,8 @@
       "passwordPlaceholder": "Al menos 6 caracteres",
       "iAmAn":   "Soy",
       "gender":  "Género",
+      "genderOptional": "Género (opcional)",
+      "genderUnspecified": "Prefiero no decirlo",
       "roleAthlete": "Atleta",
       "roleCoach":   "Entrenador",
       "genderFemale":"Mujer",

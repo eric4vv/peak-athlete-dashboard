@@ -341,7 +341,11 @@ const SignUpCard = ({ onSwitchMode, onSignedIn, onVerifySent }) => {
   const [password,  setPassword]  = useAuthState('');
   const [firstName, setFirstName] = useAuthState('');
   const [lastName,  setLastName]  = useAuthState('');
-  const [gender,    setGender]    = useAuthState('female');
+  // v03.73 — gender is OPTIONAL (App Store guideline 5.1.1(v): apps
+  // must not require personal info that isn't core to function).
+  // Default '' = "Prefer not to say"; sent as null so the DB stores
+  // no gender. Still offered because benchmarks are gender-specific.
+  const [gender,    setGender]    = useAuthState('');
   const [role,      setRole]      = useAuthState('athlete');
   const [busy,      setBusy]      = useAuthState(false);
   const [err,       setErr]       = useAuthState(null);
@@ -362,7 +366,7 @@ const SignUpCard = ({ onSwitchMode, onSignedIn, onVerifySent }) => {
     const metadata = {
       first_name: firstName.trim(),
       last_name:  lastName.trim(),
-      gender,
+      gender: gender || null,   // '' (prefer not to say) → null
       role,
     };
 
@@ -458,12 +462,13 @@ const SignUpCard = ({ onSwitchMode, onSignedIn, onVerifySent }) => {
         </div>
 
         <div style={s.field}>
-          <span style={s.label}>{t('auth.signupCard.gender')}</span>
+          <span style={s.label}>{t('auth.signupCard.genderOptional')}</span>
           <TogglePill
-            ariaLabel={t('auth.signupCard.gender')}
+            ariaLabel={t('auth.signupCard.genderOptional')}
             value={gender}
             onChange={setGender}
             options={[
+              { value: '',       label: t('auth.signupCard.genderUnspecified') },
               { value: 'female', label: t('auth.signupCard.genderFemale') },
               { value: 'male',   label: t('auth.signupCard.genderMale') },
             ]}/>

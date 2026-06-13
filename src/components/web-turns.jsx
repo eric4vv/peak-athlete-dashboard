@@ -921,6 +921,16 @@ const TurnFullVelocityProfile = ({ primary, compare }) => {
             {v.toFixed(2)} m/s
           </text>
         ))}
+        {/* v03.71 — hover/tap value tooltip per zone. dataX is the
+            zone label (e.g. "5-0") since the x-axis is zone index. */}
+        {window.ChartHoverLayer && (
+          <window.ChartHoverLayer
+            pointsA={seriesA.map(p => ({ cx: xOf(p.x), cy: yOf(p.y), dataX: p.label, dataY: p.y }))}
+            pointsB={seriesB.map(p => ({ cx: xOf(p.x), cy: yOf(p.y), dataX: p.label, dataY: p.y }))}
+            colorA="var(--lime-eff)" colorB="var(--compare-eff)"
+            fmt={(v) => v.toFixed(2)} unit=" m/s" xUnit=" m"
+            geom={{ W, PAD_L, PAD_R, PAD_T }}/>
+        )}
       </svg>
       </window.ChartScroll>
 
@@ -1356,6 +1366,13 @@ const TurnApproachDepartCard = ({ primary, compare }) => {
 // ── TurnDetail — composition mirrors StartDetail ──────────────
 const TurnDetail = ({ primary, compare, diff, story, phases, items, phase, onChangePhase, trials, isPro, onUpgrade }) => (
   <React.Fragment>
+    {/* v03.72 — inline rename control for this turn trial */}
+    {primary && window.TrialNameEditor && (
+      <div style={{ marginBottom: 4 }}>
+        <window.TrialNameEditor kind="turn" trial={primary}
+          title={window.PA_TURNS.turnTitle(primary)}/>
+      </div>
+    )}
     {story && (
       <Headline
         eyebrow={story.eyebrow}

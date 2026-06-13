@@ -573,6 +573,13 @@ const WebStarts = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsP
 // stacks primary / compare / Δ in the same idiom Stroke Mechanics uses.
 const StartDetail = ({ primary, compare, diff, story, phases, items, phase, onChangePhase, trials, isPro, onUpgrade }) => (
   <React.Fragment>
+    {/* v03.72 — inline rename control for this start trial */}
+    {primary && window.TrialNameEditor && (
+      <div style={{ marginBottom: 4 }}>
+        <window.TrialNameEditor kind="start" trial={primary}
+          title={window.PA_STARTS.startTitle(primary)}/>
+      </div>
+    )}
     {/* Hero — free-standing, no card wrapper */}
     {story && (
       <Headline
@@ -1358,6 +1365,15 @@ const BlockVelocityChart = ({ primary, compare }) => {
                     fontFamily="var(--font-mono)" fontWeight="700">
                 PEAK {peakCmp.y.toFixed(2)}
               </text>
+            )}
+            {/* v03.71 — hover/tap value tooltip on each velocity station */}
+            {window.ChartHoverLayer && (
+              <window.ChartHoverLayer
+                pointsA={seriesA.map(p => ({ cx: xOf(p.x), cy: yOf(p.y), dataX: p.x, dataY: p.y }))}
+                pointsB={seriesB.map(p => ({ cx: xOf(p.x), cy: yOf(p.y), dataX: p.x, dataY: p.y }))}
+                colorA="var(--lime-eff)" colorB="var(--compare-eff)"
+                fmt={(v) => v.toFixed(2)} unit=" m/s" xUnit=" m"
+                geom={{ W, PAD_L, PAD_R, PAD_T }}/>
             )}
           </svg>
           </window.ChartScroll>

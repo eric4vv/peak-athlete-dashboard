@@ -115,9 +115,16 @@
   }
 
   // Compact human title: "100 Freestyle · LCM" (+ event if present)
+  // v03.72 — a user-set custom name (athlete/coach/admin rename)
+  // overrides the computed title entirely. Read from the merged
+  // `custom_name` column (v_trial_custom_names) first, then the raw
+  // metrics_json["Custom Name"] for surfaces that carry the blob
+  // (v_race_trials). Returned verbatim — React escapes it on render.
   function raceTitle(trial) {
     if (!trial) return '';
     const mj = trial.mj || trial.metrics_json || {};
+    const custom = trial.custom_name || mj['Custom Name'];
+    if (custom && String(custom).trim()) return String(custom).trim();
     const distance = trial.distance_m || mj.Distance || mj.distance;
     const style    = trial.style      || mj.Style    || mj.style;
     const course   = trial.course     || mj.Course   || mj.course;
@@ -272,7 +279,13 @@
         ? await recover(exec, { label: 'v_race_trials listRaceTrials' })
         : await exec();
       if (error) return { data: [], error };
-      return { data: dedupe(data || []), error: null };
+      let rows = dedupe(data || []);
+      // v03.72 — fold in user-set custom names (rename feature).
+      if (window.PA_TRIALS) {
+        const map = await window.PA_TRIALS.loadCustomNames();
+        rows = window.PA_TRIALS.applyCustomNames(rows, map);
+      }
+      return { data: rows, error: null };
     } catch (e) {
       return { data: [], error: e };
     }

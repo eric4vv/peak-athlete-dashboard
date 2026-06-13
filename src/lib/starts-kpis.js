@@ -40,7 +40,13 @@
         ? await recover(exec, { label: 'v_start_kpis listStartTrials' })
         : await exec();
       if (error) return { data: [], error };
-      return { data: enrich(data || []), error: null };
+      let rows = enrich(data || []);
+      // v03.72 — fold in user-set custom names (rename feature).
+      if (window.PA_TRIALS) {
+        const map = await window.PA_TRIALS.loadCustomNames();
+        rows = window.PA_TRIALS.applyCustomNames(rows, map);
+      }
+      return { data: rows, error: null };
     } catch (e) {
       return { data: [], error: e };
     }
@@ -74,6 +80,9 @@
   // "Start · 50 Freestyle" or just "Start" if style missing
   function startTitle(trial) {
     if (!trial) return '';
+    // v03.72 — user-set custom name overrides the computed title.
+    const custom = trial.custom_name || trial.mj?.['Custom Name'];
+    if (custom && String(custom).trim()) return String(custom).trim();
     const style = trial.style || trial.mj?.Style || trial.mj?.style;
     const dist  = trial.distance_m || trial.mj?.Distance;
     const parts = ['Start'];

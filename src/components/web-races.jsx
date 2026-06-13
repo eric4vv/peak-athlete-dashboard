@@ -2465,6 +2465,15 @@ const RaceVelocityChart = ({ primary, compare }) => {
             {v.toFixed(2)}
           </text>
         ))}
+        {/* v03.71 — hover/tap value tooltip on every segment point */}
+        {window.ChartHoverLayer && (
+          <window.ChartHoverLayer
+            pointsA={seriesA.map(p => ({ cx: xOf(p.x), cy: yOf(p.y), dataX: Math.round(p.x), dataY: p.y }))}
+            pointsB={seriesB.map(p => ({ cx: xOf(p.x), cy: yOf(p.y), dataX: Math.round(p.x), dataY: p.y }))}
+            colorA="var(--lime-eff)" colorB="var(--compare-eff)"
+            fmt={(v) => v.toFixed(2)} unit=" m/s" xUnit=" m"
+            geom={{ W, PAD_L, PAD_R, PAD_T }}/>
+        )}
       </svg>
       </window.ChartScroll>
       {/* Legend */}
@@ -4112,11 +4121,15 @@ const RaceDetail = ({ primary, compare, diff, summary, isPro, onUpgrade }) => {
   // v03.16 — course-aware toggle visibility. Lap distance tells
   // the course: ~25 m → short course (SCM/SCY), ~50 m → long
   // course (LCM). Show the Per 50 / Per 100 toggle for SC races
-  // above the 50, and LC races above the 200.
+  // above the 50, and LC races at the 200 and up.
+  // v03.74 — LC threshold was `> 200`, which excluded the 200 LC
+  // itself (4×50 m laps — per-50 vs per-100 is meaningful there).
+  // Changed to `> 100` so 200/400/800/1500 LC show the toggle while
+  // the 100 LC (2 laps, per-100 collapses to one bar) stays hidden.
   const lapDist  = laps.length ? (laps[0].endD - laps[0].startD) : 0;
   const raceDist = laps.length ? laps[laps.length - 1].endD : 0;
   const isShortCourse = lapDist > 0 && lapDist < 40;
-  const showToggle = isShortCourse ? raceDist > 50 : raceDist > 200;
+  const showToggle = isShortCourse ? raceDist > 50 : raceDist > 100;
   // v03.17 — short course (25 m laps) offers Per lap / Per 50 m /
   // Per 100 m; long course (50 m laps) offers Per 50 m / Per 100 m.
   const modeOptions = isShortCourse ? MODE_OPTIONS_SC : MODE_OPTIONS_LC;
@@ -4132,6 +4145,13 @@ const RaceDetail = ({ primary, compare, diff, summary, isPro, onUpgrade }) => {
 
   return (
     <>
+      {/* v03.72 — inline rename control for this race trial */}
+      {primary && window.TrialNameEditor && (
+        <div style={{ marginBottom: 4 }}>
+          <window.TrialNameEditor kind="race" trial={primary}
+            title={window.PA_KPIS.raceTitle(primary)}/>
+        </div>
+      )}
       {/* Hero — free-standing, no card wrapper */}
       {story && (
         <Headline

@@ -1032,6 +1032,19 @@ const SessionDetail = ({
           )}
           {/* Read-only chip when shared and viewer can't toggle. */}
           {!canCoachShareSession && sessionShared && <TeamSharedChip/>}
+          {/* v03.73 — Notify Athlete (super-admin only; self-gates).
+              Emails the athlete "your video analysis is ready" via the
+              notify-trial-complete edge function. Once-sent state shows
+              from session.notified_at. */}
+          {session && session.athlete_uuid && window.NotifyAthleteButton && (
+            <window.NotifyAthleteButton
+              trialKind="session"
+              trialUuid={session.session_uuid}
+              athleteUuid={session.athlete_uuid}
+              eventName={SA.sessionTitle(session)}
+              notifiedAt={session.notified_at}
+            />
+          )}
           <button type="button" onClick={onDeleteSession} disabled={deleting}
             title={t('sessions.detailDelete')}
             style={{

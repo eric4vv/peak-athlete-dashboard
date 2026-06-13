@@ -61,6 +61,83 @@ function initialsFrom(profile, role, fallbackEmail) {
   return (fallbackEmail || '?').slice(0, 2).toUpperCase();
 }
 
+// ── SupportLink (v03.75) ─────────────────────────────────────
+// Click-to-reveal support contact. Avoids a mailto: (which, inside
+// the GitHub-Pages iframe, makes the browser show an "open your mail
+// app?" prompt naming the eric4vv.github.io origin — off-brand).
+// Click toggles a small panel with the address + a Copy button.
+//
+// v03.75 — support@mypeakathlete.com is a live alias of
+// eric@mypeakathlete.com (created 2026-06-11), so mail to support@
+// lands in Eric's inbox. PA_SUPPORT_EMAIL override still wins if set.
+const SUPPORT_ADDR = (typeof window !== 'undefined' && window.PA_SUPPORT_EMAIL) || 'support@mypeakathlete.com';
+function SupportLink({ label }) {
+  const Hooks = (window.React || React);
+  const [open, setOpen]     = Hooks.useState(false);
+  const [copied, setCopied] = Hooks.useState(false);
+  const copy = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(SUPPORT_ADDR);
+      } else {
+        // Fallback for older / insecure-context browsers.
+        const ta = document.createElement('textarea');
+        ta.value = SUPPORT_ADDR; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch (_) {}
+        document.body.removeChild(ta);
+      }
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch (_) { /* clipboard blocked — user can still read + type the address */ }
+  };
+  return (
+    <div style={{ marginTop: 4 }}>
+      <button type="button" onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+          padding: '6px 4px', background: 'transparent', border: 'none',
+          font: '500 11px var(--font-ui)', color: 'var(--tx-lo)',
+          cursor: 'pointer', textAlign: 'left',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--tx-md)'}
+        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--tx-lo)'}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+        {label}
+      </button>
+      {open && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          margin: '2px 4px 0', padding: '7px 9px', borderRadius: 8,
+          background: 'var(--bg-3)', border: '1px solid var(--line)',
+        }}>
+          <span className="mono" style={{
+            flex: 1, minWidth: 0, fontSize: 11, color: 'var(--tx-hi)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {SUPPORT_ADDR}
+          </span>
+          <button type="button" onClick={copy}
+            style={{
+              flexShrink: 0, padding: '3px 8px', borderRadius: 6,
+              border: '1px solid var(--line)', cursor: 'pointer',
+              background: copied ? 'color-mix(in oklch, var(--lime-eff) 16%, var(--bg-2))' : 'var(--bg-2)',
+              color: copied ? 'var(--lime-eff)' : 'var(--tx-md)',
+              font: '600 10px var(--font-ui)', textTransform: 'uppercase', letterSpacing: 0.04,
+            }}>
+            {copied ? '✓ Copied' : 'Copy'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function displayNameFrom(profile, role, fallbackEmail) {
   if (role === 'coach')  return profile?.coach_name || fallbackEmail || 'Coach';
   if (role === 'athlete') {
@@ -319,29 +396,12 @@ const Sidebar = ({
         </div>
       </div>
 
-      {/* v01.48 — Support email link. Plain mailto for now;
-          obfuscation isn't worthwhile in an authenticated app
-          (only signed-in users see this). Renders just above
-          the version stamp so it's findable without competing
-          with primary nav. */}
-      <a
-        href={'mailto:' + (window.PA_SUPPORT_EMAIL || 'eric@mypeakathlete.com')}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          marginTop: 4, padding: '6px 4px',
-          font: '500 11px var(--font-ui)', color: 'var(--tx-lo)',
-          textDecoration: 'none',
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--tx-md)'}
-        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--tx-lo)'}>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" strokeWidth="2"
-          strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-          <polyline points="22,6 12,13 2,6"/>
-        </svg>
-        {t('sidebar.support')}
-      </a>
+      {/* v03.75 — Support contact. Was a plain mailto:, but inside the
+          GitHub-Pages iframe the OS "open your mail app?" prompt names
+          the iframe origin (eric4vv.github.io), which is off-brand.
+          Now a click-to-reveal: shows the address + a Copy button, no
+          mail-handler prompt, no origin exposure. */}
+      <SupportLink label={t('sidebar.support')}/>
 
       {/* Version stamp */}
       {version && (

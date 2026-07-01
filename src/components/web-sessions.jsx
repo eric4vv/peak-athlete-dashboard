@@ -903,6 +903,30 @@ const SessionDetail = ({
     setSessionShared(!!(session && session.coach_shared_to_squad));
   }, [session && session.coach_shared_to_squad]);
   const [sharing, setSharing] = useSessionsState(false);
+  // v03.79 — inline session rename (coach/super_admin, same gate as
+  // share/delete). titleOverride shows the new name instantly after a
+  // save without waiting for a parent refetch.
+  const [editingTitle, setEditingTitle]   = useSessionsState(false);
+  const [titleDraft, setTitleDraft]       = useSessionsState('');
+  const [savingTitle, setSavingTitle]     = useSessionsState(false);
+  const [titleErr, setTitleErr]           = useSessionsState(null);
+  const [titleOverride, setTitleOverride] = useSessionsState(null);
+  const beginRename = () => {
+    setTitleErr(null);
+    setTitleDraft((session && session.title) || '');
+    setEditingTitle(true);
+  };
+  const saveRename = async (clear) => {
+    if (!session) return;
+    setSavingTitle(true); setTitleErr(null);
+    const next = clear ? '' : titleDraft;
+    const { ok, error } = await SA.updateSessionTitle(session.session_uuid, next);
+    setSavingTitle(false);
+    if (!ok) { setTitleErr((error && error.message) || 'Could not rename'); return; }
+    // Optimistic display: clear -> fall back to auto date label.
+    setTitleOverride(clear ? '__CLEARED__' : (next.trim() || '__CLEARED__'));
+    setEditingTitle(false);
+  };
   // Compute team/admin context to gate visibility of the toggle.
   const [team, setTeam] = useSessionsState({ isCoach: false, teamUuids: [] });
   const [adminInfoSD, setAdminInfoSD] = useSessionsState({ isSuperAdmin: false });
@@ -1073,12 +1097,71 @@ const SessionDetail = ({
         <div className="eyebrow" style={{ color: 'var(--tx-lo)', marginBottom: 4 }}>
           {session ? (SA.sessionDate(session) || 'SESSION') : 'SESSION'}
         </div>
-        <div className="display" style={{
-          fontSize: isMobile ? 22 : 28, color: 'var(--tx-hi)',
-          letterSpacing: '-0.02em',
-        }}>
-          {session ? SA.sessionTitle(session) : 'Session'}
-        </div>
+        {/* v03.79 — inline session rename. Coaches/super-admins get a
+            pencil; everyone else sees the title as before. Optimistic
+            titleOverride reflects the new name immediately. */}
+        {editingTitle ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 460 }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input
+                type="text" value={titleDraft} maxLength={120} autoFocus disabled={savingTitle}
+                onChange={(e) => setTitleDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') saveRename(false); if (e.key === 'Escape') setEditingTitle(false); }}
+                placeholder={t('sessions.renamePlaceholder')}
+                style={{ flex: 1, minWidth: 200, padding: '8px 11px', borderRadius: 9,
+                         border: '1px solid var(--line)', background: 'var(--bg-3)',
+                         color: 'var(--tx-hi)', font: '600 16px var(--font-ui)', outline: 'none' }}/>
+              <button type="button" onClick={() => saveRename(false)} disabled={savingTitle}
+                style={{ padding: '8px 13px', borderRadius: 9, border: 'none',
+                         background: 'var(--signal-eff)', color: 'var(--ink)',
+                         font: '700 12px var(--font-ui)', cursor: 'pointer' }}>
+                {savingTitle ? '…' : t('sessions.renameSave')}
+              </button>
+              <button type="button" onClick={() => setEditingTitle(false)} disabled={savingTitle}
+                style={{ padding: '8px 11px', borderRadius: 9, border: '1px solid var(--line)',
+                         background: 'transparent', color: 'var(--tx-md)',
+                         font: '600 12px var(--font-ui)', cursor: 'pointer' }}>
+                {t('sessions.renameCancel')}
+              </button>
+              {session && session.title && (
+                <button type="button" onClick={() => saveRename(true)} disabled={savingTitle}
+                  title={t('sessions.renameClearHint')}
+                  style={{ padding: '8px 11px', borderRadius: 9, border: '1px solid var(--line)',
+                           background: 'transparent', color: 'var(--flag-eff)',
+                           font: '600 12px var(--font-ui)', cursor: 'pointer' }}>
+                  {t('sessions.renameClear')}
+                </button>
+              )}
+            </div>
+            {titleErr && <div style={{ font: '500 12px var(--font-ui)', color: 'var(--flag-eff)' }}>{titleErr}</div>}
+          </div>
+        ) : (
+          <div className="display" style={{
+            fontSize: isMobile ? 22 : 28, color: 'var(--tx-hi)',
+            letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <span>{
+              titleOverride === '__CLEARED__'
+                ? (SA.sessionDate(session) ? 'Session · ' + SA.sessionDate(session) : 'Session')
+                : (titleOverride || (session ? SA.sessionTitle(session) : 'Session'))
+            }</span>
+            {canCoachShareSession && (
+              <button type="button" onClick={beginRename}
+                title={t('sessions.renameTitle')} aria-label={t('sessions.renameTitle')}
+                style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center',
+                         justifyContent: 'center', width: 26, height: 26, padding: 0,
+                         borderRadius: 7, border: '1px solid var(--line)',
+                         background: 'transparent', color: 'var(--tx-md)', cursor: 'pointer' }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                     strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 20h9"/>
+                  <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
         {session && session.notes && (
           <p style={{
             font: '500 14px/1.5 var(--font-ui)', color: 'var(--tx-md)',
@@ -1439,6 +1522,48 @@ const ClipWorkspace = ({
   const [url, setUrl] = useSessionsState(null);
   const [err, setErr] = useSessionsState(null);
   const videoRef = React.useRef(null);
+
+  // v03.80 — custom fullscreen. The real Fullscreen API is BLOCKED
+  // inside the Wix iframe on mypeakathlete.com (the embed has no
+  // allow="fullscreen"), so the native <video> fullscreen button
+  // no-ops there while every other control works. We try the API
+  // first (works on the direct URL + iOS native video fullscreen)
+  // and fall back to a CSS "fill the frame" fullscreen that works
+  // regardless of iframe permissions.
+  const primaryBoxRef = React.useRef(null);
+  const [isPseudoFs, setIsPseudoFs] = useSessionsState(false);
+  // True when we're embedded (the Wix iframe on mypeakathlete.com).
+  const inIframe = (() => { try { return window.self !== window.top; } catch (_) { return true; } })();
+  const enterFullscreen = () => {
+    const v = videoRef.current;
+    const box = primaryBoxRef.current;
+    // iOS: native video fullscreen — no URL shown, works in iframes.
+    if (v && v.webkitEnterFullscreen && /iP(hone|od|ad)/.test(navigator.userAgent || '')) {
+      try { v.webkitEnterFullscreen(); return; } catch (_) {}
+    }
+    // Inside the iframe: use CSS pseudo-fullscreen ONLY. The real
+    // Fullscreen API is blocked there anyway, and — more importantly —
+    // we never want a browser "… is now full screen" toast that could
+    // surface the backend origin. Pseudo-fullscreen shows nothing.
+    if (inIframe) { setIsPseudoFs(true); return; }
+    // Top level (direct URL / native webview): real fullscreen is safe.
+    const el = box || v;
+    const req = el && (el.requestFullscreen || el.webkitRequestFullscreen);
+    if (req) {
+      try {
+        const p = req.call(el);
+        if (p && p.catch) p.catch(() => setIsPseudoFs(true));
+        return;
+      } catch (_) { /* fall through to pseudo */ }
+    }
+    setIsPseudoFs(true);
+  };
+  useSessionsEffect(() => {
+    if (!isPseudoFs) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') setIsPseudoFs(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isPseudoFs]);
 
   // Notes state
   // v03.36 — per-side notes. Primary always loads; compare loads
@@ -1863,7 +1988,7 @@ const ClipWorkspace = ({
           </span>
         </div>
       )}
-      <div style={{
+      <div ref={primaryBoxRef} style={{
         ...(compareOn ? videoBoxStyleCompare : {
           background: 'var(--ink)', borderRadius: 12, overflow: 'hidden',
           border: '1px solid var(--line-soft)',
@@ -1871,6 +1996,13 @@ const ClipWorkspace = ({
           minHeight: 200,
         }),
         position: 'relative',
+        // v03.80 — pseudo-fullscreen: fill the iframe viewport when the
+        // real Fullscreen API is blocked (Wix embed).
+        ...(isPseudoFs ? {
+          position: 'fixed', inset: 0, zIndex: 100000,
+          width: '100vw', height: '100vh', maxHeight: 'none',
+          borderRadius: 0, border: 'none', background: 'var(--ink)',
+        } : {}),
       }}>
         {phase === 'loading' && (
           <div style={{ color: 'var(--tx-md)', font: '500 13px var(--font-ui)', padding: 30 }}>
@@ -1894,11 +2026,14 @@ const ClipWorkspace = ({
               const v = videoRef.current;
               if (v) setPrimaryTime(v.currentTime);
             }}
-            style={compareOn ? videoElStyleCompare : {
+            style={compareOn ? videoElStyleCompare : (isPseudoFs ? {
+              width: '100%', height: '100%', objectFit: 'contain',
+              display: 'block', background: 'var(--ink)',
+            } : {
               width: '100%',
               maxHeight: isMobile ? '50vh' : '70vh',
               display: 'block', background: 'var(--ink)',
-            }}
+            })}
           />
         )}
         {/* Phase 4 — annotation layers for primary video */}
@@ -1912,6 +2047,36 @@ const ClipWorkspace = ({
             draftStrokes={draftStrokes}
             onAddStroke={(s) => setDraftStrokes(arr => [...arr, s])}
           />
+        )}
+        {/* v03.80 — custom fullscreen toggle. Sits top-right, clear of
+            the native controls (bottom). Enters real/native fullscreen
+            when allowed, else CSS fill-the-frame. Not shown in compare
+            mode (two videos share the row). */}
+        {phase === 'ready' && url && !compareOn && (
+          <button type="button"
+            onClick={() => (isPseudoFs ? setIsPseudoFs(false) : enterFullscreen())}
+            title={isPseudoFs ? t('sessions.exitFullscreen') : t('sessions.fullscreen')}
+            aria-label={isPseudoFs ? t('sessions.exitFullscreen') : t('sessions.fullscreen')}
+            style={{
+              position: 'absolute', top: 10, right: 10, zIndex: 100001,
+              width: 34, height: 34, borderRadius: 8, padding: 0,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              background: 'color-mix(in oklch, var(--ink) 55%, transparent)',
+              border: '1px solid color-mix(in oklch, #fff 20%, transparent)',
+              color: '#fff', cursor: 'pointer', backdropFilter: 'blur(4px)',
+            }}>
+            {isPseudoFs ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M9 3v3a2 2 0 0 1-2 2H4M20 8h-3a2 2 0 0 1-2-2V3M15 21v-3a2 2 0 0 1 2-2h3M4 16h3a2 2 0 0 1 2 2v3"/>
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M16 21h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+              </svg>
+            )}
+          </button>
         )}
       </div>
       {/* v03.42 — toolbar split into two rows so it never wraps

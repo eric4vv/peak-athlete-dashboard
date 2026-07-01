@@ -570,6 +570,26 @@
       return { ok: false, error: e };
     }
   }
+
+  // v03.79 — rename a session. Writes video_sessions.title; empty /
+  // whitespace clears it back to null so the display reverts to the
+  // auto "Session · <date>" label. Uses the SAME UPDATE RLS the share
+  // toggle relies on (coach-of-team OR super_admin), so no new policy
+  // is needed — RLS is row-level and already permits these writers.
+  // Capped at 120 chars to match a sane title length.
+  async function updateSessionTitle(sessionUuid, title) {
+    if (!sessionUuid) return { ok: false, error: { message: 'Missing sessionUuid.' } };
+    const clean = (title == null ? '' : String(title)).trim().slice(0, 120);
+    try {
+      const { error } = await client
+        .from('video_sessions')
+        .update({ title: clean || null })
+        .eq('session_uuid', sessionUuid);
+      return { ok: !error, error };
+    } catch (e) {
+      return { ok: false, error: e };
+    }
+  }
   // Deprecated — keep for back-compat with any cached UI; UI no
   // longer calls this from v03.49 forward.
   async function setCoachSharedToSquad(clipUuid, value) {
@@ -1164,6 +1184,8 @@
     listAllSessionsForLibrary,
     // Phase 6 / v03.49 — team library (session-level share)
     setSessionCoachSharedToSquad, setCoachSharedToSquad,
+    // v03.79 — rename a session (coach/super_admin)
+    updateSessionTitle,
     getMyTeamMembership,
     listAllClipsForLibraryV2,
     // Phase 7 (v03.44) — Save to Library

@@ -312,7 +312,8 @@ const TogglePill = ({ options, value, onChange, ariaLabel }) => (
 );
 
 // ── SignUpCard — v01.11 ──────────────────────────────────────
-// Six fields: email, password, first/last name, gender, role.
+// Six fields: email, password, first/last name, gender (required —
+// swimming is sex-segregated), role.
 // Per locked Q19 (2026-05-05): NO confirm-password (matches live).
 // Per locked Q1 (2026-05-05): NO team-code field — coaches join
 // or create a team post-login via the "no team yet" Coach Deck
@@ -341,10 +342,11 @@ const SignUpCard = ({ onSwitchMode, onSignedIn, onVerifySent }) => {
   const [password,  setPassword]  = useAuthState('');
   const [firstName, setFirstName] = useAuthState('');
   const [lastName,  setLastName]  = useAuthState('');
-  // v03.73 — gender is OPTIONAL (App Store guideline 5.1.1(v): apps
-  // must not require personal info that isn't core to function).
-  // Default '' = "Prefer not to say"; sent as null so the DB stores
-  // no gender. Still offered because benchmarks are gender-specific.
+  // v03.78 — gender RESTORED as a required field (mirrors mobile
+  // v02.31). Swimming is sex-segregated; gender determines which
+  // records/benchmarks an athlete is compared against and which
+  // leaderboard they rank on, so it is core functionality. Required,
+  // explicit choice (no default) for accurate data.
   const [gender,    setGender]    = useAuthState('');
   const [role,      setRole]      = useAuthState('athlete');
   const [busy,      setBusy]      = useAuthState(false);
@@ -355,7 +357,8 @@ const SignUpCard = ({ onSwitchMode, onSignedIn, onVerifySent }) => {
     email.trim().length > 3 &&
     password.length >= 6 &&
     firstName.trim().length > 0 &&
-    lastName.trim().length > 0;
+    lastName.trim().length > 0 &&
+    (gender === 'male' || gender === 'female');
 
   const submit = async (e) => {
     e.preventDefault();
@@ -366,7 +369,7 @@ const SignUpCard = ({ onSwitchMode, onSignedIn, onVerifySent }) => {
     const metadata = {
       first_name: firstName.trim(),
       last_name:  lastName.trim(),
-      gender: gender || null,   // '' (prefer not to say) → null
+      gender,
       role,
     };
 
@@ -461,14 +464,16 @@ const SignUpCard = ({ onSwitchMode, onSignedIn, onVerifySent }) => {
             ]}/>
         </div>
 
+        {/* v03.78 — gender RESTORED as a required field (swimming is
+            sex-segregated; core to records/benchmarks/leaderboards).
+            Required, explicit choice. */}
         <div style={s.field}>
-          <span style={s.label}>{t('auth.signupCard.genderOptional')}</span>
+          <span style={s.label}>{t('auth.signupCard.gender')}</span>
           <TogglePill
-            ariaLabel={t('auth.signupCard.genderOptional')}
+            ariaLabel={t('auth.signupCard.gender')}
             value={gender}
             onChange={setGender}
             options={[
-              { value: '',       label: t('auth.signupCard.genderUnspecified') },
               { value: 'female', label: t('auth.signupCard.genderFemale') },
               { value: 'male',   label: t('auth.signupCard.genderMale') },
             ]}/>

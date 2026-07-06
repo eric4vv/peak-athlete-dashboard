@@ -17,9 +17,16 @@
   const SUPABASE_URL = 'https://wbqgshvbopfukwyqsndq.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndicWdzaHZib3BmdWt3eXFzbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMDk4OTAsImV4cCI6MjA4NDU4NTg5MH0.lmbqvVTyfmlkgkUCo8dAGZuK7Z9tGXUA4Fq9FAsmvhU';
 
-  // Email redirect for magic-link / email confirmation flows.
-  // Not used for password sign-in, but set here for parity with live.
-  const AUTH_REDIRECT_URL = 'https://www.mypeakathlete.com/blank-3';
+  // Email redirect for magic-link / password-recovery flows.
+  // v03.81 — was 'https://www.mypeakathlete.com/blank-3' (the Wix
+  // wrapper). Password reset was BROKEN there: the recovery token
+  // lands in the parent page's URL hash, but the app runs in a
+  // cross-origin iframe and can't read it, so PASSWORD_RECOVERY never
+  // fired and the user just saw login. Now points at the app's own
+  // custom domain (GitHub Pages, HTTPS), so the reset link opens the
+  // app standalone → token reaches it → ResetCard shows. This URL must
+  // be in Supabase → Auth → URL Configuration → Redirect URLs.
+  const AUTH_REDIRECT_URL = 'https://app.mypeakathlete.com/';
 
   // Create client (uses window.supabase, exposed by the CDN UMD build)
   // v03.05 — storageKey namespaces our auth storage so any leftover

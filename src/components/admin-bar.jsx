@@ -168,7 +168,8 @@ const AdminBar = ({ activeAthleteUuid, activeAthleteName, onPick, onClear, super
           <select value={athlete} onChange={(e) => setAthlete(e.target.value)}
                   disabled={!athletes.length || loading}
                   style={Object.assign({}, selectStyle, {
-                    minWidth: 220,
+                    minWidth: 'min(220px, calc(100vw - 48px))',
+                    maxWidth: 'calc(100vw - 48px)',
                     opacity: athletes.length ? 1 : 0.55,
                   })}>
             <option value="">

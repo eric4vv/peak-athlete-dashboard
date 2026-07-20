@@ -292,8 +292,67 @@ const WebSessions = ({ session, authUserId, lang, adminAthleteUuid, isPro, onUpg
     return () => window.removeEventListener('pa:open-sessions-clip', handler);
   }, []);
 
+  // ── v03.82 — free-tier session history gate ────────────────
+  // Free athletes keep their FREE_SESSION_LIMIT most recent OWN
+  // sessions; older own sessions lock behind Pro (drives subs +
+  // covers video storage). Rules:
+  //   - applies only to rows the viewer OWNS (athlete_uuid = mine)
+  //   - Pro users, coaches, super-admins, and admin-impersonation
+  //     views are exempt
+  //   - teammate / coach-shared sessions are never locked (they are
+  //     not the viewer's own history)
+  //   - SA.listSessions returns newest-first, so "most recent 2" =
+  //     the first 2 OWN rows in list order
+  // Client-side gate only — RLS still (correctly) lets the athlete
+  // read their own rows; this is a product gate, not a security one.
+  const FREE_SESSION_LIMIT = 2;
+  const sessionGateExempt =
+    isProForFeatures || shellTeam.isCoach ||
+    shellAdmin.isSuperAdmin || !!adminAthleteUuid;
+  const lockedSessionUuids = (() => {
+    const locked = new Set();
+    if (sessionGateExempt || !shellTeam.athleteUuid) return locked;
+    let ownSeen = 0;
+    (listState.rows || []).forEach(r => {
+      if (!r || r.athlete_uuid !== shellTeam.athleteUuid) return;
+      ownSeen += 1;
+      if (ownSeen > FREE_SESSION_LIMIT) locked.add(r.session_uuid);
+    });
+    return locked;
+  })();
+
   // ── Detail view (when a session is open) ───────────────────
   if (openSessionUuid) {
+    // v03.82 — deep-link guard: a locked session never renders its
+    // detail; show the upgrade panel instead (with a way back).
+    if (lockedSessionUuids.has(openSessionUuid)) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16,
+                      alignItems: 'center', padding: '48px 24px', textAlign: 'center' }}>
+          <span className="eyebrow" style={{ color: 'var(--signal-eff)' }}>PRO</span>
+          <div className="display" style={{ fontSize: 22, color: 'var(--tx-hi)' }}>
+            {t('sessions.lockedTitle')}
+          </div>
+          <div style={{ font: '500 13px var(--font-ui)', color: 'var(--tx-md)', maxWidth: 420, lineHeight: 1.5 }}>
+            {t('sessions.lockedBody')}
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button type="button" onClick={() => onUpgrade?.()}
+              style={{ padding: '10px 18px', borderRadius: 10, border: 'none',
+                       background: 'var(--signal-eff)', color: 'var(--ink)',
+                       font: '700 13px var(--font-ui)', cursor: 'pointer' }}>
+              {t('sessions.lockedCta')}
+            </button>
+            <button type="button" onClick={() => setOpenSessionUuid(null)}
+              style={{ padding: '10px 16px', borderRadius: 10,
+                       border: '1px solid var(--line)', background: 'transparent',
+                       color: 'var(--tx-md)', font: '600 13px var(--font-ui)', cursor: 'pointer' }}>
+              {t('sessions.backToList')}
+            </button>
+          </div>
+        </div>
+      );
+    }
     return (
       <SessionDetail
         sessionUuid={openSessionUuid}
@@ -439,14 +498,20 @@ const WebSessions = ({ session, authUserId, lang, adminAthleteUuid, isPro, onUpg
         gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
         gap: 14,
       }}>
-        {rows.map(s => (
-          <SessionCard key={s.session_uuid}
-            session={s}
-            onOpen={() => setOpenSessionUuid(s.session_uuid)}
-            onDelete={() => onDeleteFromList(s)}
-            canShare={canShareSession(s)}
-            onToggleShare={() => onToggleSessionShareFromList(s)}/>
-        ))}
+        {rows.map(s => {
+          // v03.82 — locked (free-tier history gate): tap routes to
+          // the upgrade flow instead of opening the session.
+          const locked = lockedSessionUuids.has(s.session_uuid);
+          return (
+            <SessionCard key={s.session_uuid}
+              session={s}
+              locked={locked}
+              onOpen={() => locked ? onUpgrade?.() : setOpenSessionUuid(s.session_uuid)}
+              onDelete={() => onDeleteFromList(s)}
+              canShare={canShareSession(s)}
+              onToggleShare={() => onToggleSessionShareFromList(s)}/>
+          );
+        })}
       </div>
     </div>
   );
@@ -491,7 +556,7 @@ const ModeToggle = ({ mode, onChange }) => {
 // delete button without an invalid <button><button> structure.
 // v03.49 — added share-toggle (coach + super_admin only) and a
 // read-only chip indicating the session's team-share status.
-const SessionCard = ({ session, onOpen, onDelete, onToggleShare, canShare }) => {
+const SessionCard = ({ session, onOpen, onDelete, onToggleShare, canShare, locked }) => {
   const SA = window.PA_SESSIONS;
   const Icon = window.Icon;
   const t = (window.useT || (() => (k) => k))();
@@ -514,7 +579,31 @@ const SessionCard = ({ session, onOpen, onDelete, onToggleShare, canShare }) => 
         color: 'var(--tx-hi)', cursor: 'pointer',
         display: 'flex', flexDirection: 'column', gap: 8,
         font: '500 14px var(--font-ui)',
+        // v03.82 — locked (free-tier history gate): dim the card so
+        // the content is teasing-visible; tap opens the upgrade flow.
+        opacity: locked ? 0.55 : 1,
       }}>
+      {/* v03.82 — PRO lock badge, top-left, above the dimmed card */}
+      {locked && (
+        <span style={{
+          position: 'absolute', top: 10, left: 12,
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          padding: '2px 8px', borderRadius: 999,
+          background: 'color-mix(in oklch, var(--signal-eff) 16%, transparent)',
+          border: '1px solid color-mix(in oklch, var(--signal-eff) 45%, transparent)',
+          color: 'var(--signal-eff)',
+          font: '700 9px var(--font-ui)', letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+        }}>
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"
+               strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          {t('sessions.lockedBadge')}
+        </span>
+      )}
       {/* v03.46 — Delete × in the top-right corner. stopPropagation
           so the click doesn't bubble to the card's onOpen. */}
       {onDelete && (
@@ -2908,7 +2997,8 @@ const ClipToolbar = ({
           {showComparePicker && hasOtherClips && (
             <div style={{
               position: 'absolute', top: 'calc(100% + 6px)', right: 8,
-              minWidth: 220, maxWidth: 320,
+              minWidth: 'min(220px, calc(100vw - 24px))',
+              maxWidth: 'min(320px, calc(100vw - 24px))',
               background: 'var(--bg-2)', border: '1px solid var(--line-soft)',
               borderRadius: 10, boxShadow: '0 12px 28px rgba(0,0,0,0.35)',
               padding: 6, zIndex: 30,

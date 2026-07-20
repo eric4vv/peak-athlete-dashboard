@@ -616,7 +616,7 @@ const PreferencesPanel = ({ scope, onToggleScope }) => {
           sub={t('account.preferences.languageSub')}
           control={
             TogglePill
-              ? <div style={{ minWidth: 180 }}>
+              ? <div style={{ minWidth: 'min(180px, calc(100vw - 80px))' }}>
                   <TogglePill
                     ariaLabel={t('account.preferences.language')}
                     value={lang}

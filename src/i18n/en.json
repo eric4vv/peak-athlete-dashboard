@@ -373,12 +373,12 @@
       "trialEndsOn":       "Your trial ends on {date}. We'll move you to the paid Pro plan automatically.",
       "renewsOn":          "Renews on {date}.",
       "cancelsAtEnd":      "Your Pro access stays active until {date}, then drops to Free. You can reactivate anytime from the customer portal.",
-      "freePlanLine":      "You're on the Free plan. 1 race analysis per month. Upgrade to Pro for 3 analyses, video downloads, the Pulse AI coach, and competition leaderboards.",
+      "freePlanLine":      "You're on the Free plan. 1 race analysis per month. Upgrade to Pro for 3 analyses, video downloads, your full session history, and competition leaderboards.",
       "includedInPro":     "INCLUDED IN PRO",
       "whatProUnlocks":    "WHAT PRO UNLOCKS",
       "feature1":          "3 race analyses per month",
       "feature2":          "Video downloads (race / start / turn)",
-      "feature3":          "Pulse AI coach — 50 queries / month",
+      "feature3":          "Full video session history + tags",
       "feature4":          "Competition leaderboards opt-in",
       "feature5":          "Coach-team analytics + roster flags",
       "manageBilling":          "Manage billing",
@@ -559,7 +559,7 @@
   "deck": {
     "proBanner": {
       "headline": "Get 3 race analyses every month",
-      "subline":  "Plus Pulse AI coach · Video downloads · Full dashboard",
+      "subline":  "Plus full session history · Video downloads · Leaderboards",
       "cta":      "Upgrade to Pro"
     },
     "status": {
@@ -719,6 +719,10 @@
     "detailDelete":           "Delete session",
     "detailDeleting":         "Deleting…",
     "renameTitle":            "Rename session",
+    "lockedBadge":            "Pro",
+    "lockedTitle":            "This session is in your archive",
+    "lockedBody":             "Free accounts keep the 2 most recent sessions. Upgrade to Pro to unlock your full session history — every video, note, and annotation stays saved for you.",
+    "lockedCta":              "Upgrade to Pro",
     "renamePlaceholder":      "Session name",
     "renameSave":             "Save",
     "renameCancel":           "Cancel",

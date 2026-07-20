@@ -373,12 +373,12 @@
       "trialEndsOn":       "Tu prueba termina el {date}. Te pasaremos automáticamente al plan Pro de pago.",
       "renewsOn":          "Se renueva el {date}.",
       "cancelsAtEnd":      "Tu acceso Pro estará activo hasta el {date}, luego pasarás a Gratis. Puedes reactivar en cualquier momento desde el portal de cliente.",
-      "freePlanLine":      "Estás en el plan Gratis. 1 análisis de carrera por mes. Actualiza a Pro para 3 análisis, descarga de video, el coach Pulse AI y clasificaciones de competencia.",
+      "freePlanLine":      "Estás en el plan Gratis. 1 análisis de carrera por mes. Actualiza a Pro para 3 análisis, descarga de video, tu historial completo de sesiones y clasificaciones de competencia.",
       "includedInPro":     "INCLUIDO EN PRO",
       "whatProUnlocks":    "QUÉ DESBLOQUEA PRO",
       "feature1":          "3 análisis de carrera por mes",
       "feature2":          "Descarga de video (carrera / salida / vuelta)",
-      "feature3":          "Coach Pulse AI — 50 consultas / mes",
+      "feature3":          "Historial completo de sesiones de video + etiquetas",
       "feature4":          "Suscripción a clasificaciones de competencia",
       "feature5":          "Análisis del equipo + alertas de plantilla",
       "manageBilling":          "Gestionar facturación",
@@ -559,7 +559,7 @@
   "deck": {
     "proBanner": {
       "headline": "Obtén 3 análisis de carreras cada mes",
-      "subline":  "Más Pulse AI · Descargas de video · Acceso completo",
+      "subline":  "Más historial completo de sesiones · Descargas de video · Clasificaciones",
       "cta":      "Suscribirse a Pro"
     },
     "status": {
@@ -719,6 +719,10 @@
     "detailDelete":           "Eliminar sesión",
     "detailDeleting":         "Eliminando…",
     "renameTitle":            "Renombrar sesión",
+    "lockedBadge":            "Pro",
+    "lockedTitle":            "Esta sesión está en tu archivo",
+    "lockedBody":             "Las cuentas gratuitas mantienen las 2 sesiones más recientes. Actualiza a Pro para desbloquear tu historial completo — cada video, nota y anotación queda guardado para ti.",
+    "lockedCta":              "Actualizar a Pro",
     "renamePlaceholder":      "Nombre de la sesión",
     "renameSave":             "Guardar",
     "renameCancel":           "Cancelar",

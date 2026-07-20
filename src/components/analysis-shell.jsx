@@ -195,7 +195,8 @@ const HelpDot = ({ text, placement = 'top', size = 14 }) => {
           bottom: placement === 'top'    ? 'calc(100% + 8px)' : 'auto',
           top:    placement === 'bottom' ? 'calc(100% + 8px)' : 'auto',
           ...posStyle,
-          minWidth: 220, maxWidth: 280, zIndex: 30,
+          minWidth: 'min(220px, calc(100vw - 24px))',
+          maxWidth: 'min(280px, calc(100vw - 24px))', zIndex: 30,
           padding: '10px 12px', borderRadius: 10,
           // bg-3 contrasts against the page in both dark and light
           // scope; bg-1 (the page background) made the popover blend
@@ -336,7 +337,9 @@ const BenchmarkMenu = ({ onPick, disabled, showWR = false }) => {
       </button>
       {open && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 6px)', right: 0, minWidth: 200,
+          position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+          minWidth: 'min(200px, calc(100vw - 24px))',
+          maxWidth: 'calc(100vw - 24px)',
           background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 12,
           boxShadow: 'var(--shadow)', zIndex: 10, padding: 6,
         }}>
@@ -1559,10 +1562,10 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
                   width: ((l.t / max) * 100) + '%',
                   background: color, borderRadius: dense ? 4 : 6,
                   display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-                  padding: dense ? '0 6px' : '0 10px', minWidth: dense ? 48 : 64,
+                  padding: dense ? '0 6px' : '0 10px', minWidth: dense ? 58 : 74,
                 }}>
                   <span className="mono" style={{
-                    fontSize: timeFont, fontWeight: 700, color: 'var(--ink)', lineHeight: 1,
+                    fontSize: timeFont, fontWeight: 700, color: 'var(--ink)', lineHeight: 1, whiteSpace: 'nowrap',
                   }}>
                     {K.fmtTime(l.t, 2)}
                   </span>
@@ -1583,10 +1586,10 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
                     width: ((l.t / max) * 100) + '%',
                     background: color, borderRadius: 4,
                     display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-                    padding: dense ? '0 6px' : '0 8px', minWidth: dense ? 44 : 60,
+                    padding: dense ? '0 6px' : '0 8px', minWidth: dense ? 58 : 74,
                   }}>
                     <span className="mono" style={{
-                      fontSize: timeFont, fontWeight: 700, color: 'var(--ink)', lineHeight: 1,
+                      fontSize: timeFont, fontWeight: 700, color: 'var(--ink)', lineHeight: 1, whiteSpace: 'nowrap',
                     }}>
                       {K.fmtTime(l.t, 2)}
                     </span>
@@ -1602,10 +1605,10 @@ const LapBars = ({ primary, compare, compareLabel, mode }) => {
                     width: ((c.t / max) * 100) + '%',
                     background: 'var(--compare-eff)', borderRadius: 4,
                     display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-                    padding: dense ? '0 6px' : '0 8px', minWidth: dense ? 44 : 60,
+                    padding: dense ? '0 6px' : '0 8px', minWidth: dense ? 58 : 74,
                   }}>
                     <span className="mono" style={{
-                      fontSize: timeFont, fontWeight: 700, color: 'var(--ink)', lineHeight: 1,
+                      fontSize: timeFont, fontWeight: 700, color: 'var(--ink)', lineHeight: 1, whiteSpace: 'nowrap',
                     }}>
                       {K.fmtTime(c.t, 2)}
                     </span>
@@ -2177,6 +2180,13 @@ const AddTrialToSessionButton = ({
   const [state, setState] = Hooks.useState('loading'); // 'loading'|'absent'|'saved'|'saving'
   const [clipUuid, setClipUuid] = Hooks.useState(null);
   const [showPicker, setShowPicker] = Hooks.useState(false);
+  // v03.82 — on phones the picker is position:fixed and clamped to the
+  // viewport (left/right 12px). The old absolute right-anchored panel
+  // (minWidth 260) extended past the LEFT screen edge when the button
+  // sat left-of-center. pickerTop is captured from the button rect at
+  // open time. (Mirrored from mobile v02.35.)
+  const isMobilePicker = (window.useIsMobile || (() => false))();
+  const [pickerTop, setPickerTop] = Hooks.useState(0);
   const [sessions, setSessions] = Hooks.useState([]);
   const [sessionsLoading, setSessionsLoading] = Hooks.useState(false);
   const [creating, setCreating] = Hooks.useState(false); // inline "new session" form mode
@@ -2239,7 +2249,7 @@ const AddTrialToSessionButton = ({
     setState('saved');
   };
 
-  const onClickPill = () => {
+  const onClickPill = (e) => {
     if (state === 'saving' || state === 'loading') return;
     if (state === 'saved' && clipUuid) {
       try {
@@ -2248,6 +2258,10 @@ const AddTrialToSessionButton = ({
       } catch (_) {}
       return;
     }
+    try {
+      const r = e?.currentTarget?.getBoundingClientRect?.();
+      if (r) setPickerTop(Math.round(r.bottom + 6));
+    } catch (_) {}
     setShowPicker(s => !s);
   };
 
@@ -2312,11 +2326,14 @@ const AddTrialToSessionButton = ({
 
       {showPicker && !saved && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 6px)', right: 0,
-          minWidth: 260, maxWidth: 340,
+          ...(isMobilePicker
+            ? { position: 'fixed', left: 12, right: 12, top: pickerTop || 80,
+                maxHeight: '55vh', overflowY: 'auto' }
+            : { position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                minWidth: 260, maxWidth: 340 }),
           background: 'var(--bg-2)', border: '1px solid var(--line-soft)',
           borderRadius: 10, boxShadow: '0 12px 28px rgba(0,0,0,0.35)',
-          padding: 6, zIndex: 30,
+          padding: 6, zIndex: 1300,
           display: 'flex', flexDirection: 'column', gap: 4,
         }}>
           <div className="eyebrow" style={{
@@ -3463,6 +3480,14 @@ const StrokeRateChart = ({ primary, compare }) => {
   const seriesA = a.map(p => ({ x: p.distance, y: p.rate }));
   const seriesB = b.map(p => ({ x: p.distance, y: p.rate }));
   const xMax = Math.max(...all.map(s => s.distance));
+  // v03.82 — start the x-axis just before the FIRST sample instead of
+  // hardcoding 0. Stroke rates only exist after the breakout — on a
+  // 50 there are no strokes for the first ~25-35 m, so a 0-based axis
+  // squeezed the whole line into the right fraction of the chart.
+  // Rounded down to the nearest 5 m with one 5 m pad; long races are
+  // effectively unchanged.
+  const xDataMin = Math.min(...all.map(s => s.distance));
+  const xMin = Math.max(0, Math.floor(xDataMin / 5) * 5 - 5);
   const rawMax = Math.max(...all.map(s => s.rate));
   const rawMin = Math.min(...all.map(s => s.rate));
   // Add 10% headroom so tops aren't clipped flat against axis
@@ -3470,7 +3495,7 @@ const StrokeRateChart = ({ primary, compare }) => {
   return (
     <ChartFrame legend={<Legend compareLabel={compare ? 'Compare' : null} {...RACE_CHART_COLORS}/>}>
       <LineOverlay seriesA={seriesA} seriesB={seriesB}
-                   xMin={0} xMax={xMax}
+                   xMin={xMin} xMax={xMax}
                    yMin={Math.max(0, rawMin - pad)} yMax={rawMax + pad}
                    yUnit="" yFormat={(v) => v.toFixed(0)}
                    tooltipUnit=" spm"

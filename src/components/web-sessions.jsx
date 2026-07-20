@@ -309,12 +309,17 @@ const WebSessions = ({ session, authUserId, lang, adminAthleteUuid, isPro, onUpg
   const sessionGateExempt =
     isProForFeatures || shellTeam.isCoach ||
     shellAdmin.isSuperAdmin || !!adminAthleteUuid;
+  // v03.83 — ownership resolves via athleteUuidAny (membership-status
+  // independent). The original athleteUuid is null for athletes whose
+  // team membership is inactive/pending, which silently disabled the
+  // gate for them (found via Marc/A0074, membership 'inactive').
+  const myAthleteUuid = shellTeam.athleteUuidAny || shellTeam.athleteUuid;
   const lockedSessionUuids = (() => {
     const locked = new Set();
-    if (sessionGateExempt || !shellTeam.athleteUuid) return locked;
+    if (sessionGateExempt || !myAthleteUuid) return locked;
     let ownSeen = 0;
     (listState.rows || []).forEach(r => {
-      if (!r || r.athlete_uuid !== shellTeam.athleteUuid) return;
+      if (!r || r.athlete_uuid !== myAthleteUuid) return;
       ownSeen += 1;
       if (ownSeen > FREE_SESSION_LIMIT) locked.add(r.session_uuid);
     });

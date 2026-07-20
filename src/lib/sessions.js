@@ -613,7 +613,12 @@
   let __teamMembershipCache = null;
   async function getMyTeamMembership() {
     if (__teamMembershipCache) return __teamMembershipCache;
-    const out = { isAthlete: false, isCoach: false, athleteUuid: null, teamUuids: [] };
+    // v03.83 — athleteUuidAny: the viewer's own athlete_uuid REGARDLESS
+    // of team membership_status. The original athleteUuid stays scoped
+    // to ACTIVE membership (existing consumers depend on that meaning).
+    // Needed by the free-tier session gate: an athlete owns their
+    // sessions even when their team membership is inactive/pending.
+    const out = { isAthlete: false, isCoach: false, athleteUuid: null, athleteUuidAny: null, teamUuids: [] };
     try {
       const { data: { session } } = await client.auth.getSession();
       const me = session && session.user && session.user.id;
@@ -621,15 +626,18 @@
       const [aRes, cRes] = await Promise.all([
         client.from('athletes')
           .select('athlete_uuid, team_uuid, membership_status')
-          .eq('auth_user_id', me)
-          .eq('membership_status', 'active'),
+          .eq('auth_user_id', me),
         client.from('coaches')
           .select('team_uuid, membership_status')
           .eq('auth_user_id', me)
           .eq('membership_status', 'active'),
       ]);
-      const aRows = aRes.data || [];
+      const allARows = aRes.data || [];
+      const aRows = allARows.filter(r => r.membership_status === 'active');
       const cRows = cRes.data || [];
+      if (allARows.length) {
+        out.athleteUuidAny = allARows[0].athlete_uuid;
+      }
       if (aRows.length) {
         out.isAthlete   = true;
         out.athleteUuid = aRows[0].athlete_uuid;

@@ -911,6 +911,140 @@ const CreateSessionModal = ({ onClose, onCreated, adminAthleteUuid }) => {
 // in-dashboard surface: clip list on the left, the player +
 // notes workspace on the right. No modals — coaches stay on
 // one page while flipping between clips.
+// ── CoachDebriefCard (v03.84) ────────────────────────────────
+// Structured post-session summary: Goal / Focus area / Next steps.
+// Replaces the follow-up meeting — the athlete reads it first thing
+// on the session detail, and the notify email includes it.
+// Visibility: renders read-only for athletes ONLY when at least one
+// field is filled (never an empty box); coaches/super-admins always
+// see it, with a pencil → 3 inputs → Save. Writes ride the SAME
+// video_sessions UPDATE RLS as rename/share — no new policies.
+const CoachDebriefCard = ({ session, canEdit }) => {
+  const t = (window.useT || (() => (k) => k))();
+  const SA = window.PA_SESSIONS;
+  const [editing, setEditing] = useSessionsState(false);
+  const [draft, setDraft]     = useSessionsState({ goal: '', focus: '', nextSteps: '' });
+  const [saving, setSaving]   = useSessionsState(false);
+  const [err, setErr]         = useSessionsState(null);
+  // Optimistic display override after save (list refetch not needed).
+  const [override, setOverride] = useSessionsState(null);
+
+  if (!session) return null;
+  const cur = override || {
+    goal:      session.coach_goal || '',
+    focus:     session.coach_focus || '',
+    nextSteps: session.coach_next_steps || '',
+  };
+  const hasContent = !!(cur.goal || cur.focus || cur.nextSteps);
+  if (!hasContent && !canEdit) return null;
+
+  const begin = () => {
+    setDraft({ goal: cur.goal, focus: cur.focus, nextSteps: cur.nextSteps });
+    setErr(null);
+    setEditing(true);
+  };
+  const save = async () => {
+    setSaving(true); setErr(null);
+    const { ok, error } = await SA.updateSessionDebrief(session.session_uuid, draft);
+    setSaving(false);
+    if (!ok) { setErr((error && error.message) || 'Could not save'); return; }
+    setOverride({
+      goal:      (draft.goal || '').trim(),
+      focus:     (draft.focus || '').trim(),
+      nextSteps: (draft.nextSteps || '').trim(),
+    });
+    setEditing(false);
+  };
+
+  const ROWS = [
+    { key: 'goal',      label: t('sessions.debriefGoal') },
+    { key: 'focus',     label: t('sessions.debriefFocus') },
+    { key: 'nextSteps', label: t('sessions.debriefNextSteps') },
+  ];
+  const inputStyle = {
+    width: '100%', padding: '7px 10px', borderRadius: 8,
+    border: '1px solid var(--line)', background: 'var(--bg-3)',
+    color: 'var(--tx-hi)', font: '500 13px var(--font-ui)', outline: 'none',
+    boxSizing: 'border-box',
+  };
+
+  return (
+    <div className="card card-pad" style={{ padding: '16px 20px', marginBottom: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <div className="eyebrow" style={{ color: 'var(--tx-lo)' }}>
+          {t('sessions.debriefTitle')}
+        </div>
+        {canEdit && !editing && (
+          <button type="button" onClick={begin}
+            title={t('sessions.debriefEdit')} aria-label={t('sessions.debriefEdit')}
+            style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center',
+                     justifyContent: 'center', width: 22, height: 22, padding: 0,
+                     borderRadius: 6, border: '1px solid var(--line)',
+                     background: 'transparent', color: 'var(--tx-md)', cursor: 'pointer' }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                 strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+            </svg>
+          </button>
+        )}
+      </div>
+      {editing ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 640 }}>
+          {ROWS.map(r => (
+            <div key={r.key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label style={{ font: '600 11px var(--font-ui)', textTransform: 'uppercase',
+                              letterSpacing: '0.07em', color: 'var(--tx-lo)' }}>
+                {r.label}
+              </label>
+              <input type="text" value={draft[r.key]} maxLength={500} disabled={saving}
+                onChange={(e) => setDraft(Object.assign({}, draft, { [r.key]: e.target.value }))}
+                onKeyDown={(e) => { if (e.key === 'Escape') setEditing(false); }}
+                placeholder={t('sessions.debriefPlaceholder')}
+                style={inputStyle}/>
+            </div>
+          ))}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" onClick={save} disabled={saving}
+              style={{ padding: '7px 14px', borderRadius: 8, border: 'none',
+                       background: 'var(--signal-eff)', color: 'var(--ink)',
+                       font: '700 12px var(--font-ui)', cursor: 'pointer' }}>
+              {saving ? '…' : t('sessions.debriefSave')}
+            </button>
+            <button type="button" onClick={() => setEditing(false)} disabled={saving}
+              style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid var(--line)',
+                       background: 'transparent', color: 'var(--tx-md)',
+                       font: '600 12px var(--font-ui)', cursor: 'pointer' }}>
+              {t('sessions.debriefCancel')}
+            </button>
+          </div>
+          {err && <div style={{ font: '500 12px var(--font-ui)', color: 'var(--flag-eff)' }}>{err}</div>}
+        </div>
+      ) : hasContent ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {ROWS.filter(r => cur[r.key]).map(r => (
+            <div key={r.key} style={{ display: 'flex', gap: 12, alignItems: 'baseline' }}>
+              <span style={{ font: '600 11px var(--font-ui)', textTransform: 'uppercase',
+                             letterSpacing: '0.07em', color: 'var(--signal-eff)',
+                             flexShrink: 0, width: 92 }}>
+                {r.label}
+              </span>
+              <span style={{ font: '500 14px/1.45 var(--font-ui)', color: 'var(--tx-hi)' }}>
+                {cur[r.key]}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ font: '500 13px var(--font-ui)', color: 'var(--tx-lo)' }}>
+          {t('sessions.debriefEmptyHint')}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const SessionDetail = ({
   sessionUuid, sessions, onBack, isMobile, t,
   isPro, onUpgrade,
@@ -1161,6 +1295,11 @@ const SessionDetail = ({
               athleteUuid={session.athlete_uuid}
               eventName={SA.sessionTitle(session)}
               notifiedAt={session.notified_at}
+              preWarn={
+                (session.coach_goal || session.coach_focus || session.coach_next_steps)
+                  ? undefined
+                  : t('sessions.notifyNoDebriefWarn')
+              }
             />
           )}
           <button type="button" onClick={onDeleteSession} disabled={deleting}
@@ -1265,6 +1404,10 @@ const SessionDetail = ({
           </p>
         )}
       </div>
+
+      {/* v03.84 — Coach's Debrief: Goal / Focus area / Next steps.
+          First thing the athlete reads; coaches/super-admins edit. */}
+      <CoachDebriefCard session={session} canEdit={canCoachShareSession}/>
 
       {/* Body */}
       {clipState.loading ? (
@@ -1695,6 +1838,10 @@ const ClipWorkspace = ({
   const [annotsP, setAnnotsP] = useSessionsState([]);
   const [annotsC, setAnnotsC] = useSessionsState([]);
   const [drawTarget, setDrawTarget] = useSessionsState(null); // 'primary' | 'compare' | null
+  // v03.84 — annotation overlay visibility. Default on; hiding lets
+  // athletes watch clean video. Drawing mode always forces the canvas
+  // visible on the video being annotated (never draw blind).
+  const [showAnnotations, setShowAnnotations] = useSessionsState(true);
   const [tool, setTool]           = useSessionsState('pen');
   const [strokeColor, setStrokeColor] = useSessionsState(ANNOTATE_COLORS[0].value);
   const [draftStrokes, setDraftStrokes] = useSessionsState([]); // current drawing
@@ -2130,8 +2277,10 @@ const ClipWorkspace = ({
             })}
           />
         )}
-        {/* Phase 4 — annotation layers for primary video */}
-        {phase === 'ready' && (
+        {/* Phase 4 — annotation layers for primary video.
+            v03.84 — hidden when showAnnotations is off, EXCEPT while
+            actively drawing on this video (never draw blind). */}
+        {phase === 'ready' && (showAnnotations || drawTarget === 'primary') && (
           <AnnotationCanvas
             annotations={annotsP}
             currentTime={primaryTime}
@@ -2198,6 +2347,8 @@ const ClipWorkspace = ({
         disabled={phase !== 'ready'}
         annotateMode={drawTarget === 'primary'}
         onAnnotate={() => (drawTarget === 'primary' ? cancelDraw() : enterDrawMode('primary'))}
+        onToggleAnnotations={() => setShowAnnotations(v => !v)}
+        annotationsVisible={showAnnotations}
         onTags={() => openTagPicker('primary')}
         tagsLocked={!isPro}
         tagCount={(tagsP || []).length}
@@ -2276,7 +2427,7 @@ const ClipWorkspace = ({
             style={videoElStyleCompare}
           />
         )}
-        {comparePhase === 'ready' && (
+        {comparePhase === 'ready' && (showAnnotations || drawTarget === 'compare') && (
           <AnnotationCanvas
             annotations={annotsC}
             currentTime={compareTime}
@@ -2550,9 +2701,12 @@ const ClipWorkspace = ({
       display: 'flex', flexDirection: 'column', gap: 18, minWidth: 0,
     }}>
       {annotateBar}
+      {/* v03.84 — notes moved BELOW the player (was a side column at
+          minmax(280px,1fr), which capped the video at ~62% width).
+          Video now spans the full workspace width. */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1.6fr) minmax(280px, 1fr)',
+        gridTemplateColumns: '1fr',
         gap: 18,
         alignItems: 'start',
         minWidth: 0,
@@ -2833,6 +2987,7 @@ const ClipToolbar = ({
   onOpenComparePicker, onPickCompare,
   otherClips,
   annotateMode, onAnnotate, // Phase 4 — toggle draw mode
+  onToggleAnnotations, annotationsVisible, // v03.84 — overlay show/hide
   onTags, tagsLocked, tagCount, // Phase 5 — open tag picker
   canShare, shareOn, onShare, // Phase 6 — coach team-share toggle
   variant, // v03.42 — 'playback' | 'actions' | undefined (= all)
@@ -2972,6 +3127,24 @@ const ClipToolbar = ({
             {annotateMode ? '✏ ' + t('sessions.drawing') : t('sessions.annotate')}
           </button>
         </>
+      )}
+      {/* v03.84 — show/hide annotation overlay. Renders only when the
+          workspace passes the handler (backward-compatible). */}
+      {variant !== 'playback' && onToggleAnnotations && (
+        <button type="button" onClick={onToggleAnnotations} disabled={disabled}
+          title={annotationsVisible ? t('sessions.annotHide') : t('sessions.annotShow')}
+          aria-label={annotationsVisible ? t('sessions.annotHide') : t('sessions.annotShow')}
+          style={annotationsVisible ? pillBase : pillActive}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+            strokeLinejoin="round" aria-hidden="true"
+            style={{ verticalAlign: '-1px', marginRight: 4 }}>
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/>
+            <circle cx="12" cy="12" r="3"/>
+            {!annotationsVisible && <line x1="2" y1="2" x2="22" y2="22"/>}
+          </svg>
+          {annotationsVisible ? t('sessions.annotOn') : t('sessions.annotOff')}
+        </button>
       )}
       {variant !== 'playback' && canShare && (
         <>

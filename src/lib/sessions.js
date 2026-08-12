@@ -35,7 +35,8 @@
           .from('video_sessions')
           .select('session_uuid, athlete_uuid, team_uuid, source, ' +
                   'session_date, title, notes, coach_shared_to_squad, ' +
-                  'athlete_shared_to_pool, created_at, notified_at');
+                  'athlete_shared_to_pool, created_at, notified_at, ' +
+                  'coach_goal, coach_focus, coach_next_steps');
         if (athleteUuid) q = q.eq('athlete_uuid', athleteUuid);
         return q
           .order('session_date', { ascending: false })
@@ -564,6 +565,32 @@
       const { error } = await client
         .from('video_sessions')
         .update({ coach_shared_to_squad: !!value })
+        .eq('session_uuid', sessionUuid);
+      return { ok: !error, error };
+    } catch (e) {
+      return { ok: false, error: e };
+    }
+  }
+
+  // v03.84 — Coach's Debrief (Goal / Focus area / Next steps).
+  // Same UPDATE RLS surface as the share toggle + rename (coach-of-
+  // team OR super_admin) — no new policy. Empty strings clear to
+  // null. Fields are additive nullable columns on video_sessions
+  // (coach_goal, coach_focus, coach_next_steps).
+  async function updateSessionDebrief(sessionUuid, fields) {
+    if (!sessionUuid) return { ok: false, error: { message: 'Missing sessionUuid.' } };
+    const clean = (v) => {
+      const s = (v == null ? '' : String(v)).trim().slice(0, 500);
+      return s || null;
+    };
+    try {
+      const { error } = await client
+        .from('video_sessions')
+        .update({
+          coach_goal:       clean(fields && fields.goal),
+          coach_focus:      clean(fields && fields.focus),
+          coach_next_steps: clean(fields && fields.nextSteps),
+        })
         .eq('session_uuid', sessionUuid);
       return { ok: !error, error };
     } catch (e) {
@@ -1194,6 +1221,8 @@
     setSessionCoachSharedToSquad, setCoachSharedToSquad,
     // v03.79 — rename a session (coach/super_admin)
     updateSessionTitle,
+    // v03.84 — Coach's Debrief (coach/super_admin)
+    updateSessionDebrief,
     getMyTeamMembership,
     listAllClipsForLibraryV2,
     // Phase 7 (v03.44) — Save to Library

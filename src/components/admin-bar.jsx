@@ -40,6 +40,12 @@ const AdminBar = ({ activeAthleteUuid, activeAthleteName, onPick, onClear, super
   const [athlete,  setAthlete]  = useAdminState('');
   const [loading,  setLoading]  = useAdminState(false);
   const [err,      setErr]      = useAdminState(null);
+  // v03.84 — type-to-filter for the athlete dropdown. The full list
+  // got long enough that finding teamless athletes by scrolling was
+  // painful. Filters by display name OR athlete code, case-
+  // insensitive substring; when the filter leaves exactly one match,
+  // it is auto-selected so "type + View" is a two-step flow.
+  const [search,   setSearch]   = useAdminState('');
 
   // Initial team list load — super-admin only. Non-super-admins
   // (coaches in pill-only mode) skip the network call entirely.
@@ -62,6 +68,7 @@ const AdminBar = ({ activeAthleteUuid, activeAthleteName, onPick, onClear, super
     let cancelled = false;
     setLoading(true);
     setAthlete('');
+    setSearch('');   // v03.84 — new team scope = fresh filter
     const teamArg =
       team === TEAM_ALL  ? undefined
     : team === TEAM_NONE ? null
@@ -165,6 +172,24 @@ const AdminBar = ({ activeAthleteUuid, activeAthleteName, onPick, onClear, super
             ))}
           </select>
 
+          {/* v03.84 — type-to-filter (name or athlete code) */}
+          <input
+            type="text" value={search}
+            onChange={(e) => {
+              const q = e.target.value;
+              setSearch(q);
+              const needle = q.trim().toLowerCase();
+              if (!needle) return;
+              const matches = athletes.filter(a =>
+                (window.PA_ADMIN.athleteName(a) || '').toLowerCase().includes(needle) ||
+                String(a.athlete_code || '').toLowerCase().includes(needle));
+              if (matches.length === 1) setAthlete(matches[0].athlete_uuid);
+            }}
+            placeholder="Search name / code…"
+            disabled={loading}
+            style={Object.assign({}, selectStyle, {
+              minWidth: 140, cursor: 'text', appearance: 'auto',
+            })}/>
           <select value={athlete} onChange={(e) => setAthlete(e.target.value)}
                   disabled={!athletes.length || loading}
                   style={Object.assign({}, selectStyle, {
@@ -172,16 +197,27 @@ const AdminBar = ({ activeAthleteUuid, activeAthleteName, onPick, onClear, super
                     maxWidth: 'calc(100vw - 48px)',
                     opacity: athletes.length ? 1 : 0.55,
                   })}>
-            <option value="">
-              {loading ? 'Loading athletes…'
-               : athletes.length ? 'Select an athlete…'
-               : 'No athletes in this filter'}
-            </option>
-            {athletes.map(a => (
-              <option key={a.athlete_uuid} value={a.athlete_uuid}>
-                {window.PA_ADMIN.athleteName(a)}
-              </option>
-            ))}
+            {(() => {
+              const needle = search.trim().toLowerCase();
+              const shown = !needle ? athletes : athletes.filter(a =>
+                (window.PA_ADMIN.athleteName(a) || '').toLowerCase().includes(needle) ||
+                String(a.athlete_code || '').toLowerCase().includes(needle));
+              return (
+                <>
+                  <option value="">
+                    {loading ? 'Loading athletes…'
+                     : !athletes.length ? 'No athletes in this filter'
+                     : !shown.length ? 'No match — clear search'
+                     : 'Select an athlete…'}
+                  </option>
+                  {shown.map(a => (
+                    <option key={a.athlete_uuid} value={a.athlete_uuid}>
+                      {window.PA_ADMIN.athleteName(a)}
+                    </option>
+                  ))}
+                </>
+              );
+            })()}
           </select>
 
           <button onClick={onView} disabled={!athlete}

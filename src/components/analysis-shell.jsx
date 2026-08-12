@@ -2040,6 +2040,10 @@ const RaceCompareBars = ({ primary, compare, mode }) => {
 const NotifyAthleteButton = ({
   trialKind, trialUuid, athleteUuid, eventName,
   notifiedAt: initialNotifiedAt,
+  // v03.84 — optional extra warning line prepended to the confirm
+  // dialog (e.g. "No debrief yet — send anyway?"). Undefined for
+  // starts/turns; only Sessions passes it.
+  preWarn,
 }) => {
   const Hooks  = (window.React || React);
   const t      = (window.useT  || (() => (k) => k))();
@@ -2073,9 +2077,10 @@ const NotifyAthleteButton = ({
 
   const onClick = async () => {
     if (sending) return;
-    const msg = alreadyNotified
+    let msg = alreadyNotified
       ? t('analysis.notify.confirmResend')
       : t('analysis.notify.confirmSend');
+    if (preWarn) msg = preWarn + '\n\n' + msg;
     const proceed = window.PA_CONFIRM
       ? await window.PA_CONFIRM.ask({ message: msg, confirmLabel: t('analysis.notify.confirmLabel') })
       : window.confirm(msg);

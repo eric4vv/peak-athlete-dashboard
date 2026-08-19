@@ -86,7 +86,7 @@ const StartsTeamSummary = ({ rows }) => {
 // the per-athlete WebStarts builds (story / phases / items /
 // applyDeltas) so StartDetail gets the full prop bundle it
 // expects, even with primary + compare from different athletes.
-const StartsCompareDetail = ({ primary, compare }) => {
+const StartsCompareDetail = ({ primary, compare, isPro, onUpgrade }) => {
   const [phase, setPhase] = useStartsState('Block');
   if (!primary || !compare) return null;
   const PA_S  = window.PA_STARTS;
@@ -103,7 +103,8 @@ const StartsCompareDetail = ({ primary, compare }) => {
     primary={primary} compare={compare} diff={diff}
     story={story} phases={phases} items={items}
     phase={phase} onChangePhase={setPhase}
-    trials={[primary, compare]}/>;
+    trials={[primary, compare]}
+    isPro={isPro} onUpgrade={onUpgrade}/>;
 };
 
 const formatStartTrial = (r) => {
@@ -573,11 +574,19 @@ const WebStarts = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsP
 // stacks primary / compare / Δ in the same idiom Stroke Mechanics uses.
 const StartDetail = ({ primary, compare, diff, story, phases, items, phase, onChangePhase, trials, isPro, onUpgrade }) => (
   <React.Fragment>
-    {/* v03.72 — inline rename control for this start trial */}
+    {/* v03.72 — inline rename control for this start trial.
+        v03.86 — "Ask the team" (Pro) sits opposite it. */}
     {primary && window.TrialNameEditor && (
-      <div style={{ marginBottom: 4 }}>
+      <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center',
+                    justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <window.TrialNameEditor kind="start" trial={primary}
           title={window.PA_STARTS.startTitle(primary)}/>
+        {window.AskTeamButton && (
+          <window.AskTeamButton
+            isPro={isPro} onUpgrade={onUpgrade}
+            contextKind="start"
+            contextLabel={window.PA_STARTS.startTitle(primary) + ' · ' + (window.PA_STARTS.startDate(primary) || '')}/>
+        )}
       </div>
     )}
     {/* Hero — free-standing, no card wrapper */}

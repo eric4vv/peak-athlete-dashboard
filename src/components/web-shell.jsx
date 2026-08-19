@@ -401,6 +401,13 @@ const Sidebar = ({
           the iframe origin (eric4vv.github.io), which is off-brand.
           Now a click-to-reveal: shows the address + a Copy button, no
           mail-handler prompt, no origin exposure. */}
+      {/* v03.86 — Ask the team: Pro perk visible on every page.
+          Free users get the PRO tag → upgrade via the account modal. */}
+      {window.AskTeamButton && (
+        <window.AskTeamButton variant="sidebar"
+          isPro={isPro} onUpgrade={onOpenAccount}
+          contextKind="general" contextLabel=""/>
+      )}
       <SupportLink label={t('sidebar.support')}/>
 
       {/* Version stamp */}

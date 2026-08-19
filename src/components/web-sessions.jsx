@@ -919,7 +919,7 @@ const CreateSessionModal = ({ onClose, onCreated, adminAthleteUuid }) => {
 // field is filled (never an empty box); coaches/super-admins always
 // see it, with a pencil → 3 inputs → Save. Writes ride the SAME
 // video_sessions UPDATE RLS as rename/share — no new policies.
-const CoachDebriefCard = ({ session, canEdit }) => {
+const CoachDebriefCard = ({ session, canEdit, askNode }) => {
   const t = (window.useT || (() => (k) => k))();
   const SA = window.PA_SESSIONS;
   const [editing, setEditing] = useSessionsState(false);
@@ -1035,6 +1035,17 @@ const CoachDebriefCard = ({ session, canEdit }) => {
               </span>
             </div>
           ))}
+          {/* v03.86 — highest-intent Ask-the-team moment: the athlete
+              just read the plan; questions form right here. */}
+          {askNode && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6,
+                          paddingTop: 10, borderTop: '1px solid var(--line-soft)' }}>
+              <span style={{ font: '500 12px var(--font-ui)', color: 'var(--tx-md)' }}>
+                {t('sessions.askTeamDebriefPrompt')}
+              </span>
+              {askNode}
+            </div>
+          )}
         </div>
       ) : (
         <div style={{ font: '500 13px var(--font-ui)', color: 'var(--tx-lo)' }}>
@@ -1240,6 +1251,22 @@ const SessionDetail = ({
     if (compareClipUuid  === clip.clip_uuid) setCompareClipUuid(null);
   };
 
+  // v03.85 — clip reorder (coach/super_admin, same gate as rename/
+  // share/delete). Writes order_idx via SA.reorderClip and swaps the
+  // local rows on success so the list re-sorts without a refetch.
+  const [reordering, setReordering] = useSessionsState(false);
+  const onReorderClip = async (clipUuid, direction) => {
+    if (reordering) return;
+    setReordering(true);
+    const { ok, error, rows } = await SA.reorderClip(clipState.rows || [], clipUuid, direction);
+    setReordering(false);
+    if (!ok) {
+      try { window.PA_TOAST?.show(t('sessions.reorderError'), { type: 'error' }); } catch (_) {}
+      return;
+    }
+    setClipState(s => ({ ...s, rows }));
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Back + session header */}
@@ -1288,6 +1315,17 @@ const SessionDetail = ({
               Emails the athlete "your video analysis is ready" via the
               notify-trial-complete edge function. Once-sent state shows
               from session.notified_at. */}
+          {/* v03.85 — Pro "Ask the team" (server re-checks Pro/admin;
+              free users get the upgrade flow). Visible to everyone —
+              it advertises the Pro perk. */}
+          {session && window.AskTeamButton && (
+            <window.AskTeamButton
+              isPro={isPro}
+              onUpgrade={onUpgrade}
+              contextKind="session"
+              contextLabel={SA.sessionTitle(session) + (SA.sessionDate(session) ? ' · ' + SA.sessionDate(session) : '')}
+            />
+          )}
           {session && session.athlete_uuid && window.NotifyAthleteButton && (
             <window.NotifyAthleteButton
               trialKind="session"
@@ -1407,7 +1445,13 @@ const SessionDetail = ({
 
       {/* v03.84 — Coach's Debrief: Goal / Focus area / Next steps.
           First thing the athlete reads; coaches/super-admins edit. */}
-      <CoachDebriefCard session={session} canEdit={canCoachShareSession}/>
+      <CoachDebriefCard session={session} canEdit={canCoachShareSession}
+        askNode={window.AskTeamButton ? (
+          <window.AskTeamButton variant="link"
+            isPro={isPro} onUpgrade={onUpgrade}
+            contextKind="session"
+            contextLabel={SA.sessionTitle(session) + (SA.sessionDate(session) ? ' · ' + SA.sessionDate(session) : '')}/>
+        ) : null}/>
 
       {/* Body */}
       {clipState.loading ? (
@@ -1438,6 +1482,7 @@ const SessionDetail = ({
             compareUuid={compareClipUuid}
             onSelect={onClipClick}
             onDeleteClip={onDeleteClip}
+            onReorderClip={canCoachShareSession ? onReorderClip : null}
             isMobile={isMobile}
             collapsed={clipListCollapsed}
             onToggleCollapsed={() => setClipListCollapsed(c => !c)}
@@ -1479,6 +1524,7 @@ const SessionDetail = ({
 // can be ported to the Races / Starts / Turns trial lists.
 const ClipList = ({
   clips, selectedUuid, compareUuid, onSelect, onDeleteClip,
+  onReorderClip,
   isMobile, collapsed, onToggleCollapsed,
 }) => {
   const t = (window.useT || (() => (k) => k))();
@@ -1498,12 +1544,14 @@ const ClipList = ({
         display: 'flex', flexDirection: 'row',
         gap: 8, overflowX: 'auto', paddingBottom: 4,
       }}>
-        {clips.map(c => (
+        {clips.map((c, idx) => (
           <ClipRow key={c.clip_uuid} c={c}
             slot={slotOf(c)}
             mobile
             onSelect={() => onSelect(c.clip_uuid)}
-            onDelete={onDeleteClip ? () => onDeleteClip(c) : null}/>
+            onDelete={onDeleteClip ? () => onDeleteClip(c) : null}
+            onReorder={onReorderClip ? (dir) => onReorderClip(c.clip_uuid, dir) : null}
+            isFirst={idx === 0} isLast={idx === clips.length - 1}/>
         ))}
       </div>
     );
@@ -1569,11 +1617,13 @@ const ClipList = ({
       display: 'flex', flexDirection: 'column', gap: 8,
     }}>
       {toggleBtn}
-      {clips.map(c => (
+      {clips.map((c, idx) => (
         <ClipRow key={c.clip_uuid} c={c}
           slot={slotOf(c)}
           onSelect={() => onSelect(c.clip_uuid)}
-          onDelete={onDeleteClip ? () => onDeleteClip(c) : null}/>
+          onDelete={onDeleteClip ? () => onDeleteClip(c) : null}
+          onReorder={onReorderClip ? (dir) => onReorderClip(c.clip_uuid, dir) : null}
+          isFirst={idx === 0} isLast={idx === clips.length - 1}/>
       ))}
     </div>
   );
@@ -1586,8 +1636,27 @@ const ClipList = ({
 // Slot A / Slot B styling on Races / Starts / Turns trial rows.
 // v03.46 — added optional onDelete affordance (small × on the
 // right side, always visible on desktop).
-const ClipRow = ({ c, slot, onSelect, onDelete, mobile }) => {
+const ClipRow = ({ c, slot, onSelect, onDelete, onReorder, isFirst, isLast, mobile }) => {
   const t = (window.useT || (() => (k) => k))();
+  // v03.85 — reorder arrows (coach/super_admin only; onReorder is
+  // null for everyone else so nothing renders). On the mobile
+  // horizontal strip "up" means earlier (left) — same semantics.
+  const arrowBtn = (dir, disabled) => (
+    <button type="button"
+      onClick={(e) => { e.stopPropagation(); if (!disabled) onReorder(dir); }}
+      title={dir === 'up' ? t('sessions.moveEarlier') : t('sessions.moveLater')}
+      aria-label={dir === 'up' ? t('sessions.moveEarlier') : t('sessions.moveLater')}
+      disabled={disabled}
+      style={{
+        width: 18, height: 14, padding: 0, lineHeight: 1,
+        background: 'transparent', border: 'none',
+        color: disabled ? 'var(--line)' : 'var(--tx-lo)',
+        cursor: disabled ? 'default' : 'pointer',
+        font: '700 10px var(--font-ui)',
+      }}>
+      {dir === 'up' ? '▲' : '▼'}
+    </button>
+  );
   const accent = slot === 'primary' ? 'var(--signal-eff)'
     : slot === 'compare' ? 'var(--compare-eff)'
     : null;
@@ -1651,6 +1720,13 @@ const ClipRow = ({ c, slot, onSelect, onDelete, mobile }) => {
           </span>
         )}
       </span>
+      {onReorder && (
+        <span style={{ display: 'inline-flex', flexDirection: 'column',
+                       alignItems: 'center', flexShrink: 0, gap: 1 }}>
+          {arrowBtn('up', !!isFirst)}
+          {arrowBtn('down', !!isLast)}
+        </span>
+      )}
       {onDelete && (
         <button type="button"
           onClick={(e) => { e.stopPropagation(); onDelete(); }}

@@ -2161,6 +2161,241 @@ const NotifyAthleteButton = ({
   );
 };
 
+// ── AskTeamButton (v03.85) ────────────────────────────────────
+// Pro-gated "Ask the Peak Athlete team" button + modal. Sends the
+// question to support@ via the ask-support edge function, which
+// re-checks Pro/admin SERVER-SIDE (client gating is UX only), logs
+// the question, and emails a confirmation copy to the asker.
+// Free users see the button with a lock; tapping opens the upgrade
+// flow — the button advertises the Pro perk.
+//
+// Props:
+//   isPro       — client-side gate for UX (server re-enforces)
+//   onUpgrade   — opens the upgrade/paywall flow (free users)
+//   contextKind — 'session' | 'race' | 'start' | 'turn' | 'general'
+//   contextLabel— human label of what they're asking about
+//   variant     — 'pill' (default, accent-colored feature button),
+//                 'link' (inline "Ask the team →", e.g. under the
+//                 Coach's Debrief), 'sidebar' (full-width nav row).
+//                 All variants share the same modal + send logic.
+const AskTeamButton = ({ isPro, onUpgrade, contextKind, contextLabel, variant = 'pill' }) => {
+  const t = (window.useT || (() => (k) => k))();
+  const client = window.supabaseClient;
+  const [open, setOpen]       = React.useState(false);
+  const [text, setText]       = React.useState('');
+  const [phase, setPhase]     = React.useState('idle'); // idle|sending|sent|error
+  const [errMsg, setErrMsg]   = React.useState(null);
+
+  const onClick = () => {
+    if (!isPro) { onUpgrade?.(); return; }
+    setPhase('idle'); setErrMsg(null); setText('');
+    setOpen(true);
+  };
+
+  const send = async () => {
+    const q = text.trim();
+    if (!q || phase === 'sending') return;
+    setPhase('sending'); setErrMsg(null);
+    try {
+      const { data: sessionData } = await client.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) { setPhase('error'); setErrMsg(t('sessions.askTeamError')); return; }
+      const SUPABASE_URL = client?.supabaseUrl || 'https://wbqgshvbopfukwyqsndq.supabase.co';
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/ask-support`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization:  `Bearer ${token}`,
+          apikey:         client?.supabaseKey || '',
+        },
+        body: JSON.stringify({ question: q, contextKind, contextLabel }),
+      });
+      const out = await resp.json().catch(() => ({}));
+      if (!resp.ok || !out.ok) {
+        setPhase('error');
+        setErrMsg((out && out.error) || t('sessions.askTeamError'));
+        return;
+      }
+      setPhase('sent');
+    } catch (_) {
+      setPhase('error'); setErrMsg(t('sessions.askTeamError'));
+    }
+  };
+
+  // Chat icon shared by pill + sidebar variants.
+  const chatIcon = (size) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+         strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  );
+  // "PRO" tag shown to free users (matches the app's Pro badging —
+  // reads as a perk, not a padlock).
+  const proTag = !isPro && (
+    <span className="mono" style={{
+      font: '700 9px var(--font-mono)', letterSpacing: 0.08,
+      padding: '1px 5px', borderRadius: 4,
+      background: 'color-mix(in oklch, var(--signal-eff) 22%, transparent)',
+      color: 'var(--signal-eff)', flexShrink: 0,
+    }}>
+      PRO
+    </span>
+  );
+
+  let trigger;
+  if (variant === 'link') {
+    trigger = (
+      <button type="button" onClick={onClick}
+        title={isPro ? t('sessions.askTeamTitle') : t('sessions.askTeamProHint')}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: 0, border: 'none', background: 'transparent',
+          color: 'var(--signal-eff)', font: '600 12px var(--font-ui)',
+          cursor: 'pointer', textDecoration: 'underline',
+          textUnderlineOffset: 3,
+        }}>
+        {t('sessions.askTeamBtn')} →
+        {proTag}
+      </button>
+    );
+  } else if (variant === 'sidebar') {
+    trigger = (
+      <button type="button" onClick={onClick}
+        title={isPro ? t('sessions.askTeamTitle') : t('sessions.askTeamProHint')}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+          padding: '6px 4px', background: 'transparent', border: 'none',
+          font: '500 11px var(--font-ui)', color: 'var(--tx-lo)',
+          cursor: 'pointer', textAlign: 'left',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--signal-eff)'}
+        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--tx-lo)'}>
+        {chatIcon(12)}
+        {t('sessions.askTeamBtn')}
+        {proTag}
+      </button>
+    );
+  } else {
+    // 'pill' — accent-colored feature button (same visual weight as
+    // "Try analysis" so it reads as a feature, not a utility).
+    trigger = (
+      <button type="button" onClick={onClick}
+        title={isPro ? t('sessions.askTeamTitle') : t('sessions.askTeamProHint')}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '6px 11px', borderRadius: 8,
+          border: '1px solid var(--signal-eff)',
+          background: 'color-mix(in oklch, var(--signal-eff) 8%, var(--bg-2))',
+          color: 'var(--signal-eff)',
+          font: '700 11px var(--font-ui)', letterSpacing: 0.04,
+          cursor: 'pointer', textTransform: 'uppercase', whiteSpace: 'nowrap',
+        }}>
+        {chatIcon(12)}
+        {t('sessions.askTeamBtn')}
+        {proTag}
+      </button>
+    );
+  }
+
+  // v03.87 — The modal is portaled to document.body. The sidebar
+  // variant's trigger lives inside the <aside>, which is
+  // position:sticky on desktop and transformed on the mobile drawer —
+  // both trap a fixed-position overlay in the sidebar's stacking
+  // context, so page content (KPI tiles, topbar) painted OVER the
+  // modal and the backdrop never covered the viewport. The portal
+  // puts the overlay in the root stacking context like the app's
+  // other modals. Fallback to inline render if createPortal is
+  // somehow unavailable — degraded but functional.
+  const modal = !open ? null : (
+        <div onClick={() => phase !== 'sending' && setOpen(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 1400,
+                   background: 'color-mix(in oklch, var(--ink) 55%, transparent)',
+                   display: 'flex', alignItems: 'center', justifyContent: 'center',
+                   padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 440, background: 'var(--bg-2)',
+                     border: '1px solid var(--line)', borderRadius: 14,
+                     padding: 20, boxShadow: 'var(--shadow)' }}>
+            <div style={{ font: '700 15px var(--font-display)', color: 'var(--tx-hi)',
+                          marginBottom: 6 }}>
+              {t('sessions.askTeamTitle')}
+            </div>
+            {phase === 'sent' ? (
+              <>
+                <p style={{ font: '500 13px var(--font-ui)', color: 'var(--lime-eff)',
+                            margin: '10px 0 16px' }}>
+                  {t('sessions.askTeamSent')}
+                </p>
+                <div style={{ textAlign: 'right' }}>
+                  <button type="button" onClick={() => setOpen(false)}
+                    style={{ padding: '8px 14px', borderRadius: 9, border: 'none',
+                             background: 'var(--signal-eff)', color: 'var(--ink)',
+                             font: '700 12px var(--font-ui)', cursor: 'pointer' }}>
+                    OK
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p style={{ font: '500 12px var(--font-ui)', color: 'var(--tx-md)',
+                            margin: '0 0 4px' }}>
+                  {t('sessions.askTeamBody')}
+                </p>
+                {contextLabel && (
+                  <p className="mono" style={{ font: '500 11px var(--font-mono)',
+                     color: 'var(--tx-lo)', margin: '0 0 10px' }}>
+                    {contextLabel}
+                  </p>
+                )}
+                <textarea value={text} onChange={(e) => setText(e.target.value)}
+                  placeholder={t('sessions.askTeamPlaceholder')}
+                  maxLength={2000} rows={4} disabled={phase === 'sending'}
+                  style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical',
+                           padding: '10px 12px', borderRadius: 9,
+                           border: '1px solid var(--line)', background: 'var(--bg-3)',
+                           color: 'var(--tx-hi)', font: '500 13px var(--font-ui)',
+                           outline: 'none' }}/>
+                {errMsg && (
+                  <p style={{ font: '500 12px var(--font-ui)', color: 'var(--flag-eff)',
+                              margin: '8px 0 0' }}>{errMsg}</p>
+                )}
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end',
+                              marginTop: 12 }}>
+                  <button type="button" onClick={() => setOpen(false)}
+                    disabled={phase === 'sending'}
+                    style={{ padding: '8px 12px', borderRadius: 9,
+                             border: '1px solid var(--line)', background: 'transparent',
+                             color: 'var(--tx-md)', font: '600 12px var(--font-ui)',
+                             cursor: 'pointer' }}>
+                    {t('sessions.renameCancel')}
+                  </button>
+                  <button type="button" onClick={send}
+                    disabled={phase === 'sending' || !text.trim()}
+                    style={{ padding: '8px 14px', borderRadius: 9, border: 'none',
+                             background: 'var(--signal-eff)', color: 'var(--ink)',
+                             font: '700 12px var(--font-ui)',
+                             cursor: phase === 'sending' ? 'wait' : 'pointer',
+                             opacity: (phase === 'sending' || !text.trim()) ? 0.6 : 1 }}>
+                    {phase === 'sending' ? t('sessions.askTeamSending') : t('sessions.askTeamSend')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+  );
+
+  return (
+    <>
+      {trigger}
+      {modal && (window.ReactDOM && window.ReactDOM.createPortal
+        ? window.ReactDOM.createPortal(modal, document.body)
+        : modal)}
+    </>
+  );
+};
+
 // ── AddTrialToSessionButton (v03.46) ─────────────────────────
 // Replaces the v03.44 auto-promote "Save to Library" pattern
 // with an explicit picker. Coach (or athlete) now picks which
@@ -3875,6 +4110,8 @@ Object.assign(window, {
   TrialNameEditor,
   // v03.73 — notify-athlete pill (also used by Video Sessions)
   NotifyAthleteButton,
+  // v03.85 — Pro "Ask the team" button + modal
+  AskTeamButton,
   // design-reference atoms (v00.17c)
   Headline, LapBars, StrokeMechanicsTable, RaceCompareBars,
   buildRaceStory, derivePerLap, aggregateLaps, derivePerSegment,

@@ -598,6 +598,47 @@
     }
   }
 
+  // v03.85 — reorder a clip within its session (coach/super_admin;
+  // the existing session_clips UPDATE RLS covers exactly those two
+  // roles, verified in pg_policies — no policy changes needed).
+  //
+  // Takes the CURRENTLY DISPLAYED clips array (already sorted by
+  // order_idx, created_at), moves `clipUuid` one step earlier ('up')
+  // or later ('down'), then normalizes order_idx to the array
+  // position (1..n) and writes only the rows whose order_idx
+  // changed. The normalization also self-heals legacy rows that
+  // share order_idx 0 from early uploads — the first reorder in a
+  // session rewrites them into a clean 1..n sequence.
+  //
+  // Returns { ok, error, rows } — `rows` is the new array (with
+  // updated order_idx) on success, or the original array on failure
+  // so the caller can keep state consistent either way.
+  async function reorderClip(clips, clipUuid, direction) {
+    const arr = (clips || []).slice();
+    const i = arr.findIndex(c => c && c.clip_uuid === clipUuid);
+    if (i < 0) return { ok: false, error: { message: 'Clip not found.' }, rows: clips };
+    const j = direction === 'up' ? i - 1 : i + 1;
+    if (j < 0 || j >= arr.length) return { ok: true, rows: clips };  // at edge — no-op
+    const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    const updates = [];
+    arr.forEach((c, idx) => {
+      if (c.order_idx !== idx + 1) updates.push({ clip_uuid: c.clip_uuid, order_idx: idx + 1 });
+    });
+    try {
+      for (const u of updates) {
+        const { error } = await client
+          .from('session_clips')
+          .update({ order_idx: u.order_idx })
+          .eq('clip_uuid', u.clip_uuid);
+        if (error) return { ok: false, error, rows: clips };
+      }
+      const rows = arr.map((c, idx) => Object.assign({}, c, { order_idx: idx + 1 }));
+      return { ok: true, rows };
+    } catch (e) {
+      return { ok: false, error: e, rows: clips };
+    }
+  }
+
   // v03.79 — rename a session. Writes video_sessions.title; empty /
   // whitespace clears it back to null so the display reverts to the
   // auto "Session · <date>" label. Uses the SAME UPDATE RLS the share
@@ -1221,6 +1262,8 @@
     setSessionCoachSharedToSquad, setCoachSharedToSquad,
     // v03.79 — rename a session (coach/super_admin)
     updateSessionTitle,
+    // v03.85 — clip reorder (coach/super_admin)
+    reorderClip,
     // v03.84 — Coach's Debrief (coach/super_admin)
     updateSessionDebrief,
     getMyTeamMembership,

@@ -282,6 +282,7 @@ const SubscriptionPanel = ({ subscription, profile, role, session }) => {
           <li>{t('account.subscription.feature3')}</li>
           <li>{t('account.subscription.feature4')}</li>
           <li>{t('account.subscription.feature5')}</li>
+          <li>{t('account.subscription.feature6')}</li>
         </ul>
       </div>
 
@@ -374,8 +375,9 @@ const ProfilePanel = ({ profile, role, session }) => {
 
       {/* v03.64 — Account deletion section. Required by Play Console
           data-deletion compliance and the privacy policy v2.0 commitment.
-          Visually separated + type-to-confirm pattern. Hard-delete via
-          the delete-account edge function (uses service_role server-side). */}
+          Visually separated + type-to-confirm pattern. Hard-delete runs
+          server-side in the delete-account edge function with elevated
+          privileges; nothing privileged lives in this client. */}
       <DeleteAccountSection session={session}/>
     </div>
   );

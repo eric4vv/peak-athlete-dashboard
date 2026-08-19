@@ -73,7 +73,7 @@ const TurnsTeamSummary = ({ rows }) => {
 
 // v00.82 — cross-athlete detail render for Turns. Mirrors the
 // per-athlete WebTurns prop pattern.
-const TurnsCompareDetail = ({ primary, compare }) => {
+const TurnsCompareDetail = ({ primary, compare, isPro, onUpgrade }) => {
   const [phase, setPhase] = useTurnsState('Approach');
   if (!primary || !compare) return null;
   const PA_T  = window.PA_TURNS;
@@ -89,7 +89,8 @@ const TurnsCompareDetail = ({ primary, compare }) => {
     primary={primary} compare={compare} diff={diff}
     story={story} phases={phases} items={items}
     phase={phase} onChangePhase={setPhase}
-    trials={[primary, compare]}/>;
+    trials={[primary, compare]}
+    isPro={isPro} onUpgrade={onUpgrade}/>;
 };
 
 const formatTurnTrial = (r) => {
@@ -1366,11 +1367,19 @@ const TurnApproachDepartCard = ({ primary, compare }) => {
 // ── TurnDetail — composition mirrors StartDetail ──────────────
 const TurnDetail = ({ primary, compare, diff, story, phases, items, phase, onChangePhase, trials, isPro, onUpgrade }) => (
   <React.Fragment>
-    {/* v03.72 — inline rename control for this turn trial */}
+    {/* v03.72 — inline rename control for this turn trial.
+        v03.86 — "Ask the team" (Pro) sits opposite it. */}
     {primary && window.TrialNameEditor && (
-      <div style={{ marginBottom: 4 }}>
+      <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center',
+                    justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <window.TrialNameEditor kind="turn" trial={primary}
           title={window.PA_TURNS.turnTitle(primary)}/>
+        {window.AskTeamButton && (
+          <window.AskTeamButton
+            isPro={isPro} onUpgrade={onUpgrade}
+            contextKind="turn"
+            contextLabel={window.PA_TURNS.turnTitle(primary) + ' · ' + (window.PA_TURNS.turnDate(primary) || '')}/>
+        )}
       </div>
     )}
     {story && (

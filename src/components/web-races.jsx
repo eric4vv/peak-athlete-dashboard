@@ -1386,7 +1386,9 @@ const TeamBrowsePage = ({
                     primary={trialA}
                     compare={trialB}
                     primaryName={aName}
-                    compareName={bName}/>
+                    compareName={bName}
+                    isPro={isPro}
+                    onUpgrade={onUpgrade}/>
                 </div>
               );
             })()}
@@ -1516,12 +1518,13 @@ const fetchFullRaceTrial = async (slot) => {
 // Cross-athlete RaceDetail wrapper. The TeamBrowsePage hero
 // already shows "Anna vs. Ben" above this — RaceDetail handles
 // its own per-trial labels internally.
-const RacesCompareDetail = ({ primary, compare }) => {
+const RacesCompareDetail = ({ primary, compare, isPro, onUpgrade }) => {
   if (!primary || !compare) return null;
   const tagged = Object.assign({}, compare, { _benchmarkKind: null });
   const diff = window.PA_COMPARE
     ? window.PA_COMPARE.diffTrials(primary, tagged) : null;
-  return <RaceDetail primary={primary} compare={tagged} diff={diff}/>;
+  return <RaceDetail primary={primary} compare={tagged} diff={diff}
+    isPro={isPro} onUpgrade={onUpgrade}/>;
 };
 
 const WebTeamRaces = ({ profile, onPickAthlete, isPro, onUpgrade }) => {
@@ -4145,11 +4148,21 @@ const RaceDetail = ({ primary, compare, diff, summary, isPro, onUpgrade }) => {
 
   return (
     <>
-      {/* v03.72 — inline rename control for this race trial */}
+      {/* v03.72 — inline rename control for this race trial.
+          v03.85 — "Ask the team" (Pro) sits opposite it. */}
       {primary && window.TrialNameEditor && (
-        <div style={{ marginBottom: 4 }}>
+        <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center',
+                      justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <window.TrialNameEditor kind="race" trial={primary}
             title={window.PA_KPIS.raceTitle(primary)}/>
+          {window.AskTeamButton && (
+            <window.AskTeamButton
+              isPro={isPro}
+              onUpgrade={onUpgrade}
+              contextKind="race"
+              contextLabel={window.PA_KPIS.raceTitle(primary) + ' · ' + (window.PA_KPIS.raceDate(primary) || '')}
+            />
+          )}
         </div>
       )}
       {/* Hero — free-standing, no card wrapper */}

@@ -3324,9 +3324,15 @@ const PendingMembersPanel = ({ teamUuid, onChange }) => {
 
 // ── CoachDeck (v00.57 — hero sentence + KPI rail + roster) ────
 const CoachDeck = ({ profile, onPickAthlete, teamPendingCount, onNavigateTeam }) => {
-  const teamUuid = profile?.team_uuid || null;
+  // v03.91 — same guard the athlete page got in v01.38: leave/remove
+  // flips membership_status to 'inactive' but keeps team_uuid (RLS
+  // WITH-CHECK constraint), so an inactive coach must read as "no
+  // team" here and land on the join/create CTA. Without this, a
+  // coach who left still rendered as coach of the old team.
+  const coachInactive = (profile?.membership_status || 'active') === 'inactive';
+  const teamUuid = coachInactive ? null : (profile?.team_uuid || null);
   const coachName = (profile?.first_name || profile?.coach_name || '').trim() || null;
-  const teamName  = (profile?.team_name || '').trim() || null;
+  const teamName  = coachInactive ? null : ((profile?.team_name || '').trim() || null);
   const t = (window.useT || (() => (k) => k))();
   // v01.14 — Batch 1c. Coaches without a team see a CTA card that
   // launches the TeamOnboardingModal in either join or create mode.
@@ -3530,9 +3536,16 @@ const CoachDeck = ({ profile, onPickAthlete, teamPendingCount, onNavigateTeam })
 // Sessions this month. Click anywhere on a row to drill into
 // that athlete via the same impersonation hook.
 const TeamRosterPage = ({ profile, onPickAthlete, sessionUserId, isTeamOwner }) => {
-  const teamUuid = profile?.team_uuid || null;
-  const teamName = (profile?.team_name || '').trim() || null;
+  // v03.91 — inactive coach = no team (see CoachDeck note).
+  const coachInactive = (profile?.membership_status || 'active') === 'inactive';
+  const teamUuid = coachInactive ? null : (profile?.team_uuid || null);
+  const teamName = coachInactive ? null : ((profile?.team_name || '').trim() || null);
   const { athletes, activity, loading } = useTeamData(teamUuid);
+  // v03.92 — the roster tab must never be a dead end: its no-team
+  // state now carries the same Join/Create CTAs (and modal) as
+  // Squad Overview, instead of text only.
+  const t = (window.useT || (() => (k) => k))();
+  const [onbMode, setOnbMode] = useDeckState(null); // null | 'join' | 'create'
 
   if (loading) {
     return (
@@ -3543,16 +3556,48 @@ const TeamRosterPage = ({ profile, onPickAthlete, sessionUserId, isTeamOwner }) 
   }
   if (!teamUuid) {
     return (
-      <div className="card" style={{
-        padding: 22, color: 'var(--tx-md)', font: '500 13px var(--font-ui)',
-        display: 'flex', flexDirection: 'column', gap: 6,
-      }}>
-        <span className="eyebrow" style={{ color: 'var(--tx-lo)' }}>NO TEAM YET</span>
-        <p style={{ margin: 0, maxWidth: 540, lineHeight: 1.5 }}>
-          Once your team's set up in Peak Athlete, the roster table will
-          populate here.
-        </p>
-      </div>
+      <>
+        <div className="card" style={{
+          padding: 22, color: 'var(--tx-md)', font: '500 13px var(--font-ui)',
+          display: 'flex', flexDirection: 'column', gap: 10,
+        }}>
+          <span className="eyebrow" style={{ color: 'var(--tx-lo)' }}>{t('deck.coach.noTeamEyebrow')}</span>
+          <div className="display" style={{
+            fontSize: 18, color: 'var(--tx-hi)', letterSpacing: '-0.015em', lineHeight: 1.3,
+          }}>
+            {t('deck.coach.noTeamTitle')}
+          </div>
+          <p style={{ margin: 0, maxWidth: 540, lineHeight: 1.55 }}>
+            {t('deck.coach.noTeamBody')}
+          </p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4 }}>
+            <button type="button" onClick={() => setOnbMode('join')}
+              style={{
+                padding: '10px 16px', borderRadius: 10, border: 'none',
+                background: 'var(--signal-eff)', color: 'var(--ink)',
+                font: '700 13px var(--font-ui)', letterSpacing: '0.01em',
+                cursor: 'pointer',
+              }}>
+              {t('deck.coach.joinExisting')}
+            </button>
+            <button type="button" onClick={() => setOnbMode('create')}
+              style={{
+                padding: '10px 16px', borderRadius: 10,
+                border: '1px solid var(--line)', background: 'var(--bg-3)',
+                color: 'var(--tx-hi)', font: '600 13px var(--font-ui)',
+                cursor: 'pointer',
+              }}>
+              {t('deck.coach.createNew')}
+            </button>
+          </div>
+        </div>
+        {onbMode && window.TeamOnboardingModal && (
+          <window.TeamOnboardingModal
+            initialMode={onbMode}
+            onClose={() => setOnbMode(null)}
+            onComplete={() => setOnbMode(null)}/>
+        )}
+      </>
     );
   }
 

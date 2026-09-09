@@ -691,6 +691,11 @@
     "proBadge":  "PRO",
     "support":   "Contactar soporte"
   },
+  "coachGate": {
+    "title": "Las cuentas de entrenador requieren Pro",
+    "body": "Los datos de tu equipo — análisis de carrera, sesiones de video e historial de atletas — son parte del plan Pro. Actualiza para desbloquear tu espacio de entrenador completo. Las cuentas nuevas comienzan con 7 días de prueba gratis.",
+    "cta": "Actualizar a Pro"
+  },
   "pages": {
     "home":     { "athlete": "Mi Tablero",     "coach": "Vista del Equipo" },
     "starts":   "Salidas",

@@ -486,8 +486,12 @@ const TeamBrowsePage = ({
     try { onUpgrade?.(); } catch (_) {}
     return false;
   };
-  const teamUuid = profile?.team_uuid || null;
-  const teamName = (profile?.team_name || '').trim() || null;
+  // v03.91 — inactive coach = no team (leave/remove keeps team_uuid;
+  // see CoachDeck note in web-deck.jsx). Prevents the team browse
+  // pages from rendering the old team after the coach leaves.
+  const coachInactive = (profile?.membership_status || 'active') === 'inactive';
+  const teamUuid = coachInactive ? null : (profile?.team_uuid || null);
+  const teamName = coachInactive ? null : ((profile?.team_name || '').trim() || null);
 
   const [athletes, setAthletes] = useRacesState([]);
   const [modRows,  setModRows]  = useRacesState([]); // modality-specific rows

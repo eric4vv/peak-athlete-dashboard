@@ -672,8 +672,38 @@ const PageShell = ({
   );
 };
 
+// ── CoachProGate (v03.90) ────────────────────────────────────
+// Coach accounts require Pro (Eric decision 2026-09-08). Rendered
+// in place of the coach data surfaces (Deck, Races, Starts, Turns,
+// Sessions, Team) for coach-persona users without Pro; Leaderboards
+// and the Account modal stay open. Client-side product gate — RLS
+// unchanged, same trade-off as the athlete session-history gate.
+// Trialing subscriptions count as Pro (v_my_subscription is_active).
+const CoachProGate = ({ onUpgrade }) => {
+  const t = (window.useT || (() => (k) => k))();
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16,
+                  alignItems: 'center', padding: '64px 24px', textAlign: 'center' }}>
+      <span className="eyebrow" style={{ color: 'var(--signal-eff)' }}>PRO</span>
+      <div className="display" style={{ fontSize: 22, color: 'var(--tx-hi)' }}>
+        {t('coachGate.title')}
+      </div>
+      <div style={{ font: '500 13px var(--font-ui)', color: 'var(--tx-md)',
+                    maxWidth: 460, lineHeight: 1.5 }}>
+        {t('coachGate.body')}
+      </div>
+      <button type="button" onClick={() => onUpgrade?.()}
+        style={{ padding: '10px 18px', borderRadius: 10, border: 'none',
+                 background: 'var(--signal-eff)', color: 'var(--ink)',
+                 font: '700 13px var(--font-ui)', cursor: 'pointer' }}>
+        {t('coachGate.cta')}
+      </button>
+    </div>
+  );
+};
+
 // ── Expose ───────────────────────────────────────────────────
 Object.assign(window, {
   NAV_ATHLETE, NAV_COACH,
-  Sidebar, Topbar, PageShell,
+  Sidebar, Topbar, PageShell, CoachProGate,
 });

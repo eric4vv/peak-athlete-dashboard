@@ -919,7 +919,7 @@ const CreateSessionModal = ({ onClose, onCreated, adminAthleteUuid }) => {
 // field is filled (never an empty box); coaches/super-admins always
 // see it, with a pencil → 3 inputs → Save. Writes ride the SAME
 // video_sessions UPDATE RLS as rename/share — no new policies.
-const CoachDebriefCard = ({ session, canEdit, askNode }) => {
+const CoachDebriefCard = ({ session, canEdit, askNode, onSaved }) => {
   const t = (window.useT || (() => (k) => k))();
   const SA = window.PA_SESSIONS;
   const [editing, setEditing] = useSessionsState(false);
@@ -928,6 +928,12 @@ const CoachDebriefCard = ({ session, canEdit, askNode }) => {
   const [err, setErr]         = useSessionsState(null);
   // Optimistic display override after save (list refetch not needed).
   const [override, setOverride] = useSessionsState(null);
+  // v03.90 — reset local display state when the session changes;
+  // plain useState with no key on the callsite, so a saved override
+  // from session A must not carry over to session B.
+  useSessionsEffect(() => {
+    setOverride(null); setEditing(false); setErr(null);
+  }, [session && session.session_uuid]);
 
   if (!session) return null;
   const cur = override || {
@@ -948,12 +954,16 @@ const CoachDebriefCard = ({ session, canEdit, askNode }) => {
     const { ok, error } = await SA.updateSessionDebrief(session.session_uuid, draft);
     setSaving(false);
     if (!ok) { setErr((error && error.message) || 'Could not save'); return; }
-    setOverride({
+    const saved = {
       goal:      (draft.goal || '').trim(),
       focus:     (draft.focus || '').trim(),
       nextSteps: (draft.nextSteps || '').trim(),
-    });
+    };
+    setOverride(saved);
     setEditing(false);
+    // v03.90 — tell the parent, so the Notify Athlete preWarn check
+    // sees the fresh debrief without a page reload.
+    onSaved?.(saved);
   };
 
   const ROWS = [
@@ -1076,6 +1086,11 @@ const SessionDetail = ({
   const [clipState, setClipState] = useSessionsState({
     loading: true, rows: [], error: null,
   });
+  // v03.90 — debrief saved in THIS visit (from CoachDebriefCard's
+  // onSaved). The session row in `sessions` is stale until refetch;
+  // the Notify preWarn check prefers this. Tagged with sessionUuid
+  // so it can never apply to a different session.
+  const [debriefFresh, setDebriefFresh] = useSessionsState(null);
   const [selectedClipUuid, setSelectedClipUuid] = useSessionsState(initialClipUuid || null);
   // v03.35 — Compare clip lifted to SessionDetail so the ClipList
   // can show slot A / slot B styling and a single click drives
@@ -1334,7 +1349,9 @@ const SessionDetail = ({
               eventName={SA.sessionTitle(session)}
               notifiedAt={session.notified_at}
               preWarn={
-                (session.coach_goal || session.coach_focus || session.coach_next_steps)
+                ((debriefFresh && debriefFresh.sessionUuid === session.session_uuid)
+                  ? (debriefFresh.goal || debriefFresh.focus || debriefFresh.nextSteps)
+                  : (session.coach_goal || session.coach_focus || session.coach_next_steps))
                   ? undefined
                   : t('sessions.notifyNoDebriefWarn')
               }
@@ -1446,6 +1463,7 @@ const SessionDetail = ({
       {/* v03.84 — Coach's Debrief: Goal / Focus area / Next steps.
           First thing the athlete reads; coaches/super-admins edit. */}
       <CoachDebriefCard session={session} canEdit={canCoachShareSession}
+        onSaved={(vals) => setDebriefFresh({ sessionUuid: session.session_uuid, ...vals })}
         askNode={window.AskTeamButton ? (
           <window.AskTeamButton variant="link"
             isPro={isPro} onUpgrade={onUpgrade}

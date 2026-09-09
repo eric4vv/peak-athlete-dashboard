@@ -691,6 +691,11 @@
     "proBadge":  "PRO",
     "support":   "Contact support"
   },
+  "coachGate": {
+    "title": "Coach accounts require Pro",
+    "body": "Your team's data — race analyses, video sessions, and athlete history — is part of the Pro plan. Upgrade to unlock your full coaching workspace. New accounts start with a 7-day free trial.",
+    "cta": "Upgrade to Pro"
+  },
   "pages": {
     "home":     { "athlete": "The Deck",       "coach": "Squad Overview" },
     "starts":   "Starts",

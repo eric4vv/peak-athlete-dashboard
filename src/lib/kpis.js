@@ -93,25 +93,6 @@
     return out;
   }
 
-  // v03.95 — measured stroke length samples ("Stroke length N m").
-  // Templo's engine computes these (visible in its printed report)
-  // but its txt export does not carry them yet — Eric is asking
-  // CONTEMPLAS to enable the columns. Until then rows exist only
-  // where hand-injected via SQL. Values are meters per single-arm
-  // stroke, measured mid-pool — the honest stroke length, free of
-  // the underwater inflation that count-based DPS carries.
-  function extractStrokeLength(mj) {
-    if (!mj) return [];
-    const out = [];
-    for (let d = 5; d <= 1500; d += 5) {
-      const v = mj['Stroke length ' + d + ' m'];
-      if (v && !isNaN(parseFloat(v)) && parseFloat(v) > 0) {
-        out.push({ distance: d, len: parseFloat(v) });
-      }
-    }
-    return out;
-  }
-
   // Race time = last populated split. Runtime column is video length.
   function raceTotalTime(trial) {
     const sp = extractSplits(trial?.mj || trial?.metrics_json);
@@ -425,7 +406,7 @@
     // query
     listRaceTrials,
     // extractors
-    extractSplits, extractStrokeRates, extractStrokeCounts, extractDPS, extractStrokeLength, splitsToSegments,
+    extractSplits, extractStrokeRates, extractStrokeCounts, extractDPS, splitsToSegments,
     // derived
     raceTotalTime, raceTitle, raceDate,
     avgStrokeRate, avgDPS, avgVelocity, totalStrokes,

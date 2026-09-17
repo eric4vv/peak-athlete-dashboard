@@ -2089,13 +2089,6 @@ const MechanicsSection = ({ primary, compare, mode }) => {
   const sr  = K.avgStrokeRate(primary);
   const dps = K.avgDPS(primary);
   const vel = K.avgVelocity(primary);
-  // v03.95 — in-water stroke distance, derived so the identity
-  // rate x DPS = 60 x velocity holds exactly. K.avgDPS (pool length
-  // / counted strokes) includes underwater meters that carry no
-  // strokes, so it must never appear in a sentence claiming the
-  // product relationship (122 spm x 2.41 m would imply ~4.9 m/s).
-  const dpsInWater = (sr != null && sr > 0 && vel != null)
-    ? +((60 * vel) / sr).toFixed(2) : null;
   // v03.09 — compare-race mechanics, for the compare-aware narrative.
   const cSr  = compare ? K.avgStrokeRate(compare) : null;
   const cDps = compare ? K.avgDPS(compare)        : null;
@@ -2162,7 +2155,7 @@ const MechanicsSection = ({ primary, compare, mode }) => {
         const v = verdictTail(d, 'above', 'below', Math.abs(d).toFixed(1) + ' spm');
         return <>Avg stroke rate {G(sr.toFixed(1) + ' spm')}{tail(v)}</>;
       }
-      return <>Avg stroke rate {G(sr.toFixed(1) + ' spm')} — paired with {G(dpsInWater != null ? dpsInWater.toFixed(2) + ' m/stroke' : '—')} of in-water stroke distance, this drove an average velocity of {G(vel != null ? vel.toFixed(2) + ' m/s' : '—')}.</>;
+      return <>Avg stroke rate {G(sr.toFixed(1) + ' spm')} — paired with {G(dps != null ? dps.toFixed(2) + ' m/stroke' : '—')} of DPS, this drove an average velocity of {G(vel != null ? vel.toFixed(2) + ' m/s' : '—')}.</>;
     }
     if (tab === 'DPS') {
       if (dps == null) return null;
@@ -2171,7 +2164,7 @@ const MechanicsSection = ({ primary, compare, mode }) => {
         const v = verdictTail(d, 'longer than', 'shorter than', Math.abs(d).toFixed(2) + ' m');
         return <>Avg distance per stroke {G(dps.toFixed(2) + ' m')}{tail(v)}</>;
       }
-      return <>Avg distance per stroke {G(dps.toFixed(2) + ' m')} (pool length ÷ strokes, underwater included) — in-water stroke length ≈ {G(dpsInWater != null ? dpsInWater.toFixed(2) + ' m' : '—')} at {G(sr != null ? sr.toFixed(1) + ' spm' : '—')}, producing {G(vel != null ? vel.toFixed(2) + ' m/s' : '—')} on average.</>;
+      return <>Avg distance per stroke {G(dps.toFixed(2) + ' m')} — at {G(sr != null ? sr.toFixed(1) + ' spm' : '—')} cadence, that produced {G(vel != null ? vel.toFixed(2) + ' m/s' : '—')} on average.</>;
     }
     if (tab === 'Velocity') {
       if (vel == null) return null;
@@ -2180,7 +2173,7 @@ const MechanicsSection = ({ primary, compare, mode }) => {
         const v = verdictTail(d, 'faster than', 'slower than', Math.abs(d).toFixed(2) + ' m/s');
         return <>Avg velocity {G(vel.toFixed(2) + ' m/s')}{tail(v)}</>;
       }
-      return <>Avg velocity {G(vel.toFixed(2) + ' m/s')} — the product of {G(sr != null ? sr.toFixed(1) + ' spm' : '—')} stroke rate and {G(dpsInWater != null ? dpsInWater.toFixed(2) + ' m' : '—')} in-water stroke distance.</>;
+      return <>Avg velocity {G(vel.toFixed(2) + ' m/s')} — the product of {G(sr != null ? sr.toFixed(1) + ' spm' : '—')} stroke rate and {G(dps != null ? dps.toFixed(2) + ' m' : '—')} per-stroke distance.</>;
     }
     if (tab === 'Efficiency') {
       // v00.94 — pivoted to focus on iso-curves. v00.95 — copy
@@ -2230,18 +2223,15 @@ const MechanicsSection = ({ primary, compare, mode }) => {
 
   // Mini-KPI panel tailored to the active tab — always shows the
   // OTHER two metrics so the correlation stays visible.
-  // v03.95 — every mini that sits beside rate/velocity shows the
-  // IN-WATER stroke distance (identity-consistent); only the DPS
-  // tab's own headline keeps the count-based figure, labeled there.
   const miniPanel = (() => {
-    if (tab === 'Stroke Rate') return [{ label: 'In-water DPS', value: dpsInWater, unit: 'm', dec: 2 },
+    if (tab === 'Stroke Rate') return [{ label: 'Avg DPS', value: dps, unit: 'm', dec: 2 },
                                        { label: 'Avg Velocity', value: vel, unit: 'm/s', dec: 2 }];
     if (tab === 'DPS')         return [{ label: 'Avg Stroke Rate', value: sr,  unit: 'spm', dec: 1 },
                                        { label: 'Avg Velocity',    value: vel, unit: 'm/s', dec: 2 }];
     if (tab === 'Velocity')    return [{ label: 'Avg Stroke Rate', value: sr,  unit: 'spm', dec: 1 },
-                                       { label: 'In-water DPS',    value: dpsInWater, unit: 'm', dec: 2 }];
+                                       { label: 'Avg DPS',         value: dps, unit: 'm',   dec: 2 }];
     if (tab === 'Efficiency')  return [{ label: 'Avg Stroke Rate', value: sr,  unit: 'spm', dec: 1 },
-                                       { label: 'In-water DPS',    value: dpsInWater, unit: 'm', dec: 2 },
+                                       { label: 'Avg DPS',         value: dps, unit: 'm',   dec: 2 },
                                        { label: 'Avg Velocity',    value: vel, unit: 'm/s', dec: 2 }];
     return [];
   })();
@@ -3156,14 +3146,13 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
     const laps = derivePerLap(t).filter(l => l.rate != null && l.t > 0);
     if (laps.length < 2) return derivePerSegment(t, 5);
     // This chart's geometry is built on velocity = SR x DPS / 60
-    // (iso-curves, zones, velOf). derivePerLap's dps is pool length
-    // / counted strokes — but the underwater portions of a lap
-    // carry distance with ZERO strokes, so that figure is inflated
-    // and breaks the identity (it implied ~6 m/s here). For this
-    // chart, derive dps from the lap's MEASURED velocity (true
-    // meters / lap time), exactly like derivePerSegment does; the
-    // implied velocity is then the real one. The DPS tab keeps the
-    // count-based figure, labeled "underwater included" there.
+    // (iso-curves, zones, velOf). derivePerLap's dps comes from
+    // stroke COUNTS, which Templo counts in a different convention
+    // than its stroke RATES — mixing them implied ~6 m/s here. So
+    // for this chart, derive dps from the lap's MEASURED velocity
+    // (true meters / lap time), exactly like derivePerSegment does;
+    // the implied velocity is then the real one. The DPS tab keeps
+    // its count-based per-stroke distance — different question.
     const course = K.courseOf ? K.courseOf(t) : null;
     return laps.map(l => {
       const lapM = K.actualMeters ? K.actualMeters(l.endD - l.startD, course) : (l.endD - l.startD);

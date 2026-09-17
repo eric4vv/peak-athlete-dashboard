@@ -1406,7 +1406,20 @@ function derivePerSegment(trial, preferredSize) {
   const courseSeg     = K.courseOf ? K.courseOf(trial) : null;
   const segmentSizeM  = K.actualMeters ? K.actualMeters(segmentSize, courseSeg) : segmentSize;
 
+  // v03.93 — impossible-segment guard. Hand-marked splits at 5 m/yd
+  // resolution can misplace a marker by a few tenths, which doubles
+  // a short segment's computed velocity. A wall segment (dive carry
+  // or turn push-off) can legitimately average ~3.5 m/s; mid-pool
+  // swimming cannot exceed ~3.2 m/s (WR pace is ~2.4). Segments
+  // above the ceiling are excluded from the chart — counted in
+  // out.excludedCount so the chart can hint "check split markers" —
+  // instead of one bad marker stretching the scale for everything.
+  const lapLenSeg   = parseFloat(mj['Lap length']) || 50;
+  const isWallStart = (d) => d === 0 || (lapLenSeg > 0 && d % lapLenSeg === 0);
+  const velCeiling  = (d) => isWallStart(d) ? 4.0 : 3.2;
+
   const out = [];
+  let excluded = 0;
   let prevT = 0;
   ordered.forEach((s, idx) => {
     const segT   = s.cumTime - prevT;
@@ -1421,17 +1434,22 @@ function derivePerSegment(trial, preferredSize) {
     }
     if (rate != null && rate > 0 && segT > 0) {
       const vel = segmentSizeM / segT;      // TRUE m/s for SCY
-      const dps = (60 * vel) / rate;
-      out.push({
-        lap: idx + 1,
-        rate, dps,
-        t: +segT.toFixed(2),
-        startD, endD,
-        segLabel: endD + ' m',
-      });
+      if (vel > velCeiling(startD)) {
+        excluded += 1;
+      } else {
+        const dps = (60 * vel) / rate;
+        out.push({
+          lap: idx + 1,
+          rate, dps,
+          t: +segT.toFixed(2),
+          startD, endD,
+          segLabel: endD + ' m',
+        });
+      }
     }
     prevT = s.cumTime;
   });
+  out.excludedCount = excluded;
   return out;
 }
 
@@ -3598,8 +3616,13 @@ const LineOverlay = ({
   const yOf = (v) => PAD_T + (1 - (v - yMin) / yRange) * (H - PAD_T - PAD_B);
   const tipUnit = tooltipUnit != null ? tooltipUnit : (yUnit || '');
 
+  // v03.94 — monotone curve (see PA_SVG.monotonePath): rounded like
+  // the race velocity chart, but can never overshoot the sampled
+  // values. Applies to every LineOverlay consumer (stroke rate,
+  // mechanics velocity) so the whole chart family reads the same.
   const toPath = (arr) => arr.length
-    ? window.PA_SVG.smoothPath(arr.map(p => [xOf(p.x), yOf(p.y)]))
+    ? (window.PA_SVG.monotonePath || window.PA_SVG.smoothPath)(
+        arr.map(p => [xOf(p.x), yOf(p.y)]))
     : '';
 
   const fmt = yFormat || ((v) => Number(v).toFixed(1));

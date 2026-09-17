@@ -412,6 +412,7 @@
     "es": "Español"
   },
   "analysis": {
+    "effSegExcluded": "{n} segmento(s) ocultos — el parcial implica una velocidad imposible. Revisa los marcadores de parciales en la exportación.",
     "filter": {
       "distance":  "Distancia",
       "style":     "Estilo",

@@ -2292,11 +2292,36 @@ const RaceVelocityChart = ({ primary, compare }) => {
   const segA = K.splitsToSegments(K.extractSplits(primary?.mj || primary?.metrics_json));
   const segB = compare ? K.splitsToSegments(K.extractSplits(compare.mj || compare.metrics_json)) : [];
 
-  const toVel = (segs) => segs
-    .filter(s => s.segTime > 0)
-    .map(s => ({ x: s.distEnd, y: +((s.distEnd - s.distStart) / s.segTime).toFixed(3) }));
-  const seriesA = toVel(segA);
-  const seriesB = toVel(segB);
+  // v03.93 — three changes to how the trace is built:
+  //   1. SCY fix: velocity uses TRUE meters (labeled distances are
+  //      yards for SCY), so the trace + AVG line agree with the
+  //      hero's avgVelocity instead of overstating by ~9%.
+  //   2. Each segment's average plots at the segment MIDPOINT — it
+  //      is a mean over that stretch of water, not an instant at
+  //      its end — with anchor points at 0 and the finish so the
+  //      line spans the whole race instead of starting at the
+  //      first split.
+  //   3. Anchor points carry anchor:true — no dot, no hover, no
+  //      peak callout; they only complete the line.
+  const toVel = (segs, trial) => {
+    const course = K.courseOf ? K.courseOf(trial) : null;
+    const pts = segs
+      .filter(s => s.segTime > 0)
+      .map(s => ({
+        x: (s.distStart + s.distEnd) / 2,
+        y: +((K.actualMeters
+                ? K.actualMeters(s.distEnd - s.distStart, course)
+                : (s.distEnd - s.distStart)) / s.segTime).toFixed(3),
+        segEnd: s.distEnd,
+      }));
+    if (!pts.length) return pts;
+    const raceEnd = Math.max(...segs.map(s => s.distEnd));
+    return [{ x: 0, y: pts[0].y, segEnd: pts[0].segEnd, anchor: true }]
+      .concat(pts)
+      .concat([{ x: raceEnd, y: pts[pts.length - 1].y, segEnd: raceEnd, anchor: true }]);
+  };
+  const seriesA = toVel(segA, primary);
+  const seriesB = toVel(segB, compare);
   const all = seriesA.concat(seriesB);
 
   if (!all.length) {
@@ -2334,7 +2359,7 @@ const RaceVelocityChart = ({ primary, compare }) => {
   const peaksFor = (series) => Array.from({ length: numLaps }, (_, lapIdx) => {
     const lapStart = lapIdx * lapLen;
     const lapEnd   = (lapIdx + 1) * lapLen;
-    const inLap    = series.filter(p => p.x > lapStart - 0.5 && p.x <= lapEnd + 0.5);
+    const inLap    = series.filter(p => !p.anchor && p.x > lapStart - 0.5 && p.x <= lapEnd + 0.5);
     if (!inLap.length) return null;
     return inLap.reduce((max, p) => p.y > max.y ? p : max, inLap[0]);
   }).filter(Boolean);
@@ -2346,9 +2371,20 @@ const RaceVelocityChart = ({ primary, compare }) => {
   // the chart would clutter without adding signal, so the chart's
   // AVG line stays primary-only. Compare's velocity story reads
   // off the line shape + the per-lap PEAK callouts.
-  const avgPrim = seriesA.length
-    ? +(seriesA.reduce((s, p) => s + p.y, 0) / seriesA.length).toFixed(3)
-    : null;
+  // v03.93 — time-weighted TRUE-meters average (total distance /
+  // total time), matching K.avgVelocity on the hero sentence. Was
+  // an unweighted mean of per-segment velocities in labeled units,
+  // which disagreed with the hero on SCY races (yd/s vs m/s).
+  const avgPrim = (() => {
+    const segs = segA.filter(s => s.segTime > 0);
+    if (!segs.length) return null;
+    const course = K.courseOf ? K.courseOf(primary) : null;
+    const dist = segs.reduce((sum, s) => sum + (K.actualMeters
+      ? K.actualMeters(s.distEnd - s.distStart, course)
+      : (s.distEnd - s.distStart)), 0);
+    const time = segs.reduce((sum, s) => sum + s.segTime, 0);
+    return time > 0 ? +(dist / time).toFixed(3) : null;
+  })();
 
   // SVG layout
   const W = 720, H = 240, PAD_L = 48, PAD_R = 18, PAD_T = 22, PAD_B = 32;
@@ -2358,8 +2394,12 @@ const RaceVelocityChart = ({ primary, compare }) => {
   const yOf = (v) => PAD_T + (1 - (v - yMin) / (yMax - yMin || 1)) * innerH;
   const baseY = H - PAD_B;
 
+  // v03.93 — monotone curve: rounded through the turns but can
+  // never overshoot a lap's actual average (Catmull-Rom smoothPath
+  // would bulge past the real values between points).
   const linePath = (series) => series.length
-    ? window.PA_SVG.smoothPath(series.map(p => [xOf(p.x), yOf(p.y)]))
+    ? (window.PA_SVG.monotonePath || window.PA_SVG.smoothPath)(
+        series.map(p => [xOf(p.x), yOf(p.y)]))
     : '';
 
   // X-axis ticks — adapt step to race distance.
@@ -2418,14 +2458,14 @@ const RaceVelocityChart = ({ primary, compare }) => {
                 stroke="var(--compare-eff)" strokeWidth="2.4"
                 strokeLinecap="round" strokeLinejoin="round"/>
         )}
-        {seriesB.length > 0 && showDots && seriesB.map((p, i) => (
+        {seriesB.length > 0 && showDots && seriesB.map((p, i) => !p.anchor && (
           <circle key={'cb' + i} cx={xOf(p.x)} cy={yOf(p.y)} r="3" fill="var(--compare-eff)"/>
         ))}
         {/* Primary line */}
         <path d={linePath(seriesA)} fill="none"
               stroke="var(--lime-eff)" strokeWidth="2.6"
               strokeLinecap="round" strokeLinejoin="round"/>
-        {showDots && seriesA.map((p, i) => (
+        {showDots && seriesA.map((p, i) => !p.anchor && (
           <circle key={'ca' + i} cx={xOf(p.x)} cy={yOf(p.y)} r="3.2" fill="var(--lime-eff)"/>
         ))}
         {/* Per-lap PEAK callouts — primary above the dot, compare
@@ -2475,8 +2515,8 @@ const RaceVelocityChart = ({ primary, compare }) => {
         {/* v03.71 — hover/tap value tooltip on every segment point */}
         {window.ChartHoverLayer && (
           <window.ChartHoverLayer
-            pointsA={seriesA.map(p => ({ cx: xOf(p.x), cy: yOf(p.y), dataX: Math.round(p.x), dataY: p.y }))}
-            pointsB={seriesB.map(p => ({ cx: xOf(p.x), cy: yOf(p.y), dataX: Math.round(p.x), dataY: p.y }))}
+            pointsA={seriesA.filter(p => !p.anchor).map(p => ({ cx: xOf(p.x), cy: yOf(p.y), dataX: Math.round(p.segEnd), dataY: p.y }))}
+            pointsB={seriesB.filter(p => !p.anchor).map(p => ({ cx: xOf(p.x), cy: yOf(p.y), dataX: Math.round(p.segEnd), dataY: p.y }))}
             colorA="var(--lime-eff)" colorB="var(--compare-eff)"
             fmt={(v) => v.toFixed(2)} unit=" m/s" xUnit=" m"
             geom={{ W, PAD_L, PAD_R, PAD_T }}/>
@@ -3084,6 +3124,7 @@ const buildEfficiencyStory = (laps, medSR, medDPS, opts) => {
 };
 
 const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
+  const t = (window.useT || (() => (k) => k))();
   // v00.95 — sprint detection. For 50 m races, per-lap data
   // produces only 1-2 dots — too few for the chart to render
   // anything meaningful. Step down to 5 m segment granularity:
@@ -3095,12 +3136,39 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
     || primary?.mj?.Distance || primary?.metrics_json?.Distance;
   const isSprint = Number(sprintDist) > 0 && Number(sprintDist) <= 50;
 
-  const sourceFn = isSprint
-    ? (t) => derivePerSegment(t, 5)
-    : derivePerLap;
+  // v03.94 — per-5 segments proved too cluttered/noisy for 50s
+  // (hand-marked splits + interpolated rates). Sprints now use
+  // per-lap rows first — 2 clean dots for a 50, same convention as
+  // every other distance; derivePerLap is SCY-correct since v03.66 —
+  // and fall back to 5 m segments only when the export lacks
+  // usable per-lap stroke counts, so older uploads never go blank.
+  const sprintSource = (t) => {
+    const laps = derivePerLap(t).filter(l => l.rate != null && l.t > 0);
+    if (laps.length < 2) return derivePerSegment(t, 5);
+    // This chart's geometry is built on velocity = SR x DPS / 60
+    // (iso-curves, zones, velOf). derivePerLap's dps comes from
+    // stroke COUNTS, which Templo counts in a different convention
+    // than its stroke RATES — mixing them implied ~6 m/s here. So
+    // for this chart, derive dps from the lap's MEASURED velocity
+    // (true meters / lap time), exactly like derivePerSegment does;
+    // the implied velocity is then the real one. The DPS tab keeps
+    // its count-based per-stroke distance — different question.
+    const course = K.courseOf ? K.courseOf(t) : null;
+    return laps.map(l => {
+      const lapM = K.actualMeters ? K.actualMeters(l.endD - l.startD, course) : (l.endD - l.startD);
+      const vel  = lapM / l.t;
+      return { ...l, dps: +((60 * vel) / l.rate).toFixed(2) };
+    });
+  };
+  const sourceFn = isSprint ? sprintSource : derivePerLap;
 
-  const lapsRawA = sourceFn(primary).filter(l => l.rate != null && l.dps != null);
-  const lapsRawB = compare ? sourceFn(compare).filter(l => l.rate != null && l.dps != null) : [];
+  // v03.93 — capture the impossible-segment count BEFORE .filter()
+  // (filter returns a new array and drops the property).
+  const rawSrcA = sourceFn(primary);
+  const rawSrcB = compare ? sourceFn(compare) : [];
+  const excludedSegs = (rawSrcA.excludedCount || 0) + (rawSrcB.excludedCount || 0);
+  const lapsRawA = rawSrcA.filter(l => l.rate != null && l.dps != null);
+  const lapsRawB = rawSrcB.filter(l => l.rate != null && l.dps != null);
   // v03.16/17 — per-lap / per-50m / per-100m bucketing.
   // aggregateLaps with 25 is always a no-op (per-lap = raw laps);
   // 50 merges SC pairs / no-ops LCM; 100 buckets to 100 m.
@@ -3110,7 +3178,11 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
     .filter(l => l.rate != null && l.dps != null);
   const lapsB = (isSprint ? lapsRawB : aggregateLaps(lapsRawB, _bM))
     .filter(l => l.rate != null && l.dps != null);
-  const dotUnit = isSprint ? 'segment' : 'lap';
+  // v03.94 — a sprint that resolved per-lap rows labels its dots
+  // as laps; only the segment fallback keeps the 'segment' label.
+  // Per-lap rows carry `label`, segment rows carry `segLabel`.
+  const sprintUsedSegments = isSprint && lapsRawA.length > 0 && lapsRawA[0].segLabel != null;
+  const dotUnit = sprintUsedSegments ? 'segment' : 'lap';
 
   // v00.92 — show-more toggle for iso-velocity curve density.
   const [showMoreCurves, setShowMoreCurves] = useRacesState(false);
@@ -3552,6 +3624,15 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
         })()}
       </svg>
       </window.ChartScroll>
+      {/* v03.93 — impossible-segment hint. Shown when the guard in
+          derivePerSegment dropped segments whose computed velocity
+          is beyond human limits (mis-placed split marker). */}
+      {excludedSegs > 0 && (
+        <div style={{ marginTop: 8, font: '500 11px var(--font-ui)',
+                      color: 'var(--tx-lo)' }}>
+          {t('analysis.effSegExcluded').replace('{n}', String(excludedSegs))}
+        </div>
+      )}
       {/* v03.13 (idea 4) — per-lap zone strip. One cell per lap,
           colored by stroke-shape zone — reads the shape/fatigue
           story at a glance, no chart-decoding needed. */}

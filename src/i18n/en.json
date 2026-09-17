@@ -412,6 +412,7 @@
     "es": "Español"
   },
   "analysis": {
+    "effSegExcluded": "{n} segment(s) hidden — split time implies an impossible speed. Check the export’s split markers.",
     "filter": {
       "distance":  "Distance",
       "style":     "Stroke",

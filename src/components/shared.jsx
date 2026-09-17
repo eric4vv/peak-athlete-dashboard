@@ -158,7 +158,41 @@ function smoothPath(points, tension) {
   }
   return d;
 }
-window.PA_SVG = Object.assign(window.PA_SVG || {}, { smoothPath });
+// v03.93 — monotone cubic path (Fritsch-Carlson). Unlike smoothPath
+// (Catmull-Rom), it can NEVER overshoot the data — the curve stays
+// within the y-range of its points. Used by RaceVelocityChart, where
+// an overshoot would draw a velocity the swimmer never actually had.
+function monotonePath(points) {
+  if (!points || points.length === 0) return '';
+  if (points.length < 3) return smoothPath(points);
+  const n = points.length;
+  const xs = points.map(p => p[0]);
+  const ys = points.map(p => p[1]);
+  const dx = [], m = [];
+  for (let i = 0; i < n - 1; i++) {
+    dx.push(xs[i + 1] - xs[i]);
+    m.push(dx[i] !== 0 ? (ys[i + 1] - ys[i]) / dx[i] : 0);
+  }
+  const t = [m[0]];
+  for (let i = 1; i < n - 1; i++) {
+    if (m[i - 1] * m[i] <= 0) t.push(0);
+    else {
+      const w1 = 2 * dx[i] + dx[i - 1];
+      const w2 = dx[i] + 2 * dx[i - 1];
+      t.push((w1 + w2) / (w1 / m[i - 1] + w2 / m[i]));
+    }
+  }
+  t.push(m[n - 2]);
+  let d = 'M' + xs[0].toFixed(2) + ',' + ys[0].toFixed(2);
+  for (let i = 0; i < n - 1; i++) {
+    const h = dx[i] / 3;
+    d += ' C' + (xs[i] + h).toFixed(2) + ',' + (ys[i] + h * t[i]).toFixed(2)
+       + ' ' + (xs[i + 1] - h).toFixed(2) + ',' + (ys[i + 1] - h * t[i + 1]).toFixed(2)
+       + ' ' + xs[i + 1].toFixed(2) + ',' + ys[i + 1].toFixed(2);
+  }
+  return d;
+}
+window.PA_SVG = Object.assign(window.PA_SVG || {}, { smoothPath, monotonePath });
 
 // ── Inline line sparkline (with soft area fill) ──
 const LineSpark = ({ data, height = 32, width = 110, color = 'var(--signal-eff)', area = true }) => {

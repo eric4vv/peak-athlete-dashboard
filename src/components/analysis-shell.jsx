@@ -3868,6 +3868,16 @@ const DPSChart = ({ primary, compare, mode }) => {
   const yOf = (v) => PAD_T + (1 - (v - yMin) / (yMax - yMin || 1)) * innerH;
 
   const showB = compare && b.length > 0;
+  // v03.95 — measured stroke-length overlay. When the race carries
+  // "Stroke length N m" samples (Templo's measured mid-pool stroke
+  // length; today only via SQL injection, soon via the export),
+  // draw them as teal ring markers on top of the count-based bars.
+  // The bars measure pool-length-per-counted-stroke (underwater
+  // included); the rings are the honest in-water stroke length —
+  // both stories on one chart, each labeled in the legend.
+  const slA = (K.extractStrokeLength
+    ? K.extractStrokeLength(primary?.mj || primary?.metrics_json)
+    : []).filter(s => s.len != null);
   // Lap distance (assume equal — matches extractDPS's contract)
   const sample  = a[0] || b[0];
   const lapDist = sample ? (sample.lapEnd - sample.lapStart) : (xMax / Math.max(laps.length, 1));
@@ -3882,6 +3892,7 @@ const DPSChart = ({ primary, compare, mode }) => {
   const labelEvery = veryDense ? 5 : dense ? 2 : 1;
 
   return (
+    <div>
     <ChartFrame legend={<Legend compareLabel={compare ? 'Compare' : null} {...RACE_CHART_COLORS}/>}>
       {laps.map((lap, idx) => {
         const aR = aMap.get(lap);
@@ -3922,6 +3933,19 @@ const DPSChart = ({ primary, compare, mode }) => {
           </g>
         );
       })}
+      {/* v03.95 — measured stroke-length ring markers + value labels */}
+      {slA.map((s, i) => (
+        <g key={'sl' + i}>
+          <circle cx={xOf(s.distance)} cy={yOf(s.len)} r="4.5"
+                  fill="var(--bg-2)" stroke="var(--signal-eff)" strokeWidth="2"/>
+          <text x={xOf(s.distance)} y={yOf(s.len) - 9}
+                textAnchor="middle"
+                fontSize="10" fontFamily="var(--font-mono)" fontWeight="700"
+                fill="var(--signal-eff)">
+            {s.len.toFixed(2)}
+          </text>
+        </g>
+      ))}
       <LineAxes
         xLabels={[]}
         yLabels={[
@@ -3930,6 +3954,23 @@ const DPSChart = ({ primary, compare, mode }) => {
           { y: H - PAD_B,                     text: '0' },
         ]}/>
     </ChartFrame>
+    {/* v03.96 — caption row, ONLY when measured stroke-length
+        samples exist (dormant otherwise — v03.94 look unchanged).
+        ChartFrame drops its legend prop (long-standing quirk), so
+        the labels live below the frame. */}
+    {slA.length > 0 && (
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 6,
+                    font: '500 11px var(--font-ui)', color: 'var(--tx-md)' }}>
+        <span>bars = lap ÷ strokes (incl. underwater)</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 9, height: 9, borderRadius: '50%',
+                         border: '2px solid var(--signal-eff)',
+                         background: 'transparent' }}/>
+          measured stroke length (in-water)
+        </span>
+      </div>
+    )}
+    </div>
   );
 };
 

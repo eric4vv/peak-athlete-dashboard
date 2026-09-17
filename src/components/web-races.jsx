@@ -1980,8 +1980,14 @@ const RaceSummaryRail = ({ primary, compare }) => {
 
   const pTime = K.raceTotalTime(primary);
   const pSR   = K.avgStrokeRate(primary);
-  const pDPS  = K.avgDPS(primary);
   const pVel  = K.avgVelocity(primary);
+  // v03.97 — same derivation as the mechanics narratives: displayed
+  // avg DPS = 60 x velocity / rate so the tile agrees with the
+  // Stroke Rate and Velocity tiles beside it. Count-based K.avgDPS
+  // only as fallback when a race has no rate samples.
+  const pDPS  = (pSR != null && pSR > 0 && pVel != null)
+    ? +((60 * pVel) / pSR).toFixed(2)
+    : K.avgDPS(primary);
   const pSt   = K.totalStrokes(primary);
   const pFBH  = frontBackHalfDelta(primary);
   // v03.65 — Reaction time from race metrics_json. Templo race
@@ -2003,8 +2009,10 @@ const RaceSummaryRail = ({ primary, compare }) => {
 
   const cTime = compare ? K.raceTotalTime(compare) : null;
   const cSR   = compare ? K.avgStrokeRate(compare) : null;
-  const cDPS  = compare ? K.avgDPS(compare)        : null;
   const cVel  = compare ? K.avgVelocity(compare)   : null;
+  const cDPS  = (cSR != null && cSR > 0 && cVel != null)
+    ? +((60 * cVel) / cSR).toFixed(2)
+    : (compare ? K.avgDPS(compare) : null);
   const cSt   = compare ? K.totalStrokes(compare)  : null;
   const cFBH  = compare ? frontBackHalfDelta(compare) : null;
 
@@ -2064,7 +2072,7 @@ const RaceSummaryRail = ({ primary, compare }) => {
     { k: 'Avg DPS',      v: round(pDPS, 2), u: 'm',    goodDir: 'up',
       d: delta(pDPS, cDPS, 2),
       vCompare: cDPS == null ? null : round(cDPS, 2),
-      tip: 'Distance per stroke. Lap distance ÷ strokes that lap. Higher means each stroke covered more water.' },
+      tip: 'Distance per stroke, derived from average velocity and stroke rate. Higher means each stroke covered more water.' },
     { k: 'Avg Velocity', v: round(pVel, 2), u: 'm/s',  goodDir: 'up',
       d: delta(pVel, cVel, 2),
       vCompare: cVel == null ? null : round(cVel, 2),
@@ -2087,12 +2095,23 @@ const MechanicsSection = ({ primary, compare, mode }) => {
   const isMobile = (window.useIsMobile || (() => false))();
 
   const sr  = K.avgStrokeRate(primary);
-  const dps = K.avgDPS(primary);
   const vel = K.avgVelocity(primary);
+  // v03.97 — displayed avg DPS derives from velocity / rate so that
+  // rate x DPS = 60 x velocity holds in the narratives (Eric: the
+  // wording is fine, "the problem is the 2.41" — K.avgDPS is pool
+  // length / counted strokes, which credits underwater meters that
+  // carry no strokes and overstates sprints ~2x). Falls back to
+  // K.avgDPS when a race has no rate samples. The count-based
+  // per-lap figures still live in the DPS chart bars.
+  const dps = (sr != null && sr > 0 && vel != null)
+    ? +((60 * vel) / sr).toFixed(2)
+    : K.avgDPS(primary);
   // v03.09 — compare-race mechanics, for the compare-aware narrative.
   const cSr  = compare ? K.avgStrokeRate(compare) : null;
-  const cDps = compare ? K.avgDPS(compare)        : null;
   const cVel = compare ? K.avgVelocity(compare)   : null;
+  const cDps = (cSr != null && cSr > 0 && cVel != null)
+    ? +((60 * cVel) / cSr).toFixed(2)
+    : (compare ? K.avgDPS(compare) : null);
 
   // Compare-target name. Benchmark holder names are never surfaced
   // (CLAUDE.md) — only the kind. WR shows as "world-record pace".
@@ -2185,8 +2204,14 @@ const MechanicsSection = ({ primary, compare, mode }) => {
         || primary?.mj?.Distance || primary?.metrics_json?.Distance;
       const isSprintTab = Number(distP) > 0 && Number(distP) <= 50;
       const HelpDot = window.HelpDot;
-      const dotName = isSprintTab ? '5 m segment' : 'lap';
-      const dotPlural = isSprintTab ? 'segments' : 'laps';
+      // v03.97 — since v03.94 sprints plot per-LAP dots (sprintSource);
+      // the 5 m segment wording only applies on the rare fallback
+      // when per-lap rows are unusable. Mirror sprintSource's check.
+      const sprintUsesLaps = isSprintTab
+        && derivePerLap(primary).filter(l => l.rate != null && l.t > 0).length >= 2;
+      const sprintSegs = isSprintTab && !sprintUsesLaps;
+      const dotName = sprintSegs ? '5 m segment' : 'lap';
+      const dotPlural = sprintSegs ? 'segments' : 'laps';
       const helpText = (
         <>
           <div style={{ marginBottom: 8 }}>
@@ -2213,7 +2238,7 @@ const MechanicsSection = ({ primary, compare, mode }) => {
       );
       return (
         <>
-          Each dot is one {dotName}, plotted by <span style={{ color: 'var(--lime-eff)' }}>stroke rate</span> (x) and <span style={{ color: 'var(--lime-eff)' }}>distance per stroke</span> (y). The diagonal dashed curves are <span style={{ color: 'var(--tx-hi)' }}>velocity</span> lines — higher curve = faster {dotName}. Same curve = same speed, different stroke shape.{isSprintTab && <> Sprint mode shows {dotPlural} so you can see where speed is gained or lost across the race.</>}{' '}
+          Each dot is one {dotName}, plotted by <span style={{ color: 'var(--lime-eff)' }}>stroke rate</span> (x) and <span style={{ color: 'var(--lime-eff)' }}>distance per stroke</span> (y). The diagonal dashed curves are <span style={{ color: 'var(--tx-hi)' }}>velocity</span> lines — higher curve = faster {dotName}. Same curve = same speed, different stroke shape.{sprintSegs && <> Sprint mode shows {dotPlural} so you can see where speed is gained or lost across the race.</>}{' '}
           {HelpDot && <HelpDot text={helpText} size={13}/>}
         </>
       );
@@ -3146,13 +3171,14 @@ const SrDpsEfficiencyChart = ({ primary, compare, mode }) => {
     const laps = derivePerLap(t).filter(l => l.rate != null && l.t > 0);
     if (laps.length < 2) return derivePerSegment(t, 5);
     // This chart's geometry is built on velocity = SR x DPS / 60
-    // (iso-curves, zones, velOf). derivePerLap's dps comes from
-    // stroke COUNTS, which Templo counts in a different convention
-    // than its stroke RATES — mixing them implied ~6 m/s here. So
-    // for this chart, derive dps from the lap's MEASURED velocity
-    // (true meters / lap time), exactly like derivePerSegment does;
-    // the implied velocity is then the real one. The DPS tab keeps
-    // its count-based per-stroke distance — different question.
+    // (iso-curves, zones, velOf). derivePerLap's dps is pool length
+    // / counted strokes — but the underwater portions of a lap
+    // carry distance with ZERO strokes, so that figure is inflated
+    // and breaks the identity (it implied ~6 m/s here). For this
+    // chart, derive dps from the lap's MEASURED velocity (true
+    // meters / lap time), exactly like derivePerSegment does; the
+    // implied velocity is then the real one. The DPS tab keeps the
+    // count-based figure, labeled "underwater included" there.
     const course = K.courseOf ? K.courseOf(t) : null;
     return laps.map(l => {
       const lapM = K.actualMeters ? K.actualMeters(l.endD - l.startD, course) : (l.endD - l.startD);
@@ -4204,8 +4230,6 @@ const RaceDetail = ({ primary, compare, diff, summary, isPro, onUpgrade }) => {
   // Compute lap count to drive auto default + toggle visibility.
   const laps = primary ? derivePerLap(primary) : [];
   const numLaps = laps.length;
-  const autoMode = numLaps > 16 ? 'per-100m' : 'per-50m';
-  const mode = userMode || autoMode;
   // v03.16 — course-aware toggle visibility. Lap distance tells
   // the course: ~25 m → short course (SCM/SCY), ~50 m → long
   // course (LCM). Show the Per 50 / Per 100 toggle for SC races
@@ -4217,6 +4241,21 @@ const RaceDetail = ({ primary, compare, diff, summary, isPro, onUpgrade }) => {
   const lapDist  = laps.length ? (laps[0].endD - laps[0].startD) : 0;
   const raceDist = laps.length ? laps[laps.length - 1].endD : 0;
   const isShortCourse = lapDist > 0 && lapDist < 40;
+  // v03.96 — auto default is per-lap for short-course races of 50
+  // and under. The per-50m default merged an SC 50's two 25 m/yd
+  // laps into one 0-50 bucket across every mode-driven card (split
+  // story, DPS bars, compare bars, mechanics table), with no toggle
+  // to undo it (toggle hidden at <= 50). Course comes from the
+  // trial's course field, NOT the lap-distance heuristic: an old
+  // LCM import without stroke counts makes derivePerLap guess 25 m
+  // laps, and splitting such a race into two false laps would be
+  // worse than the merge. Unknown course falls back to the
+  // heuristic. LCM 50s render identically either way (one 50 m lap).
+  const courseRD = (window.PA_KPIS.courseOf ? window.PA_KPIS.courseOf(primary) : null) || '';
+  const sprintPerLap = raceDist > 0 && raceDist <= 50
+    && (courseRD === 'SCY' || courseRD === 'SCM' || (!courseRD && isShortCourse));
+  const autoMode = numLaps > 16 ? 'per-100m' : sprintPerLap ? 'per-lap' : 'per-50m';
+  const mode = userMode || autoMode;
   const showToggle = isShortCourse ? raceDist > 50 : raceDist > 100;
   // v03.17 — short course (25 m laps) offers Per lap / Per 50 m /
   // Per 100 m; long course (50 m laps) offers Per 50 m / Per 100 m.

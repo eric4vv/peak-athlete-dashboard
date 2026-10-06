@@ -412,6 +412,12 @@
     "es": "Español"
   },
   "analysis": {
+    "reportBtn":     "Templo report",
+    "reportTitle":   "Templo report",
+    "reportOpenTab": "Open in new tab",
+    "reportLoading": "Loading report…",
+    "reportError":   "Could not load the report. Please try again.",
+    "reportProHint": "Templo PDF report — a Pro feature.",
     "effSegExcluded": "{n} segment(s) hidden — split time implies an impossible speed. Check the export’s split markers.",
     "filter": {
       "distance":  "Distance",

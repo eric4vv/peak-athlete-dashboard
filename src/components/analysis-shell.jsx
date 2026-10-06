@@ -2414,6 +2414,192 @@ const AskTeamButton = ({ isPro, onUpgrade, contextKind, contextLabel, variant = 
   );
 };
 
+// ── PA_REPORTS (v03.98) — Templo PDF report keys ──────────────
+// One cached fetch of every report key the caller can see via the
+// v_trial_reports view (rows exist only for trials that HAVE a
+// report; the trial's own RLS applies). Keys are written by
+// PeakAthleteReports/upload_reports.py, never by the client. Lives
+// here (not in trials.js) because mobile has no trials.js — this
+// keeps web and mobile on one implementation.
+const PA_REPORTS = (() => {
+  let cache = null, inflight = null;
+  const TTL = 8000;
+  async function fetchMap() {
+    const map = new Map();
+    const c = window.supabaseClient;
+    if (!c) return map;
+    try {
+      const { data, error } = await c
+        .from('v_trial_reports')
+        .select('kind, record_uuid, report_key');
+      if (error || !data) return map;
+      data.forEach(r => {
+        if (!r || !r.record_uuid || !r.report_key) return;
+        map.set(r.kind + ':' + r.record_uuid, r.report_key);
+      });
+    } catch (_) { /* swallow — button just stays hidden */ }
+    return map;
+  }
+  async function loadReportKeys() {
+    if (cache && (Date.now() - cache.at) < TTL) return cache.map;
+    if (inflight) return inflight;
+    inflight = fetchMap().then(map => {
+      cache = { map, at: Date.now() }; inflight = null; return map;
+    }).catch(() => { inflight = null; return new Map(); });
+    return inflight;
+  }
+  const ID_KEYS = ['record_uuid', 'race_uuid', 'start_uuid', 'turn_uuid'];
+  const trialId = (trial) => {
+    if (!trial) return null;
+    for (const k of ID_KEYS) if (trial[k]) return trial[k];
+    return null;
+  };
+  return { loadReportKeys, trialId, invalidate: () => { cache = null; inflight = null; } };
+})();
+
+// ── TrialReportButton (v03.98) ────────────────────────────────
+// Pro-gated "Templo report" pill for the Races / Starts / Turns
+// detail headers. Renders ONLY when the trial has a PDF attached
+// (metrics_json['Report Key'], read via v_trial_reports through
+// PA_REPORTS.loadReportKeys) — no report, no button, no clutter.
+// Free users: PRO tag, click -> upgrade flow. Pro users: signed URL
+// from r2-download-url (which re-checks RLS + Pro SERVER-SIDE) in a
+// portaled modal <iframe>, plus "open in new tab". Android's WebView
+// does not render PDFs inline, so there the report opens externally
+// (window.PA_OPEN_EXTERNAL when the mobile shell provides it).
+const TrialReportButton = ({ kind, trial, athleteUuid, isPro, onUpgrade }) => {
+  const t = (window.useT || (() => (k) => k))();
+  const trialUuid = PA_REPORTS.trialId(trial);
+  const [reportKey, setReportKey] = React.useState(null);
+  const [open, setOpen]           = React.useState(false);
+  const [url, setUrl]             = React.useState(null);
+  const [phase, setPhase]         = React.useState('idle'); // idle|loading|error
+
+  React.useEffect(() => {
+    let dead = false;
+    setReportKey(null);
+    if (!trialUuid) return;
+    PA_REPORTS.loadReportKeys().then(map => {
+      if (dead) return;
+      setReportKey(map.get(kind + ':' + trialUuid) || null);
+    });
+    return () => { dead = true; };
+  }, [kind, trialUuid]);
+
+  if (!reportKey) return null;
+
+  const openReport = async () => {
+    if (!isPro) { onUpgrade?.(); return; }
+    setPhase('loading'); setUrl(null); setOpen(true);
+    const R = window.PA_REQUESTS;
+    const res = (R && R.getVideoDownloadUrl)
+      ? await R.getVideoDownloadUrl(reportKey, { athleteUuid })
+      : { ok: false };
+    if (!res.ok || !res.url) { setPhase('error'); return; }
+    const platform = window.Capacitor && window.Capacitor.getPlatform
+      ? window.Capacitor.getPlatform() : 'web';
+    if (platform === 'android') {
+      setOpen(false); setPhase('idle');
+      const opener = window.PA_OPEN_EXTERNAL || ((u) => window.open(u, '_blank', 'noopener'));
+      try { opener(res.url); } catch (_) {}
+      return;
+    }
+    setUrl(res.url); setPhase('idle');
+  };
+
+  const docIcon = (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+         strokeLinejoin="round" aria-hidden="true">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="8" y1="13" x2="16" y2="13"/>
+      <line x1="8" y1="17" x2="16" y2="17"/>
+    </svg>
+  );
+  const proTag = !isPro && (
+    <span className="mono" style={{
+      font: '700 9px var(--font-mono)', letterSpacing: 0.08,
+      padding: '1px 5px', borderRadius: 4,
+      background: 'color-mix(in oklch, var(--signal-eff) 22%, transparent)',
+      color: 'var(--signal-eff)', flexShrink: 0,
+    }}>
+      PRO
+    </span>
+  );
+
+  const modal = !open ? null : (
+    <div onClick={() => setOpen(false)}
+      style={{ position: 'fixed', inset: 0, zIndex: 1400,
+               background: 'color-mix(in oklch, var(--ink) 55%, transparent)',
+               display: 'flex', alignItems: 'center', justifyContent: 'center',
+               padding: 16 }}>
+      <div onClick={(e) => e.stopPropagation()}
+        style={{ width: '100%', maxWidth: 900, background: 'var(--bg-2)',
+                 border: '1px solid var(--line)', borderRadius: 14,
+                 padding: 16, boxShadow: 'var(--shadow)',
+                 display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ font: '700 15px var(--font-display)', color: 'var(--tx-hi)', flex: 1 }}>
+            {t('analysis.reportTitle')}
+          </div>
+          {url && (
+            <a href={url} target="_blank" rel="noopener noreferrer"
+               style={{ font: '600 12px var(--font-ui)', color: 'var(--signal-eff)',
+                        textDecoration: 'underline', textUnderlineOffset: 3 }}>
+              {t('analysis.reportOpenTab')}
+            </a>
+          )}
+          <button type="button" onClick={() => setOpen(false)}
+            style={{ width: 30, height: 30, borderRadius: 8,
+                     border: '1px solid var(--line)', background: 'transparent',
+                     color: 'var(--tx-md)', cursor: 'pointer', font: '600 14px var(--font-ui)' }}>
+            ×
+          </button>
+        </div>
+        {phase === 'loading' && (
+          <div style={{ font: '500 12px var(--font-ui)', color: 'var(--tx-lo)', padding: '24px 0', textAlign: 'center' }}>
+            {t('analysis.reportLoading')}
+          </div>
+        )}
+        {phase === 'error' && (
+          <div style={{ font: '500 12px var(--font-ui)', color: 'var(--flag-eff)', padding: '24px 0', textAlign: 'center' }}>
+            {t('analysis.reportError')}
+          </div>
+        )}
+        {url && phase === 'idle' && (
+          <iframe src={url} title={t('analysis.reportTitle')}
+                  style={{ width: '100%', height: '72vh', border: '1px solid var(--line-soft)',
+                           borderRadius: 10, background: 'var(--bg-3)' }}/>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <button type="button" onClick={openReport}
+        title={isPro ? t('analysis.reportTitle') : t('analysis.reportProHint')}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '6px 11px', borderRadius: 8,
+          border: '1px solid var(--signal-eff)',
+          background: 'color-mix(in oklch, var(--signal-eff) 8%, var(--bg-2))',
+          color: 'var(--signal-eff)',
+          font: '700 11px var(--font-ui)', letterSpacing: 0.04,
+          cursor: 'pointer', textTransform: 'uppercase', whiteSpace: 'nowrap',
+        }}>
+        {docIcon}
+        {t('analysis.reportBtn')}
+        {proTag}
+      </button>
+      {modal && (window.ReactDOM && window.ReactDOM.createPortal
+        ? window.ReactDOM.createPortal(modal, document.body)
+        : modal)}
+    </>
+  );
+};
+
 // ── AddTrialToSessionButton (v03.46) ─────────────────────────
 // Replaces the v03.44 auto-promote "Save to Library" pattern
 // with an explicit picker. Coach (or athlete) now picks which
@@ -4175,7 +4361,7 @@ Object.assign(window, {
   // v03.73 — notify-athlete pill (also used by Video Sessions)
   NotifyAthleteButton,
   // v03.85 — Pro "Ask the team" button + modal
-  AskTeamButton,
+  AskTeamButton, TrialReportButton,
   // design-reference atoms (v00.17c)
   Headline, LapBars, StrokeMechanicsTable, RaceCompareBars,
   buildRaceStory, derivePerLap, aggregateLaps, derivePerSegment,

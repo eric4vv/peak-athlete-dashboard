@@ -587,6 +587,13 @@ const StartDetail = ({ primary, compare, diff, story, phases, items, phase, onCh
             contextKind="start"
             contextLabel={window.PA_STARTS.startTitle(primary) + ' · ' + (window.PA_STARTS.startDate(primary) || '')}/>
         )}
+        {/* v03.98 — Templo PDF report (Pro). Renders only when attached. */}
+        {window.TrialReportButton && (
+          <window.TrialReportButton kind="start"
+            trial={primary}
+            athleteUuid={primary && primary.athlete_uuid}
+            isPro={isPro} onUpgrade={onUpgrade}/>
+        )}
       </div>
     )}
     {/* Hero — free-standing, no card wrapper */}

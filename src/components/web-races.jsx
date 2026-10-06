@@ -4287,6 +4287,17 @@ const RaceDetail = ({ primary, compare, diff, summary, isPro, onUpgrade }) => {
               contextLabel={window.PA_KPIS.raceTitle(primary) + ' · ' + (window.PA_KPIS.raceDate(primary) || '')}
             />
           )}
+          {/* v03.98 — Templo PDF report (Pro). Renders only when a
+              report is attached to this trial. */}
+          {window.TrialReportButton && (
+            <window.TrialReportButton
+              kind="race"
+              trial={primary}
+              athleteUuid={primary && primary.athlete_uuid}
+              isPro={isPro}
+              onUpgrade={onUpgrade}
+            />
+          )}
         </div>
       )}
       {/* Hero — free-standing, no card wrapper */}

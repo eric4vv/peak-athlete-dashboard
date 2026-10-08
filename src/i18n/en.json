@@ -290,6 +290,7 @@
       "sentTitle": "Check your email",
       "sentSubA":  "If an account exists for ",
       "sentSubB":  ", we sent a password-reset link. Click it to set a new password, then come back here to sign in.",
+      "sentSpam":  "Not there after a minute? Check your spam or junk folder and mark it as safe.",
       "sentMetaRight": "reset · sent"
     },
     "resetCard": {

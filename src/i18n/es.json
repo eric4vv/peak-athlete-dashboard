@@ -290,6 +290,7 @@
       "sentTitle": "Revisa tu correo",
       "sentSubA":  "Si existe una cuenta para ",
       "sentSubB":  ", enviamos un enlace de restablecimiento. Haz clic para establecer una nueva contraseña, luego vuelve aquí para iniciar sesión.",
+      "sentSpam":  "¿No llega en un minuto? Revisa la carpeta de spam o correo no deseado y márcalo como seguro.",
       "sentMetaRight": "restablecer · enviado"
     },
     "resetCard": {

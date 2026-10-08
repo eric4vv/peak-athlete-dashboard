@@ -627,6 +627,7 @@ const ForgotCard = ({ onSwitchMode }) => {
         sub={
           <>
             {t('auth.forgotCard.sentSubA')}<strong style={{ color: 'var(--tx-hi)' }}>{email}</strong>{t('auth.forgotCard.sentSubB')}
+            <br/><span style={{ display: 'inline-block', marginTop: 8, color: 'var(--tx-dim)' }}>{t('auth.forgotCard.sentSpam')}</span>
           </>
         }>
         <button type="button" style={s.btnGhost}
@@ -967,7 +968,7 @@ const PlaceholderCard = ({ title, body, onSwitchMode }) => {
 // AuthScreen renders the ResetCard regardless of internal state.
 // `onResetComplete` lets AuthGate clear its recoveryMode flag
 // after the reset finishes so it can flip to App.
-const AuthScreen = ({ onSignedIn, forceMode, onResetComplete }) => {
+const AuthScreen = ({ onSignedIn, forceMode, onResetComplete, onResetCancel }) => {
   const [mode, setMode] = useAuthState('login');
   // v01.11 — `pendingEmail` is set by SignUpCard when sign-up
   // succeeds but Supabase requires email confirmation. The
@@ -985,7 +986,7 @@ const AuthScreen = ({ onSignedIn, forceMode, onResetComplete }) => {
   if (effectiveMode === 'reset') {
     return <ResetCard
       onComplete={onResetComplete}
-      onCancel={onResetComplete /* same handler — exits recovery */}/>;
+      onCancel={onResetCancel || onResetComplete /* v04.00 — Cancel signs out (no recovery session left behind) */}/>;
   }
   if (effectiveMode === 'signup') {
     return <SignUpCard

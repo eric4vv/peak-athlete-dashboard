@@ -381,7 +381,7 @@ const SignUpCard = ({ onSwitchMode, onSignedIn, onVerifySent }) => {
     if (error) {
       // Common Supabase error messages — surface them as-is. Examples:
       //   "User already registered"
-      //   "Password should be at least 6 characters"
+      //   "Password should be at least 12 characters"  (v03.99: minimum raised to 12)
       //   "Unable to validate email address: invalid format"
       setErr(error.message || t('auth.signupCard.errFallback'));
       return;
@@ -425,7 +425,7 @@ const SignUpCard = ({ onSwitchMode, onSignedIn, onVerifySent }) => {
         <div style={s.field}>
           <label style={s.label} htmlFor="su-pass">{t('auth.password')}</label>
           <input id="su-pass" type="password" autoComplete="new-password" required
-                 minLength={6}
+                 minLength={12}
                  placeholder={t('auth.signupCard.passwordPlaceholder')}
                  value={password} onChange={(e) => setPassword(e.target.value)}
                  style={s.input} {...inputFx}/>
@@ -707,7 +707,7 @@ const ResetCard = ({ onComplete, onCancel }) => {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!password || password.length < 6 || busy) return;
+    if (!password || password.length < 12 || busy) return;
     setBusy(true); setErr(null);
     const { user, error } = await window.PA_AUTH.updatePassword(password);
     setBusy(false);
@@ -731,18 +731,18 @@ const ResetCard = ({ onComplete, onCancel }) => {
           <label style={s.label} htmlFor="rp-pass">{t('auth.resetCard.passwordLabel')}</label>
           <input
             id="rp-pass" type="password" autoComplete="new-password" required
-            minLength={6} placeholder={t('auth.resetCard.passwordPlaceholder')}
+            minLength={12} placeholder={t('auth.resetCard.passwordPlaceholder')}
             value={password} onChange={(e) => setPassword(e.target.value)}
             style={s.input}
             onFocus={(e) => { e.target.style.borderColor = 'var(--signal-eff)'; }}
             onBlur={(e)  => { e.target.style.borderColor = 'var(--line)'; }}/>
         </div>
 
-        <button type="submit" disabled={busy || password.length < 6}
+        <button type="submit" disabled={busy || password.length < 12}
           style={{
             ...s.btnPrimary,
-            opacity: (busy || password.length < 6) ? 0.5 : 1,
-            cursor:  (busy || password.length < 6) ? 'not-allowed' : 'pointer',
+            opacity: (busy || password.length < 12) ? 0.5 : 1,
+            cursor:  (busy || password.length < 12) ? 'not-allowed' : 'pointer',
           }}>
           {busy ? t('auth.resetCard.submitBusy') : t('auth.resetCard.submit')}
         </button>

@@ -15,7 +15,12 @@
 
 (function () {
   const SUPABASE_URL = 'https://wbqgshvbopfukwyqsndq.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndicWdzaHZib3BmdWt3eXFzbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMDk4OTAsImV4cCI6MjA4NDU4NTg5MH0.lmbqvVTyfmlkgkUCo8dAGZuK7Z9tGXUA4Fq9FAsmvhU';
+  // v04.02 (security Phase 5C): the publishable key replaces the legacy
+  // anon JWT. Same public, RLS-gated role, rotatable on its own; the
+  // legacy key is disabled in Phase 6 after the mobile build. supabase-js
+  // 2.45.4 sends it as apikey + Bearer and the gateway accepts both
+  // (tested 2026-10-08).
+  const SUPABASE_KEY = 'sb_publishable_eUEEYAYb5vDNJRFTGSbc_g_m8mRHuRK';
 
   // Email redirect for magic-link / password-recovery flows.
   // v03.81 — was 'https://www.mypeakathlete.com/blank-3' (the Wix

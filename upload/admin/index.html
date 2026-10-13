@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="robots" content="noindex"/>
+  <title>Upload admin · Peak Athlete</title>
+  <!--
+    Peak Athlete · Upload Center admin tool (Eric only)
+    Phase 5 of prototype-v03/UPLOAD-CENTER-PLAN.md, 2026-10-10.
+    Reads through RLS (admin policies), writes only through the
+    session-upload edge function. Edits nothing outside upload/.
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../../styles/tokens.css?v=up0.4"/>
+  <link rel="stylesheet" href="../upload.css?v=up0.4"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+</head>
+<body class="up" data-scope="dark" data-dir="teal" data-density="balanced">
+  <div id="root"></div>
+
+  <script>window.UPLOAD_VERSION = 'up0.4';</script>
+  <script src="../../src/lib/supabase.js?v=up0.4"></script>
+  <script type="text/babel" data-presets="react" src="admin-app.jsx?v=up0.4"></script>
+</body>
+</html>

@@ -396,9 +396,25 @@ function UploadForm({ ov, onSubmit }) {
 }
 
 // ── Active upload ─────────────────────────────────────────
-function ProgressCard({ job, onPause, onResume, onCancel, onAnother }) {
+function ProgressCard({ job, onPause, onResume, onCancel, onAnother, awake }) {
   const headingRef = useRef(null);
   useEffect(() => { if (headingRef.current) headingRef.current.focus(); }, [job.uploadUuid]);
+  // Re-render once a second while a retry countdown is showing.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!job.retry) return undefined;
+    const id = setInterval(() => setTick((x) => x + 1), 1000);
+    return () => clearInterval(id);
+  }, [job.retry]);
+  let retryText = null;
+  if (job.retry && (job.state === 'uploading' || job.state === 'completing')) {
+    const secs = Math.max(0, Math.ceil((job.retry.until - Date.now()) / 1000));
+    retryText = job.retry.auth
+      ? t('progress.retryingAuth', { n: job.retry.attempt })
+      : secs > 0
+        ? t('progress.retrying', { s: secs, n: job.retry.attempt })
+        : t('progress.retryingNow', { n: job.retry.attempt });
+  }
   const pct = job.total ? Math.floor((job.sent / job.total) * 100) : 0;
   const s = job.state === 'idle' ? 'uploading' : job.state;
   const statusText = s === 'error'
@@ -432,6 +448,8 @@ function ProgressCard({ job, onPause, onResume, onCancel, onAnother }) {
         )}
       </div>
       <p className={'up-status' + (s === 'error' ? ' error' : s === 'done' ? ' done' : '')}>{statusText}</p>
+      {retryText && <p className="up-status up-warn">{retryText}</p>}
+      {awake && (s === 'uploading' || s === 'completing') && <p className="up-help">{t('progress.awake')}</p>}
       <div className="up-actions">
         {s === 'uploading' && <button type="button" className="up-btn" onClick={onPause}>{t('progress.pause')}</button>}
         {(s === 'paused' || s === 'error') && <button type="button" className="up-btn primary" onClick={onResume}>{t('progress.resume')}</button>}
@@ -631,6 +649,34 @@ function App() {
     return () => window.removeEventListener('beforeunload', h);
   }, [moving]);
 
+  // Keep the screen (and on most PCs the computer) awake while bytes are moving.
+  // Browsers drop the lock when the tab is hidden, so it is taken again on return.
+  const [awake, setAwake] = useState(false);
+  useEffect(() => {
+    if (!moving || !navigator.wakeLock) { setAwake(false); return undefined; }
+    let lock = null;
+    let stopped = false;
+    const acquire = async () => {
+      try {
+        lock = await navigator.wakeLock.request('screen');
+        if (stopped) { lock.release().catch(() => {}); return; }
+        setAwake(true);
+        lock.addEventListener('release', () => { if (!stopped) setAwake(false); });
+      } catch (_) {
+        setAwake(false); // not allowed (battery saver, policy): the reminder text still applies
+      }
+    };
+    const onVisible = () => { if (document.visibilityState === 'visible') acquire(); };
+    acquire();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      stopped = true;
+      document.removeEventListener('visibilitychange', onVisible);
+      if (lock) lock.release().catch(() => {});
+      setAwake(false);
+    };
+  }, [moving]);
+
   // Drop a remembered upload the server no longer considers in progress.
   useEffect(() => {
     if (!ov || !pending || job) return;
@@ -644,6 +690,18 @@ function App() {
     let samples = [];
     const engine = window.PA_UPLOADER.createUpload({
       file: info.file, uploadUuid: info.uploadUuid, partSize: info.partSize, api,
+      // Uploads can outlive the 1-hour sign-in token; renew it when the server says so.
+      refreshAuth: async () => { await window.supabaseClient.auth.refreshSession(); },
+      onRetry: (r) => {
+        setJob((j) => {
+          if (!j || j.uploadUuid !== info.uploadUuid) return j;
+          if (r && !j.retry) setAnnounce(t('progress.retryAnnounce'));
+          if (!r && j.retry) setAnnounce(t('progress.reconnected'));
+          return Object.assign({}, j, {
+            retry: r ? { attempt: r.attempt, until: Date.now() + r.waitMs, auth: r.reason === 'unauthorized' } : null,
+          });
+        });
+      },
       onProgress: (p) => {
         const now = Date.now();
         samples.push({ t: now, sent: p.sent });
@@ -764,6 +822,7 @@ function App() {
             {job && (
               <ProgressCard
                 job={job}
+                awake={awake}
                 onPause={() => job.engine.pause()}
                 onResume={() => job.engine.resume()}
                 onCancel={() => setConfirm({ kind: 'job' })}

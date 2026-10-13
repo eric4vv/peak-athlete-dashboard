@@ -1,29 +1,40 @@
 /* ───────────────────────────────────────────────────────────
    Peak Athlete · Upload Center
-   upload-app.jsx — coach upload page (Phase 4, 2026-10-10)
+   upload-app.jsx — coach upload page
 
-   Plan: prototype-v03/UPLOAD-CENTER-PLAN.md. All data goes
-   through the session-upload edge function; this page never
-   queries tables directly and never sees storage keys.
+   Phase 4 (2026-10-10); rebuilt 2026-10-13 for the trial-based
+   allowance and the upload QUEUE. Plan: UPLOAD-CENTER-PLAN.md.
 
-   States: loading -> signedOut | notCoach | inactive | error | ready.
-   Ready: upload form (or the active upload's progress), an
-   unfinished-upload card when one can be resumed, this month's
-   usage per athlete, and uploads from the last 90 days.
+   The coach adds Templo files per athlete (one trial or clip per
+   file by default, editable), for as many athletes as needed,
+   confirms calibration once, and presses "Upload all". Files go
+   one at a time; each becomes its own upload on the server and
+   shows as Received the moment it finishes. The engine
+   (uploader.js) retries connection problems on its own.
 
-   Accessibility (WCAG 2.1 AA target): skip link, landmarks,
-   one h1 + h2 per section, native controls with labels, error
-   summary that takes focus, aria-live announcements for upload
-   progress and state, native <dialog> for confirmations, no
-   time limits, corrected muted-text contrast (index.html).
+   If the page closes mid-queue, the unfinished files are offered
+   again on the next visit. In Chrome and Edge the page keeps a
+   handle to each picked file (IndexedDB), so continuing is one
+   click plus the browser's permission prompt; elsewhere the coach
+   re-selects the files and they are matched by size and date.
+
+   All data goes through the session-upload edge function; this
+   page never queries tables directly and never sees storage keys.
+
+   Accessibility (WCAG 2.1 AA target): skip link, landmarks, one
+   h1 + h2 per section, native controls with labels, aria-live
+   announcements, native <dialog> confirmations, no time limits.
    ─────────────────────────────────────────────────────────── */
 
 const { useState, useEffect, useRef, useCallback } = React;
 const t = window.PA_UPLOAD_T;
 
 const FN_URL = window.PA_AUTH.SUPABASE_URL + '/functions/v1/session-upload';
-const PENDING_KEY = 'pa-upload-pending';
+const QUEUE_KEY = 'pa-upload-queue';
+const LEGACY_PENDING_KEY = 'pa-upload-pending';
 const GB = 1024 * 1024 * 1024;
+const LEGACY_PART_SIZE = 64 * 1024 * 1024;
+const SUPPORTS_HANDLES = typeof window.showOpenFilePicker === 'function';
 
 // ── Server call ───────────────────────────────────────────
 // Network failures throw (the upload engine retries those);
@@ -57,14 +68,6 @@ function fmtDuration(seconds) {
   if (total < 60) return t('eta.minutes', { m: total });
   return t('eta.hours', { h: Math.floor(total / 60), m: total % 60 });
 }
-function fmtMoney(v) {
-  const num = Number(v || 0);
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency', currency: 'USD',
-    minimumFractionDigits: Number.isInteger(num) ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(num);
-}
 function fmtMonth(period) {
   const parts = String(period || '').split('-').map(Number);
   if (parts.length < 2 || !parts[0]) return '';
@@ -77,9 +80,9 @@ function fmtDate(iso) {
 function athleteName(a) {
   return a ? [a.first_name, a.last_name].filter(Boolean).join(' ') : t('uploads.unknownAthlete');
 }
-function codeText(code) {
+function codeText(code, extra) {
   const key = 'code.' + code;
-  const s = t(key);
+  const s = t(key, extra || {});
   return s === key ? t('code.default', { code: code || 'unknown' }) : s;
 }
 function fileExt(name) {
@@ -92,15 +95,59 @@ function engineErrorCode(err) {
   if (err.status) return 'storage_unavailable';
   return 'network';
 }
-function readPending() {
-  try { return JSON.parse(localStorage.getItem(PENDING_KEY) || 'null'); } catch (_) { return null; }
+const newId = () => 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const itemUnits = (it) => (it.type === 'performance' ? (it.starts || 0) + (it.turns || 0) : (it.clips || 0));
+
+// ── Local storage (per-browser convenience only) ──────────
+function readJson(key) {
+  try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (_) { return null; }
 }
-function writePending(v) {
+function writeJson(key, v) {
   try {
-    if (v) localStorage.setItem(PENDING_KEY, JSON.stringify(v));
-    else localStorage.removeItem(PENDING_KEY);
-  } catch (_) { /* storage blocked: resume after reload just won't be offered */ }
+    if (v) localStorage.setItem(key, JSON.stringify(v));
+    else localStorage.removeItem(key);
+  } catch (_) { /* storage blocked: continuing after a reload won't be offered */ }
 }
+// What survives a reload: no file names, no file contents.
+function persistQueue(items) {
+  const keep = items
+    .filter((i) => !['done', 'cancelled'].includes(i.status) && !(i.status === 'error' && !i.uploadUuid))
+    .map((i) => ({
+      id: i.id, athleteUuid: i.athleteUuid, type: i.type, starts: i.starts, turns: i.turns, clips: i.clips,
+      size: i.size, lastModified: i.lastModified, uploadUuid: i.uploadUuid || null, partSize: i.partSize || null,
+    }));
+  writeJson(QUEUE_KEY, keep.length ? keep : null);
+}
+
+// ── File handles (Chrome / Edge): continue after a reload ──
+const handleStore = (() => {
+  let dbp = null;
+  function db() {
+    if (!('indexedDB' in window)) return Promise.reject(new Error('no indexedDB'));
+    if (!dbp) {
+      dbp = new Promise((resolve, reject) => {
+        const r = indexedDB.open('pa-upload', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('handles');
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+      });
+    }
+    return dbp;
+  }
+  function run(mode, fn) {
+    return db().then((d) => new Promise((resolve, reject) => {
+      const tx = d.transaction('handles', mode);
+      const req = fn(tx.objectStore('handles'));
+      tx.oncomplete = () => resolve(req ? req.result : undefined);
+      tx.onerror = () => reject(tx.error);
+    }));
+  }
+  return {
+    put: (k, v) => run('readwrite', (s) => s.put(v, k)).catch(() => {}),
+    get: (k) => run('readonly', (s) => s.get(k)).catch(() => null),
+    del: (k) => run('readwrite', (s) => s.delete(k)).catch(() => {}),
+  };
+})();
 
 // ── Dialog (native <dialog>: focus trap, Escape, backdrop) ─
 function Dialog({ open, titleId, title, children, onClose }) {
@@ -127,365 +174,373 @@ function Dialog({ open, titleId, title, children, onClose }) {
   );
 }
 
-// ── Number stepper (input + labelled -/+ buttons) ─────────
-function Stepper({ id, label, value, onChange, max, invalid, describedBy }) {
-  const what = label.toLowerCase();
-  return (
-    <div className="up-stepper">
-      <label htmlFor={id}>{label}</label>
-      <div className="up-stepper-row">
-        <button type="button" className="up-btn square" aria-label={t('form.decrease', { what })}
-                aria-controls={id} onClick={() => onChange(value - 1)}>−</button>
-        <input id={id} type="number" inputMode="numeric" min={0} max={max} value={value}
-               aria-invalid={invalid ? 'true' : undefined} aria-describedby={describedBy}
-               onChange={(e) => onChange(parseInt(e.target.value, 10) || 0)} />
-        <button type="button" className="up-btn square" aria-label={t('form.increase', { what })}
-                aria-controls={id} onClick={() => onChange(value + 1)}>+</button>
-      </div>
-    </div>
-  );
+// ── Budget: what each athlete has left, counting the queue ─
+function budgetFor(ov, athleteUuid, type, items) {
+  const a = ov.roster.find((x) => x.athlete_uuid === athleteUuid);
+  const max = type === 'performance' ? ov.program.perf_trials_per_month : ov.program.video_clips_per_month;
+  const used = a ? (type === 'performance' ? a.perf_used : a.video_used) : 0;
+  // Items already started on the server are inside `used`.
+  const queued = items
+    .filter((i) => i.athleteUuid === athleteUuid && i.type === type && !i.uploadUuid
+                   && !['done', 'cancelled', 'error'].includes(i.status))
+    .reduce((s, i) => s + itemUnits(i), 0);
+  return { max, used, queued, left: Math.max(max - used, 0), leftAfterQueue: max - used - queued };
 }
 
-// ── Upload form ───────────────────────────────────────────
-function UploadForm({ ov, onSubmit }) {
+// ── Add files ─────────────────────────────────────────────
+function AddFiles({ ov, items, onAdd, disabled }) {
   const prog = ov.program;
-  const nTrials = prog.perf_trials_per_session;
-  const nClips = prog.video_clips_per_session;
-
   const [athleteUuid, setAthleteUuid] = useState('');
   const [type, setType] = useState('');
-  const [starts, setStarts] = useState(0);
-  const [turns, setTurns] = useState(0);
-  const [calibration, setCalibration] = useState(false);
-  const [clipsOk, setClipsOk] = useState(false);
-  const [file, setFile] = useState(null);
-  const [errors, setErrors] = useState([]);
-  const [serverError, setServerError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [extraAsk, setExtraAsk] = useState(null);
+  const [msg, setMsg] = useState(null);
   const [dragOver, setDragOver] = useState(false);
-  const summaryRef = useRef(null);
+  const inputRef = useRef(null);
 
   const athlete = ov.roster.find((a) => a.athlete_uuid === athleteUuid) || null;
-  const usage = athlete && type
-    ? (type === 'performance'
-        ? { used: athlete.perf_used, max: prog.perf_sessions_per_month, price: prog.extra_perf_price_usd }
-        : { used: athlete.video_used, max: prog.video_sessions_per_month, price: prog.extra_video_price_usd })
-    : null;
-  const isExtra = !!usage && usage.used >= usage.max;
+  const fileTypes = type === 'video' ? prog.video_file_types : prog.perf_file_types;
   const allTypes = Array.from(new Set([...(prog.perf_file_types || []), ...(prog.video_file_types || [])]));
-  const fileTypes = type === 'video' ? prog.video_file_types : type === 'performance' ? prog.perf_file_types : allTypes;
-  const typesText = fileTypes.map((x) => '.' + x).join(' or ');
-  const clamp = (v) => Math.max(0, Math.min(nTrials, v));
-  const bad = (id) => errors.some((e) => e.id === id);
+  const typesText = (type ? fileTypes : allTypes).map((x) => '.' + x).join(' or ');
+  const b = athlete && type ? budgetFor(ov, athleteUuid, type, items) : null;
 
-  function validate() {
-    const e = [];
-    if (!athlete) e.push({ id: 'f-athlete', msg: t('err.athlete') });
-    if (!type) e.push({ id: 'f-type-performance', msg: t('err.type') });
-    if (type === 'performance') {
-      if (starts + turns !== nTrials) e.push({ id: 'f-starts', msg: t('err.trials', { n: nTrials }) });
-      if (!calibration) e.push({ id: 'f-calibration', msg: t('err.calibration') });
+  function accept(entries) {
+    if (!athlete || !type) { setMsg({ kind: 'error', text: t('add.needAthlete') }); return; }
+    const ok = [];
+    const rejected = [];
+    for (const { file, handle } of entries) {
+      if (!file) continue;
+      let reason = null;
+      if (!fileTypes.includes(fileExt(file.name))) reason = t('add.rejectType', { types: typesText });
+      else if (file.size === 0) reason = t('add.rejectEmpty');
+      else if (file.size > prog.max_file_gb * GB) reason = t('add.rejectSize', { max: prog.max_file_gb });
+      if (reason) { rejected.push(t('add.rejected', { name: file.name, reason })); continue; }
+      ok.push({ file, handle });
     }
-    if (type === 'video' && !clipsOk) e.push({ id: 'f-clips', msg: t('err.clips', { n: nClips }) });
-    if (!file || file.size === 0) {
-      e.push({ id: 'f-file', msg: t('err.file') });
+    if (ok.length) onAdd(athleteUuid, type, ok);
+    const parts = [];
+    if (ok.length) parts.push(t('add.added', { n: ok.length, name: athleteName(athlete) }));
+    parts.push(...rejected);
+    setMsg({ kind: rejected.length ? 'error' : 'ok', text: parts.join(' ') });
+  }
+
+  async function choose() {
+    if (!athlete || !type) { setMsg({ kind: 'error', text: t('add.needAthlete') }); return; }
+    if (SUPPORTS_HANDLES) {
+      try {
+        const handles = await window.showOpenFilePicker({ multiple: true });
+        const entries = [];
+        for (const h of handles) entries.push({ file: await h.getFile(), handle: h });
+        accept(entries);
+        return;
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;   // the coach closed the picker
+      }
+    }
+    if (inputRef.current) inputRef.current.click();
+  }
+
+  function onDrop(e) {
+    e.preventDefault();
+    setDragOver(false);
+    const dt = e.dataTransfer;
+    const items = dt && dt.items ? Array.from(dt.items).filter((i) => i.kind === 'file') : [];
+    if (items.length && items[0].getAsFileSystemHandle) {
+      // Handles must be requested during the drop event itself.
+      const pending = items.map((i) => Promise.all([i.getAsFile(), i.getAsFileSystemHandle().catch(() => null)]));
+      Promise.all(pending).then((pairs) => accept(pairs.map(([file, handle]) => ({ file, handle }))));
     } else {
-      if (!fileTypes.includes(fileExt(file.name))) e.push({ id: 'f-file', msg: t('err.fileType', { types: typesText }) });
-      if (file.size > prog.max_file_gb * GB) e.push({ id: 'f-file', msg: t('err.fileSize', { max: prog.max_file_gb }) });
+      accept(Array.from((dt && dt.files) || []).map((file) => ({ file, handle: null })));
     }
-    return e;
-  }
-
-  async function go(confirmExtra) {
-    setBusy(true);
-    setServerError('');
-    try {
-      const res = await onSubmit({
-        athleteUuid, athlete, type, starts, turns, calibration,
-        clips: type === 'video' && clipsOk ? nClips : null, file,
-      }, confirmExtra);
-      if (res && res.ok) return;
-      if (res && res.code === 'extra_confirmation_required') { setExtraAsk({ price: res.price_usd }); return; }
-      setServerError(codeText(res && res.code));
-    } catch (_) {
-      setServerError(codeText('network'));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function submit(ev) {
-    ev.preventDefault();
-    if (busy) return;
-    const e = validate();
-    setErrors(e);
-    if (e.length) {
-      setTimeout(() => { if (summaryRef.current) summaryRef.current.focus(); }, 0);
-      return;
-    }
-    if (isExtra) { setExtraAsk({ price: usage.price }); return; }
-    go(false);
-  }
-
-  function pickFile(f) {
-    setFile(f || null);
-    setErrors((prev) => prev.filter((x) => x.id !== 'f-file'));
   }
 
   return (
-    <section className="up-card" aria-labelledby="form-title">
-      <h2 id="form-title">{t('form.title')}</h2>
+    <section className="up-card" aria-labelledby="add-title">
+      <h2 id="add-title">{t('add.title')}</h2>
+      {msg && <p className={'up-msg ' + msg.kind} role={msg.kind === 'error' ? 'alert' : 'status'}>{msg.text}</p>}
 
-      {errors.length > 0 && (
-        <div className="up-error-summary" ref={summaryRef} tabIndex={-1} aria-labelledby="err-title">
-          <h3 id="err-title">{t('form.errors.title')}</h3>
-          <ul>
-            {errors.map((e, i) => <li key={i}><a href={'#' + e.id}>{e.msg}</a></li>)}
-          </ul>
-        </div>
-      )}
-      {serverError && <p className="up-status error" role="alert">{t('progress.status.error', { reason: serverError })}</p>}
-
-      <form onSubmit={submit} noValidate>
-        <div className="up-field">
-          <label className="up-label" htmlFor="f-athlete">{t('form.athlete')}</label>
-          <select id="f-athlete" value={athleteUuid} aria-describedby="f-athlete-help"
-                  aria-invalid={bad('f-athlete') ? 'true' : undefined}
-                  onChange={(e) => setAthleteUuid(e.target.value)}>
-            <option value="">{t('form.athlete.placeholder')}</option>
-            {ov.roster.map((a) => (
+      <div className="up-field">
+        <label className="up-label" htmlFor="f-athlete">{t('add.athlete')}</label>
+        <select id="f-athlete" value={athleteUuid} aria-describedby="f-athlete-help"
+                onChange={(e) => { setAthleteUuid(e.target.value); setMsg(null); }}>
+          <option value="">{t('add.athlete.placeholder')}</option>
+          {ov.roster.map((a) => {
+            const bp = budgetFor(ov, a.athlete_uuid, 'performance', items);
+            const bv = budgetFor(ov, a.athlete_uuid, 'video', items);
+            return (
               <option key={a.athlete_uuid} value={a.athlete_uuid}>
-                {t('form.athlete.option', {
+                {t('add.athlete.option', {
                   name: athleteName(a),
-                  p: a.perf_used, pmax: prog.perf_sessions_per_month,
-                  v: a.video_used, vmax: prog.video_sessions_per_month,
+                  p: Math.max(bp.leftAfterQueue, 0), pmax: bp.max,
+                  v: Math.max(bv.leftAfterQueue, 0), vmax: bv.max,
                 })}
               </option>
-            ))}
-          </select>
-          <span id="f-athlete-help" className="up-help">{t('form.athlete.help')}</span>
-        </div>
+            );
+          })}
+        </select>
+        <span id="f-athlete-help" className="up-help">{t('add.athlete.help')}</span>
+      </div>
 
-        <fieldset aria-describedby={usage ? 'f-allowance' : undefined}>
-          <legend>{t('form.type')}</legend>
-          <label className="up-radio">
-            <input type="radio" name="f-type" id="f-type-performance" value="performance"
-                   checked={type === 'performance'} aria-describedby="f-type-performance-help"
-                   aria-invalid={bad('f-type-performance') ? 'true' : undefined}
-                   onChange={() => setType('performance')} />
+      <fieldset>
+        <legend>{t('add.type')}</legend>
+        {['performance', 'video'].map((ty) => (
+          <label className="up-radio" key={ty}>
+            <input type="radio" name="f-type" id={'f-type-' + ty} value={ty} checked={type === ty}
+                   aria-describedby={'f-type-' + ty + '-help'} onChange={() => { setType(ty); setMsg(null); }} />
             <span>
-              <strong>{t('form.type.performance')}</strong>
-              <span id="f-type-performance-help" className="up-help">{t('form.type.performance.help', { n: nTrials })}</span>
-            </span>
-          </label>
-          <label className="up-radio">
-            <input type="radio" name="f-type" id="f-type-video" value="video"
-                   checked={type === 'video'} aria-describedby="f-type-video-help"
-                   aria-invalid={bad('f-type-performance') ? 'true' : undefined}
-                   onChange={() => setType('video')} />
-            <span>
-              <strong>{t('form.type.video')}</strong>
-              <span id="f-type-video-help" className="up-help">{t('form.type.video.help', { n: nClips })}</span>
-            </span>
-          </label>
-          {usage && (
-            <p id="f-allowance" className={'up-allowance' + (isExtra ? ' extra' : '')}>
-              {isExtra
-                ? t('form.allowance.extra', { type: t('type.' + type), price: fmtMoney(usage.price) })
-                : t('form.allowance.left', { left: usage.max - usage.used, max: usage.max })}
-            </p>
-          )}
-        </fieldset>
-
-        {type === 'performance' && (
-          <fieldset>
-            <legend>{t('form.contents')}</legend>
-            <div className="up-steppers">
-              <Stepper id="f-starts" label={t('form.starts')} value={starts} max={nTrials}
-                       invalid={bad('f-starts')} describedBy="f-trial-total"
-                       onChange={(v) => setStarts(clamp(v))} />
-              <Stepper id="f-turns" label={t('form.turns')} value={turns} max={nTrials}
-                       invalid={bad('f-starts')} describedBy="f-trial-total"
-                       onChange={(v) => setTurns(clamp(v))} />
-              <span id="f-trial-total" aria-live="polite"
-                    className={'up-total' + (starts + turns === nTrials ? ' ok' : '')}>
-                {t('form.trialTotal', { total: starts + turns, n: nTrials })}
+              <strong>{t('add.type.' + ty)}</strong>
+              <span id={'f-type-' + ty + '-help'} className="up-help">
+                {t('add.type.' + ty + '.help', { n: ty === 'performance' ? prog.perf_trials_per_month : prog.video_clips_per_month })}
               </span>
-            </div>
-            <div className="up-check" style={{ marginTop: 14 }}>
-              <input type="checkbox" id="f-calibration" checked={calibration}
-                     aria-invalid={bad('f-calibration') ? 'true' : undefined}
-                     aria-describedby="f-calibration-help"
-                     onChange={(e) => setCalibration(e.target.checked)} />
-              <label htmlFor="f-calibration">
-                {t('form.calibration')}
-                <span id="f-calibration-help" className="up-help">{t('form.calibration.help')}</span>
-              </label>
-            </div>
-          </fieldset>
-        )}
-
-        {type === 'video' && (
-          <fieldset>
-            <legend>{t('form.contents')}</legend>
-            <div className="up-check">
-              <input type="checkbox" id="f-clips" checked={clipsOk}
-                     aria-invalid={bad('f-clips') ? 'true' : undefined}
-                     onChange={(e) => setClipsOk(e.target.checked)} />
-              <label htmlFor="f-clips">{t('form.clips', { n: nClips })}</label>
-            </div>
-          </fieldset>
-        )}
-
-        <fieldset>
-          <legend>{t('form.file')}</legend>
-          <div className={'up-drop' + (dragOver ? ' over' : '')}
-               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-               onDragLeave={() => setDragOver(false)}
-               onDrop={(e) => { e.preventDefault(); setDragOver(false); pickFile(e.dataTransfer.files && e.dataTransfer.files[0]); }}>
-            <span className="up-file-wrap">
-              <input id="f-file" type="file" className="sr-only"
-                     accept={fileTypes.map((x) => '.' + x).join(',')}
-                     aria-invalid={bad('f-file') ? 'true' : undefined}
-                     aria-describedby="f-file-name f-file-help"
-                     onChange={(e) => pickFile(e.target.files && e.target.files[0])} />
-              <label htmlFor="f-file" className="up-btn">{t('form.file.choose')}</label>
             </span>
-            <span aria-hidden="true">{t('form.file.drop')}</span>
-            <span id="f-file-name" className="up-file-name">
-              {file ? file.name + ', ' + fmtBytes(file.size) : t('form.file.none')}
-            </span>
-          </div>
-          <span id="f-file-help" className="up-help">{t('form.file.help', { types: typesText, max: prog.max_file_gb })}</span>
-        </fieldset>
+          </label>
+        ))}
+        {b && (
+          <p className={'up-allowance' + (b.leftAfterQueue <= 0 ? ' extra' : '')}>
+            {t('add.left', {
+              name: athleteName(athlete), left: Math.max(b.leftAfterQueue, 0), max: b.max,
+              unit: t(type === 'performance' ? 'unit.trials' : 'unit.clips'),
+            })}
+          </p>
+        )}
+      </fieldset>
 
-        <div className="up-reminders">
-          <h3>{t('form.reminders.title')}</h3>
-          <ul>
-            <li>{t('form.reminder.oneAthlete')}</li>
-            <li>{t('form.reminder.trials', { n: nTrials })}</li>
-            <li>{t('form.reminder.clips', { n: nClips })}</li>
-            <li>{t('form.reminder.calibration')}</li>
-            <li>{t('form.reminder.awake')}</li>
-          </ul>
-        </div>
-
-        <button type="submit" className="up-btn primary" aria-disabled={busy ? 'true' : undefined}>
-          {busy ? t('form.submitting') : t('form.submit')}
-        </button>
-      </form>
-
-      <Dialog open={!!extraAsk} titleId="extra-title" title={t('extra.title')} onClose={() => setExtraAsk(null)}>
-        <p>{extraAsk && t('extra.body', {
-          name: athleteName(athlete), type: t('type.' + (type || 'performance')),
-          month: fmtMonth(ov.period_month), price: fmtMoney(extraAsk.price),
-        })}</p>
-        <div className="up-actions">
-          <button type="button" className="up-btn primary"
-                  onClick={() => { setExtraAsk(null); go(true); }}>
-            {extraAsk && t('extra.confirm', { price: fmtMoney(extraAsk.price) })}
-          </button>
-          <button type="button" className="up-btn" data-autofocus onClick={() => setExtraAsk(null)}>
-            {t('extra.cancel')}
-          </button>
-        </div>
-      </Dialog>
+      <div className={'up-drop' + (dragOver ? ' over' : '')}
+           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+           onDragLeave={() => setDragOver(false)}
+           onDrop={onDrop}>
+        <button type="button" className="up-btn" onClick={choose} aria-disabled={disabled ? 'true' : undefined}
+                aria-describedby="f-files-help">{t('add.choose')}</button>
+        <input ref={inputRef} type="file" multiple className="sr-only" tabIndex={-1} aria-hidden="true"
+               accept={(type ? fileTypes : allTypes).map((x) => '.' + x).join(',')}
+               onChange={(e) => {
+                 const files = Array.from(e.target.files || []);
+                 e.target.value = '';
+                 accept(files.map((file) => ({ file, handle: null })));
+               }} />
+        <span aria-hidden="true">{t('add.drop')}</span>
+      </div>
+      <span id="f-files-help" className="up-help">{t('add.help', { types: typesText, max: prog.max_file_gb })}</span>
     </section>
   );
 }
 
-// ── Active upload ─────────────────────────────────────────
-function ProgressCard({ job, onPause, onResume, onCancel, onAnother, awake }) {
-  const headingRef = useRef(null);
-  useEffect(() => { if (headingRef.current) headingRef.current.focus(); }, [job.uploadUuid]);
-  // Re-render once a second while a retry countdown is showing.
+// ── Queue ─────────────────────────────────────────────────
+function itemStatusText(it) {
+  const pct = it.size ? Math.floor(((it.sent || 0) / it.size) * 100) : 0;
+  switch (it.status) {
+    case 'ready': return t('qs.ready');
+    case 'needsFile': return t('qs.needsFile');
+    case 'starting': return t('qs.starting');
+    case 'uploading': return t('qs.uploading', { pct });
+    case 'completing': return t('qs.completing');
+    case 'paused': return t('qs.paused', { pct });
+    case 'done': return t('qs.done');
+    case 'cancelled': return t('qs.cancelled');
+    case 'error': return t('qs.error', { reason: codeText(it.error, it.errorExtra) });
+    default: return it.status;
+  }
+}
+
+function QueueCard({ ov, items, running, calibration, setCalibration, onChange, onRemove, onCancel,
+                     onUploadAll, onPause, onClearDone, problems }) {
+  const byId = {};
+  for (const a of ov.roster) byId[a.athlete_uuid] = a;
+  const waiting = items.filter((i) => ['ready', 'paused', 'needsFile'].includes(i.status));
+  const totalSize = items.filter((i) => !['cancelled'].includes(i.status)).reduce((s, i) => s + (i.size || 0), 0);
+  const hasPerf = items.some((i) => i.type === 'performance' && !['done', 'cancelled', 'error'].includes(i.status));
+  const editable = (i) => !i.uploadUuid && ['ready', 'needsFile', 'error'].includes(i.status) && !running;
+  const pausedNow = !running && items.some((i) => i.status === 'paused');
+
+  return (
+    <section className="up-card" aria-labelledby="queue-title">
+      <h2 id="queue-title">{t('queue.title')}</h2>
+      {items.length === 0 ? <p className="up-muted">{t('queue.empty')}</p> : (
+        <>
+          <p className="up-muted">{t('queue.summary', { files: items.length, size: fmtBytes(totalSize) })}</p>
+          <div className="up-table-wrap">
+            <table>
+              <caption className="sr-only">{t('queue.caption')}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{t('col.file')}</th>
+                  <th scope="col">{t('col.athlete')}</th>
+                  <th scope="col">{t('col.contents')}</th>
+                  <th scope="col">{t('col.status')}</th>
+                  <th scope="col"><span className="sr-only">{t('col.actions')}</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((it) => {
+                  const fname = it.name || fmtBytes(it.size || 0);
+                  return (
+                    <tr key={it.id}>
+                      <th scope="row" className="up-file-name">{fname}<div className="up-muted">{fmtBytes(it.size || 0)}</div></th>
+                      <td>{athleteName(byId[it.athleteUuid])}<div className="up-muted">{t('type.' + it.type + '.title')}</div></td>
+                      <td>
+                        {it.type === 'performance' ? (
+                          <div className="up-row-actions">
+                            <label className="up-mini">
+                              <span>{t('q.starts')}</span>
+                              <input type="number" min={0} max={ov.program.perf_trials_per_month} value={it.starts}
+                                     aria-label={t('q.startsLabel', { file: fname })} disabled={!editable(it)}
+                                     onChange={(e) => onChange(it.id, { starts: Math.max(0, parseInt(e.target.value, 10) || 0) })} />
+                            </label>
+                            <label className="up-mini">
+                              <span>{t('q.turns')}</span>
+                              <input type="number" min={0} max={ov.program.perf_trials_per_month} value={it.turns}
+                                     aria-label={t('q.turnsLabel', { file: fname })} disabled={!editable(it)}
+                                     onChange={(e) => onChange(it.id, { turns: Math.max(0, parseInt(e.target.value, 10) || 0) })} />
+                            </label>
+                          </div>
+                        ) : (
+                          <label className="up-mini">
+                            <span>{t('q.clips')}</span>
+                            <input type="number" min={1} max={ov.program.video_clips_per_month} value={it.clips}
+                                   aria-label={t('q.clipsLabel', { file: fname })} disabled={!editable(it)}
+                                   onChange={(e) => onChange(it.id, { clips: Math.max(0, parseInt(e.target.value, 10) || 0) })} />
+                          </label>
+                        )}
+                      </td>
+                      <td>
+                        <span className={'up-badge ' + (it.status === 'done' ? 'received' : it.status === 'error' ? 'recapture' : 'uploading')}>
+                          {itemStatusText(it)}
+                        </span>
+                      </td>
+                      <td>
+                        {editable(it) && (
+                          <button type="button" className="up-btn small" aria-label={t('q.removeLabel', { file: fname })}
+                                  onClick={() => onRemove(it)}>{t('q.remove')}</button>
+                        )}
+                        {it.uploadUuid && !['done', 'cancelled'].includes(it.status) && (
+                          <button type="button" className="up-btn small danger" aria-label={t('q.cancelLabel', { file: fname })}
+                                  onClick={() => onCancel(it)}>{t('cancel.confirm')}</button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {problems.length > 0 && (
+            <div className="up-error-summary" role="alert">
+              <ul>{problems.map((p, i) => <li key={i}>{p}</li>)}</ul>
+            </div>
+          )}
+
+          {hasPerf && (
+            <div className="up-check up-field" style={{ marginTop: 16 }}>
+              <input type="checkbox" id="q-calibration" checked={calibration} disabled={running}
+                     aria-describedby="q-calibration-help" onChange={(e) => setCalibration(e.target.checked)} />
+              <label htmlFor="q-calibration">
+                {t('q.calibration')}
+                <span id="q-calibration-help" className="up-help">{t('q.calibration.help')}</span>
+              </label>
+            </div>
+          )}
+
+          <div className="up-reminders">
+            <h3>{t('q.reminders.title')}</h3>
+            <ul>
+              <li>{t('q.reminder.oneAthlete')}</li>
+              <li>{t('q.reminder.trials')}</li>
+              <li>{t('q.reminder.calibration')}</li>
+              <li>{t('q.reminder.awake')}</li>
+            </ul>
+          </div>
+
+          <div className="up-actions">
+            {!running && waiting.length > 0 && (
+              <button type="button" className="up-btn primary" onClick={onUploadAll}>
+                {pausedNow ? t('q.resume') : t('q.uploadAll')}
+              </button>
+            )}
+            {running && <button type="button" className="up-btn" onClick={onPause}>{t('q.pause')}</button>}
+            {!running && items.some((i) => ['done', 'cancelled', 'error'].includes(i.status)) && (
+              <button type="button" className="up-btn small" onClick={onClearDone}>{t('q.clearDone')}</button>
+            )}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+// ── Overall progress ──────────────────────────────────────
+function ProgressCard({ items, running, rate, eta, current, retry, awake, ov }) {
   const [, setTick] = useState(0);
   useEffect(() => {
-    if (!job.retry) return undefined;
+    if (!retry) return undefined;
     const id = setInterval(() => setTick((x) => x + 1), 1000);
     return () => clearInterval(id);
-  }, [job.retry]);
+  }, [retry]);
+  const live = items.filter((i) => i.status !== 'cancelled' && i.status !== 'error');
+  const total = live.reduce((s, i) => s + (i.size || 0), 0);
+  const sent = live.reduce((s, i) => s + (i.status === 'done' ? (i.size || 0) : (i.sent || 0)), 0);
+  const done = live.filter((i) => i.status === 'done').length;
+  const pct = total ? Math.floor((sent / total) * 100) : 0;
+  const finished = !running && live.length > 0 && done === live.length;
+  const paused = !running && !finished && items.some((i) => i.status === 'paused');
+  if (!running && !finished && !paused) return null;
+
   let retryText = null;
-  if (job.retry && (job.state === 'uploading' || job.state === 'completing')) {
-    const secs = Math.max(0, Math.ceil((job.retry.until - Date.now()) / 1000));
-    retryText = job.retry.auth
-      ? t('progress.retryingAuth', { n: job.retry.attempt })
-      : secs > 0
-        ? t('progress.retrying', { s: secs, n: job.retry.attempt })
-        : t('progress.retryingNow', { n: job.retry.attempt });
+  if (running && retry) {
+    const secs = Math.max(0, Math.ceil((retry.until - Date.now()) / 1000));
+    retryText = retry.auth ? t('progress.retryingAuth', { n: retry.attempt })
+      : secs > 0 ? t('progress.retrying', { s: secs, n: retry.attempt })
+      : t('progress.retryingNow', { n: retry.attempt });
   }
-  const pct = job.total ? Math.floor((job.sent / job.total) * 100) : 0;
-  const s = job.state === 'idle' ? 'uploading' : job.state;
-  const statusText = s === 'error'
-    ? t('progress.status.error', { reason: codeText(job.error) })
-    : t('progress.status.' + s);
+  const byId = {};
+  for (const a of ov.roster) byId[a.athlete_uuid] = a;
+
   return (
     <section className="up-card" aria-labelledby="progress-title">
-      <h2 id="progress-title" tabIndex={-1} ref={headingRef}>{t('progress.title')}</h2>
-      <dl className="up-kv">
-        <dt>{t('col.athlete')}</dt>
-        <dd>{athleteName(job.athlete)}</dd>
-        <dt>{t('col.session')}</dt>
-        <dd>
-          {t('type.' + job.type + '.title')}
-          {job.isExtra ? ' · ' + t('progress.extra', { price: fmtMoney(job.price) }) : ''}
-        </dd>
-        <dt>{t('form.file')}</dt>
-        <dd>{job.fileName}</dd>
-      </dl>
+      <h2 id="progress-title">{t('progress.title')}</h2>
       <label className="up-label" htmlFor="progress-bar">{t('progress.label')}</label>
       <progress id="progress-bar" max={100} value={pct} aria-describedby="progress-meta">{pct}%</progress>
       <div id="progress-meta" className="up-progress-meta">
         <span>{pct}%</span>
-        <span>{t('progress.detail', { sent: fmtBytes(job.sent), total: fmtBytes(job.total) })}</span>
-        {s === 'uploading' && (
-          <span>
-            {job.rate > 0 && job.eta !== null
-              ? t('progress.speed', { rate: fmtBytes(job.rate), eta: fmtDuration(job.eta) })
-              : t('progress.measuring')}
-          </span>
+        <span>{t('progress.overall', { done, files: live.length, sent: fmtBytes(sent), total: fmtBytes(total) })}</span>
+        {running && (
+          <span>{rate > 0 && eta !== null ? t('progress.speed', { rate: fmtBytes(rate), eta: fmtDuration(eta) }) : t('progress.measuring')}</span>
         )}
       </div>
-      <p className={'up-status' + (s === 'error' ? ' error' : s === 'done' ? ' done' : '')}>{statusText}</p>
+      {running && current && (
+        <p className="up-help">{t('progress.current', { file: current.name || fmtBytes(current.size || 0), name: athleteName(byId[current.athleteUuid]) })}</p>
+      )}
+      <p className={'up-status' + (finished ? ' done' : '')}>
+        {finished ? t('progress.finished') : running ? t('progress.running') : t('progress.paused')}
+      </p>
       {retryText && <p className="up-status up-warn">{retryText}</p>}
-      {awake && (s === 'uploading' || s === 'completing') && <p className="up-help">{t('progress.awake')}</p>}
-      <div className="up-actions">
-        {s === 'uploading' && <button type="button" className="up-btn" onClick={onPause}>{t('progress.pause')}</button>}
-        {(s === 'paused' || s === 'error') && <button type="button" className="up-btn primary" onClick={onResume}>{t('progress.resume')}</button>}
-        {['uploading', 'paused', 'error'].includes(s) && <button type="button" className="up-btn danger" onClick={onCancel}>{t('progress.cancel')}</button>}
-        {(s === 'done' || s === 'cancelled') && <button type="button" className="up-btn primary" onClick={onAnother}>{t('progress.another')}</button>}
-      </div>
+      {running && awake && <p className="up-help">{t('progress.awake')}</p>}
     </section>
   );
 }
 
-// ── Unfinished upload from an earlier visit ───────────────
-function ResumeCard({ pending, athlete, onFile, onDiscard }) {
-  const [err, setErr] = useState('');
+// ── Continue an unfinished queue from an earlier visit ────
+function RestoreCard({ items, onContinue, onChoose, onDiscard, note }) {
+  const need = items.filter((i) => i.status === 'needsFile');
+  const inputRef = useRef(null);
+  if (!need.length) return null;
   return (
-    <section className="up-card" aria-labelledby="resume-title">
-      <h2 id="resume-title">{t('resume.title')}</h2>
-      <p>{t('resume.body', { name: athleteName(athlete), type: t('type.' + pending.type) })}</p>
-      {err && <p className="up-status error" role="alert">{err}</p>}
+    <section className="up-card" aria-labelledby="restore-title">
+      <h2 id="restore-title">{t('restore.title')}</h2>
+      <p>{t('restore.body', { n: need.length })}</p>
+      {note && <p className={'up-msg ' + note.kind} role="status">{note.text}</p>}
       <div className="up-actions">
-        <span className="up-file-wrap">
-          <input id="resume-file" type="file" className="sr-only"
-                 onChange={(e) => {
-                   const f = e.target.files && e.target.files[0];
-                   e.target.value = '';
-                   if (!f) return;
-                   if (f.size !== pending.size || f.lastModified !== pending.lastModified) {
-                     setErr(t('resume.mismatch'));
-                     return;
-                   }
-                   setErr('');
-                   onFile(f);
-                 }} />
-          <label htmlFor="resume-file" className="up-btn primary">{t('resume.choose')}</label>
-        </span>
-        <button type="button" className="up-btn danger" onClick={onDiscard}>{t('resume.discard')}</button>
+        {SUPPORTS_HANDLES && need.some((i) => i.hasHandle) && (
+          <button type="button" className="up-btn primary" aria-describedby="restore-continue-help" onClick={onContinue}>
+            {t('restore.continue')}
+          </button>
+        )}
+        <button type="button" className="up-btn" aria-describedby="restore-choose-help"
+                onClick={() => inputRef.current && inputRef.current.click()}>{t('restore.choose')}</button>
+        <input ref={inputRef} type="file" multiple className="sr-only" tabIndex={-1} aria-hidden="true"
+               onChange={(e) => { const f = Array.from(e.target.files || []); e.target.value = ''; onChoose(f); }} />
+        <button type="button" className="up-btn danger" onClick={onDiscard}>{t('restore.discard')}</button>
       </div>
+      {SUPPORTS_HANDLES && need.some((i) => i.hasHandle) && <span id="restore-continue-help" className="up-help">{t('restore.continueHelp')}</span>}
+      <span id="restore-choose-help" className="up-help">{t('restore.chooseHelp')}</span>
     </section>
   );
 }
@@ -511,8 +566,8 @@ function MonthCard({ ov }) {
               {ov.roster.map((a) => (
                 <tr key={a.athlete_uuid}>
                   <th scope="row">{athleteName(a)}</th>
-                  <td className="num">{a.perf_used} / {prog.perf_sessions_per_month}</td>
-                  <td className="num">{a.video_used} / {prog.video_sessions_per_month}</td>
+                  <td className="num">{t('month.cell', { used: a.perf_used, max: prog.perf_trials_per_month })}</td>
+                  <td className="num">{t('month.cell', { used: a.video_used, max: prog.video_clips_per_month })}</td>
                 </tr>
               ))}
             </tbody>
@@ -524,7 +579,7 @@ function MonthCard({ ov }) {
 }
 
 // ── Recent uploads ────────────────────────────────────────
-function UploadsCard({ ov, activeUuid, onWithdraw }) {
+function UploadsCard({ ov, activeIds, onWithdraw }) {
   const byId = {};
   for (const a of ov.roster) byId[a.athlete_uuid] = a;
   return (
@@ -547,16 +602,19 @@ function UploadsCard({ ov, activeUuid, onWithdraw }) {
             <tbody>
               {ov.uploads.map((u) => {
                 const name = athleteName(byId[u.athlete_uuid]);
-                const canWithdraw = u.uploaded_by_me && ['uploading', 'received'].includes(u.status) && u.upload_uuid !== activeUuid;
+                const canWithdraw = u.uploaded_by_me && ['uploading', 'received'].includes(u.status) && !activeIds.has(u.upload_uuid);
+                const contents = u.session_type === 'performance'
+                  ? t('uploads.perf', { s: u.trial_starts || 0, t: u.trial_turns || 0 })
+                  : t('uploads.video', { n: u.clip_count || u.trial_count || 0 });
                 const notes = [];
-                if (u.is_extra) notes.push(t('uploads.extra', { price: fmtMoney(u.extra_price_usd) }));
+                if (u.accepted_count && u.accepted_count !== u.trial_count) notes.push(t('uploads.accepted', { n: u.accepted_count }));
                 if (u.recapture_reason) notes.push(t('reason.' + u.recapture_reason));
                 if (u.review_note) notes.push(u.review_note);
                 return (
                   <tr key={u.upload_uuid}>
                     <td className="num">{fmtDate(u.created_at)}</td>
                     <th scope="row">{name}</th>
-                    <td>{t('type.' + u.session_type + '.title')}</td>
+                    <td>{t('type.' + u.session_type + '.title')}<div className="up-muted">{contents}</div></td>
                     <td><span className={'up-badge ' + u.status}>{t('status.' + u.status)}</span></td>
                     <td>{notes.join(' · ')}</td>
                     <td>
@@ -584,11 +642,32 @@ function App() {
   const [phase, setPhase] = useState('loading');
   const [email, setEmail] = useState('');
   const [ov, setOv] = useState(null);
-  const [job, setJob] = useState(null);
-  const [pending, setPending] = useState(readPending());
+  const [items, setItemsState] = useState([]);
+  const itemsRef = useRef([]);
+  const [running, setRunning] = useState(false);
+  const runningRef = useRef(false);
+  const stopRef = useRef(false);
+  const engineRef = useRef(null);       // { id, engine } for the file in flight
+  const [calibration, setCalibration] = useState(false);
+  const [problems, setProblems] = useState([]);
+  const [rate, setRate] = useState(0);
+  const [eta, setEta] = useState(null);
+  const [retry, setRetry] = useState(null);
   const [announce, setAnnounce] = useState('');
-  const [confirm, setConfirm] = useState(null); // { kind: 'job' } | { kind: 'withdraw', upload } | { kind: 'pending' }
+  const [confirm, setConfirm] = useState(null);   // { kind: 'item', item } | { kind: 'withdraw', upload } | { kind: 'discard' }
+  const [restoreNote, setRestoreNote] = useState(null);
   const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 760px)').matches);
+  const restoredRef = useRef(false);
+
+  const setItems = useCallback((updater) => {
+    const next = typeof updater === 'function' ? updater(itemsRef.current) : updater;
+    itemsRef.current = next;
+    setItemsState(next);
+    persistQueue(next);
+  }, []);
+  const patchItem = useCallback((id, patch) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? Object.assign({}, i, patch) : i)));
+  }, [setItems]);
 
   const load = useCallback(async () => {
     try {
@@ -596,7 +675,7 @@ function App() {
       if (!session) { setEmail(''); setOv(null); setPhase('signedOut'); return; }
       setEmail((session.user && session.user.email) || '');
       const d = await api('overview', {});
-      if (d && d.ok) { setOv(d); setPhase('ready'); return; }
+      if (d && d.ok) { setOv(d); setPhase('ready'); return d; }
       const code = d && d.code;
       if (code === 'unauthorized') setPhase('signedOut');
       else if (code === 'not_active_coach') setPhase('notCoach');
@@ -605,11 +684,47 @@ function App() {
     } catch (_) {
       setPhase('error');
     }
+    return null;
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  // Signed out: re-check when the coach comes back from the sign-in tab.
+  // Restore an unfinished queue once, after the first overview.
+  useEffect(() => {
+    if (!ov || restoredRef.current) return;
+    restoredRef.current = true;
+    const saved = readJson(QUEUE_KEY) || [];
+    const legacy = readJson(LEGACY_PENDING_KEY);
+    if (legacy && legacy.uploadUuid && !saved.some((s) => s.uploadUuid === legacy.uploadUuid)) {
+      saved.push({
+        id: 'legacy-' + legacy.uploadUuid.slice(0, 8), athleteUuid: legacy.athleteUuid, type: legacy.type,
+        starts: null, turns: null, clips: null, size: legacy.size, lastModified: legacy.lastModified,
+        uploadUuid: legacy.uploadUuid, partSize: null,
+      });
+    }
+    writeJson(LEGACY_PENDING_KEY, null);
+    const byUpload = {};
+    for (const u of ov.uploads) byUpload[u.upload_uuid] = u;
+    const restored = [];
+    for (const s of saved) {
+      if (s.uploadUuid) {
+        const u = byUpload[s.uploadUuid];
+        if (!u || u.status !== 'uploading') { handleStore.del(s.id); continue; }   // finished, cancelled or expired
+        restored.push(Object.assign({}, s, {
+          starts: s.starts != null ? s.starts : u.trial_starts, turns: s.turns != null ? s.turns : u.trial_turns,
+          clips: s.clips != null ? s.clips : u.clip_count, partSize: s.partSize || u.part_size || LEGACY_PART_SIZE,
+          status: 'needsFile', sent: 0,
+        }));
+      } else {
+        restored.push(Object.assign({}, s, { status: 'needsFile', sent: 0 }));
+      }
+    }
+    if (!restored.length) { setItems([]); return; }
+    Promise.all(restored.map((r) => handleStore.get(r.id))).then((handles) => {
+      setItems(restored.map((r, k) => Object.assign({}, r, { hasHandle: !!handles[k] })));
+    });
+  }, [ov, setItems]);
+
   useEffect(() => {
     if (phase !== 'signedOut') return undefined;
     const onFocus = () => load();
@@ -635,25 +750,23 @@ function App() {
     const titles = {
       loading: t('state.loading'), signedOut: t('signedOut.title'), notCoach: t('notCoach.title'),
       inactive: t('inactive.title'), error: t('loadError.title'),
-      ready: job ? t('progress.title') : t('page.title'),
+      ready: running ? t('progress.title') : t('page.title'),
     };
     document.title = titles[phase] + ' · Peak Athlete';
-  }, [phase, job]);
+  }, [phase, running]);
 
-  // Warn before leaving while bytes are moving.
-  const moving = !!job && ['uploading', 'completing'].includes(job.state);
+  // Warn before leaving while uploads run.
   useEffect(() => {
-    if (!moving) return undefined;
+    if (!running) return undefined;
     const h = (e) => { e.preventDefault(); e.returnValue = t('progress.leaveWarning'); return e.returnValue; };
     window.addEventListener('beforeunload', h);
     return () => window.removeEventListener('beforeunload', h);
-  }, [moving]);
+  }, [running]);
 
-  // Keep the screen (and on most PCs the computer) awake while bytes are moving.
-  // Browsers drop the lock when the tab is hidden, so it is taken again on return.
+  // Keep the screen (and on most PCs the computer) awake while uploads run.
   const [awake, setAwake] = useState(false);
   useEffect(() => {
-    if (!moving || !navigator.wakeLock) { setAwake(false); return undefined; }
+    if (!running || !navigator.wakeLock) { setAwake(false); return undefined; }
     let lock = null;
     let stopped = false;
     const acquire = async () => {
@@ -663,7 +776,7 @@ function App() {
         setAwake(true);
         lock.addEventListener('release', () => { if (!stopped) setAwake(false); });
       } catch (_) {
-        setAwake(false); // not allowed (battery saver, policy): the reminder text still applies
+        setAwake(false);
       }
     };
     const onVisible = () => { if (document.visibilityState === 'visible') acquire(); };
@@ -675,104 +788,252 @@ function App() {
       if (lock) lock.release().catch(() => {});
       setAwake(false);
     };
-  }, [moving]);
+  }, [running]);
 
-  // Drop a remembered upload the server no longer considers in progress.
-  useEffect(() => {
-    if (!ov || !pending || job) return;
-    const u = ov.uploads.find((x) => x.upload_uuid === pending.uploadUuid);
-    if (!u || u.status !== 'uploading') { writePending(null); setPending(null); }
-  }, [ov, pending, job]);
+  // ── Queue editing ──────────────────────────────────────
+  function addFiles(athleteUuid, type, entries) {
+    const b = budgetFor(ov, athleteUuid, type, itemsRef.current);
+    const single = entries.length === 1;
+    const fresh = entries.map(({ file, handle }) => {
+      const it = {
+        id: newId(), athleteUuid, type, name: file.name, size: file.size, lastModified: file.lastModified,
+        file, starts: type === 'performance' ? 1 : null, turns: type === 'performance' ? 0 : null,
+        clips: type === 'video' ? (single ? Math.max(1, Math.min(b.leftAfterQueue, ov.program.video_clips_per_month)) : 1) : null,
+        status: 'ready', sent: 0, hasHandle: !!handle,
+      };
+      if (handle) handleStore.put(it.id, handle);
+      return it;
+    });
+    setItems((prev) => prev.concat(fresh));
+    setProblems([]);
+  }
 
-  const startEngine = useCallback((info) => {
-    let lastBucket = 0;
-    // Speed over a sliding 30-second window; reset whenever the upload (re)starts.
-    let samples = [];
-    const engine = window.PA_UPLOADER.createUpload({
-      file: info.file, uploadUuid: info.uploadUuid, partSize: info.partSize, api,
-      // Uploads can outlive the 1-hour sign-in token; renew it when the server says so.
-      refreshAuth: async () => { await window.supabaseClient.auth.refreshSession(); },
-      onRetry: (r) => {
-        setJob((j) => {
-          if (!j || j.uploadUuid !== info.uploadUuid) return j;
-          if (r && !j.retry) setAnnounce(t('progress.retryAnnounce'));
-          if (!r && j.retry) setAnnounce(t('progress.reconnected'));
-          return Object.assign({}, j, {
-            retry: r ? { attempt: r.attempt, until: Date.now() + r.waitMs, auth: r.reason === 'unauthorized' } : null,
-          });
+  function removeItem(it) {
+    handleStore.del(it.id);
+    setItems((prev) => prev.filter((i) => i.id !== it.id));
+  }
+
+  function validate() {
+    const out = [];
+    const list = itemsRef.current.filter((i) => ['ready', 'needsFile', 'paused'].includes(i.status) && !i.uploadUuid);
+    for (const i of list) {
+      const n = itemUnits(i);
+      if (i.type === 'performance' && (n < 1 || n > ov.program.perf_trials_per_month)) {
+        out.push((i.name ? i.name + ': ' : '') + t('q.trialsInvalid', { max: ov.program.perf_trials_per_month }));
+      }
+      if (i.type === 'video' && (n < 1 || n > ov.program.video_clips_per_month)) {
+        out.push((i.name ? i.name + ': ' : '') + t('q.clipsInvalid', { max: ov.program.video_clips_per_month }));
+      }
+    }
+    const seen = new Set();
+    for (const i of list) {
+      const key = i.athleteUuid + '|' + i.type;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const b = budgetFor(ov, i.athleteUuid, i.type, itemsRef.current);
+      if (b.leftAfterQueue < 0) {
+        const a = ov.roster.find((x) => x.athlete_uuid === i.athleteUuid);
+        out.push(t('q.overBudget', { name: athleteName(a), left: b.left, unit: t(i.type === 'performance' ? 'unit.trials' : 'unit.clips') }));
+      }
+    }
+    if (calibrationNeeded() && !calibration) out.push(t('q.calibrationMissing'));
+    return out;
+  }
+  function calibrationNeeded() {
+    return itemsRef.current.some((i) => i.type === 'performance' && !i.uploadUuid
+                                        && ['ready', 'needsFile'].includes(i.status));
+  }
+
+  // ── Running the queue ──────────────────────────────────
+  const samplesRef = useRef([]);
+  function trackSpeed() {
+    const live = itemsRef.current.filter((i) => i.status !== 'cancelled' && i.status !== 'error');
+    const total = live.reduce((s, i) => s + (i.size || 0), 0);
+    const sent = live.reduce((s, i) => s + (i.status === 'done' ? (i.size || 0) : (i.sent || 0)), 0);
+    const now = Date.now();
+    const s = samplesRef.current;
+    s.push({ t: now, sent });
+    while (s.length > 2 && now - s[0].t > 30000) s.shift();
+    const span = (now - s[0].t) / 1000;
+    const r = span >= 5 && sent > s[0].sent ? (sent - s[0].sent) / span : 0;
+    setRate(r);
+    setEta(r > 0 ? (total - sent) / r : null);
+  }
+
+  async function runItem(it) {
+    // 1. Reserve the upload on the server (first time only).
+    let item = it;
+    if (!item.uploadUuid) {
+      patchItem(item.id, { status: 'starting', error: null });
+      let res;
+      try {
+        res = await api('start', {
+          athlete_uuid: item.athleteUuid, session_type: item.type,
+          starts: item.type === 'performance' ? item.starts : undefined,
+          turns: item.type === 'performance' ? item.turns : undefined,
+          clips: item.type === 'video' ? item.clips : undefined,
+          calibration: item.type === 'performance' ? calibration : false,
+          file_type: fileExt(item.name || ''), file_size: item.size,
         });
-      },
-      onProgress: (p) => {
-        const now = Date.now();
-        samples.push({ t: now, sent: p.sent });
-        while (samples.length > 2 && now - samples[0].t > 30000) samples.shift();
-        const first = samples[0];
-        const span = (now - first.t) / 1000;
-        const rate = span >= 5 && p.sent > first.sent ? (p.sent - first.sent) / span : 0;
-        const eta = rate > 0 ? (p.total - p.sent) / rate : null;
-        setJob((j) => (j && j.uploadUuid === info.uploadUuid
-          ? Object.assign({}, j, { sent: p.sent, total: p.total, rate, eta }) : j));
-        const bucket = Math.floor((p.sent / p.total) * 10) * 10;
-        if (bucket > lastBucket && bucket < 100) { lastBucket = bucket; setAnnounce(t('progress.announce', { pct: bucket })); }
-      },
-      onState: (s, err) => {
-        if (s === 'uploading') samples = [];
-        const code = s === 'error' ? engineErrorCode(err) : null;
-        setJob((j) => (j && j.uploadUuid === info.uploadUuid ? Object.assign({}, j, { state: s, error: code }) : j));
-        setAnnounce(s === 'error'
-          ? t('progress.status.error', { reason: codeText(code) })
-          : t('progress.status.' + s));
-        if (s === 'done' || s === 'cancelled') { writePending(null); setPending(null); load(); }
-      },
-    });
-    setJob({
-      uploadUuid: info.uploadUuid, engine, athlete: info.athlete, type: info.type,
-      fileName: info.file.name, total: info.file.size, sent: 0, state: 'idle', error: null,
-      isExtra: info.isExtra, price: info.price,
-    });
-    engine.run();
-  }, [load]);
+      } catch (_) {
+        res = { ok: false, code: 'network' };
+      }
+      if (!res || !res.ok) {
+        if (res && res.code === 'network') { patchItem(item.id, { status: 'ready' }); return 'retry-later'; }
+        patchItem(item.id, { status: 'error', error: (res && res.code) || 'default', errorExtra: res });
+        return 'error';
+      }
+      item = Object.assign({}, item, { uploadUuid: res.upload_uuid, partSize: res.part_size });
+      patchItem(item.id, { uploadUuid: res.upload_uuid, partSize: res.part_size });
+    }
 
-  const submitUpload = useCallback(async (v, confirmExtra) => {
-    const res = await api('start', {
-      athlete_uuid: v.athleteUuid,
-      session_type: v.type,
-      starts: v.type === 'performance' ? v.starts : undefined,
-      turns: v.type === 'performance' ? v.turns : undefined,
-      clips: v.type === 'video' ? v.clips : undefined,
-      calibration: v.type === 'performance' ? v.calibration : false,
-      confirm_extra: !!confirmExtra,
-      file_type: fileExt(v.file.name),
-      file_size: v.file.size,
+    // 2. Send the file; the engine resumes from parts the server already holds.
+    return new Promise((resolve) => {
+      const engine = window.PA_UPLOADER.createUpload({
+        file: item.file, uploadUuid: item.uploadUuid, partSize: item.partSize || LEGACY_PART_SIZE, api,
+        refreshAuth: async () => { await window.supabaseClient.auth.refreshSession(); },
+        onProgress: (p) => { patchItem(item.id, { sent: p.sent }); trackSpeed(); },
+        onRetry: (r) => {
+          setRetry((prev) => {
+            if (r && !prev) setAnnounce(t('progress.retryAnnounce'));
+            if (!r && prev) setAnnounce(t('progress.reconnected'));
+            return r ? { attempt: r.attempt, until: Date.now() + r.waitMs, auth: r.reason === 'unauthorized' } : null;
+          });
+        },
+        onState: (s, err) => {
+          if (s === 'uploading' || s === 'completing') patchItem(item.id, { status: s });
+          if (s === 'done') {
+            patchItem(item.id, { status: 'done', sent: item.size, file: null });
+            handleStore.del(item.id);
+            setAnnounce(t('progress.fileDone', { file: item.name || fmtBytes(item.size) }));
+            resolve('done');
+          } else if (s === 'paused') {
+            patchItem(item.id, { status: 'paused' });
+            resolve('paused');
+          } else if (s === 'cancelled') {
+            patchItem(item.id, { status: 'cancelled', file: null });
+            handleStore.del(item.id);
+            resolve('cancelled');
+          } else if (s === 'error') {
+            patchItem(item.id, { status: 'error', error: engineErrorCode(err) });
+            resolve('error');
+          }
+        },
+      });
+      engineRef.current = { id: item.id, engine };
+      engine.run();
     });
-    if (!res || !res.ok) return res;
-    const pend = {
-      uploadUuid: res.upload_uuid, size: v.file.size, lastModified: v.file.lastModified,
-      athleteUuid: v.athleteUuid, type: v.type,
-    };
-    writePending(pend);
-    setPending(pend);
-    startEngine({
-      uploadUuid: res.upload_uuid, file: v.file, partSize: res.part_size,
-      athlete: v.athlete, type: v.type, isExtra: res.is_extra, price: res.price_usd,
+  }
+
+  async function runQueue() {
+    if (runningRef.current) return;
+    const found = validate();
+    setProblems(found);
+    if (found.length) return;
+    runningRef.current = true;
+    stopRef.current = false;
+    samplesRef.current = [];
+    setRunning(true);
+    // Paused files go first so they finish before new ones start.
+    setItems((prev) => prev.map((i) => (i.status === 'paused' ? Object.assign({}, i, { status: 'ready' }) : i)));
+    try {
+      let networkStrikes = 0;
+      for (;;) {
+        if (stopRef.current) break;
+        const next = itemsRef.current.find((i) => i.status === 'ready' && i.file);
+        if (!next) break;
+        const outcome = await runItem(next);
+        engineRef.current = null;
+        if (outcome === 'paused') break;
+        if (outcome === 'retry-later') {
+          networkStrikes += 1;
+          await new Promise((r) => setTimeout(r, Math.min(60000, 2000 * networkStrikes)));
+        } else {
+          networkStrikes = 0;
+        }
+        setRetry(null);
+      }
+    } finally {
+      runningRef.current = false;
+      engineRef.current = null;
+      setRunning(false);
+      setRetry(null);
+      load();
+    }
+  }
+
+  function pauseQueue() {
+    stopRef.current = true;
+    if (engineRef.current) engineRef.current.engine.pause();
+  }
+
+  async function cancelItem(it) {
+    if (engineRef.current && engineRef.current.id === it.id) {
+      await engineRef.current.engine.cancel();
+      return;
+    }
+    if (it.uploadUuid) {
+      try { await api('cancel', { upload_uuid: it.uploadUuid }); } catch (_) { /* list refresh shows the truth */ }
+    }
+    handleStore.del(it.id);
+    patchItem(it.id, { status: 'cancelled', file: null });
+    load();
+  }
+
+  // ── Restoring after a reload ───────────────────────────
+  async function continueWithHandles() {
+    let matched = 0;
+    for (const it of itemsRef.current.filter((i) => i.status === 'needsFile' && i.hasHandle)) {
+      try {
+        const h = await handleStore.get(it.id);
+        if (!h) continue;
+        let perm = h.queryPermission ? await h.queryPermission({ mode: 'read' }) : 'granted';
+        if (perm !== 'granted' && h.requestPermission) perm = await h.requestPermission({ mode: 'read' });
+        if (perm !== 'granted') continue;
+        const f = await h.getFile();
+        if (f.size !== it.size || f.lastModified !== it.lastModified) continue;
+        patchItem(it.id, { file: f, name: f.name, status: 'ready' });
+        matched += 1;
+      } catch (_) { /* fall back to choosing the files again */ }
+    }
+    setRestoreNote(matched ? { kind: 'ok', text: t('restore.matched', { n: matched }) } : null);
+  }
+
+  function chooseAgain(files) {
+    let matched = 0;
+    const used = new Set();
+    for (const f of files) {
+      const it = itemsRef.current.find((i) => i.status === 'needsFile' && !used.has(i.id)
+                                              && i.size === f.size && i.lastModified === f.lastModified);
+      if (!it) continue;
+      used.add(it.id);
+      patchItem(it.id, { file: f, name: f.name, status: 'ready' });
+      matched += 1;
+    }
+    const unmatched = files.length - matched;
+    setRestoreNote({
+      kind: unmatched ? 'error' : 'ok',
+      text: [matched ? t('restore.matched', { n: matched }) : '', unmatched ? t('restore.unmatched', { n: unmatched }) : ''].join(' ').trim(),
     });
-    return { ok: true };
-  }, [startEngine]);
+  }
 
   async function confirmYes() {
     const c = confirm;
     setConfirm(null);
     if (!c) return;
-    if (c.kind === 'job' && job) {
-      await job.engine.cancel();
+    if (c.kind === 'item') {
+      await cancelItem(c.item);
     } else if (c.kind === 'withdraw') {
-      try { await api('cancel', { upload_uuid: c.upload.upload_uuid }); } catch (_) { /* list refresh shows the truth */ }
-      if (pending && pending.uploadUuid === c.upload.upload_uuid) { writePending(null); setPending(null); }
+      try { await api('cancel', { upload_uuid: c.upload.upload_uuid }); } catch (_) { /* refresh shows the truth */ }
+      setItems((prev) => prev.filter((i) => i.uploadUuid !== c.upload.upload_uuid));
       load();
-    } else if (c.kind === 'pending' && pending) {
-      try { await api('cancel', { upload_uuid: pending.uploadUuid }); } catch (_) { /* list refresh shows the truth */ }
-      writePending(null);
-      setPending(null);
+    } else if (c.kind === 'discard') {
+      for (const it of itemsRef.current.filter((i) => i.status === 'needsFile')) {
+        if (it.uploadUuid) { try { await api('cancel', { upload_uuid: it.uploadUuid }); } catch (_) { /* ignore */ } }
+        handleStore.del(it.id);
+      }
+      setItems((prev) => prev.filter((i) => i.status !== 'needsFile'));
+      setRestoreNote(null);
       load();
     }
   }
@@ -784,6 +1045,7 @@ function App() {
     setPhase('signedOut');
   }
 
+  // ── Render ─────────────────────────────────────────────
   let content;
   if (phase === 'loading') {
     content = (<><h1>{t('page.title')}</h1><p role="status">{t('state.loading')}</p></>);
@@ -811,47 +1073,39 @@ function App() {
       </>
     );
   } else {
-    const pendingUpload = pending && !job ? ov.uploads.find((x) => x.upload_uuid === pending.uploadUuid && x.status === 'uploading') : null;
-    const pendingAthlete = pendingUpload ? ov.roster.find((a) => a.athlete_uuid === pending.athleteUuid) : null;
+    const current = engineRef.current ? items.find((i) => i.id === engineRef.current.id) : null;
+    const activeIds = new Set(items.filter((i) => i.uploadUuid && !['done', 'cancelled', 'error'].includes(i.status)).map((i) => i.uploadUuid));
     content = (
       <>
         <h1>{t('page.title')}</h1>
+        <p className="up-lede">{t('page.lede')}</p>
         {narrow && <div className="up-notice" role="note">{t('narrow')}</div>}
         <div className="up-grid">
           <div>
-            {job && (
-              <ProgressCard
-                job={job}
-                awake={awake}
-                onPause={() => job.engine.pause()}
-                onResume={() => job.engine.resume()}
-                onCancel={() => setConfirm({ kind: 'job' })}
-                onAnother={() => setJob(null)} />
-            )}
-            {!job && pendingUpload && (
-              <ResumeCard
-                pending={pending}
-                athlete={pendingAthlete}
-                onFile={(f) => startEngine({
-                  uploadUuid: pending.uploadUuid, file: f, partSize: ov.part_size,
-                  athlete: pendingAthlete, type: pending.type,
-                  isExtra: pendingUpload.is_extra, price: pendingUpload.extra_price_usd,
-                })}
-                onDiscard={() => setConfirm({ kind: 'pending' })} />
-            )}
-            {!job && <UploadForm ov={ov} onSubmit={submitUpload} />}
+            <RestoreCard items={items} note={restoreNote} onContinue={continueWithHandles}
+                         onChoose={chooseAgain} onDiscard={() => setConfirm({ kind: 'discard' })} />
+            <ProgressCard items={items} running={running} rate={rate} eta={eta} current={current}
+                          retry={retry} awake={awake} ov={ov} />
+            {!running && <AddFiles ov={ov} items={items} onAdd={addFiles} disabled={running} />}
+            <QueueCard ov={ov} items={items} running={running} calibration={calibration}
+                       setCalibration={setCalibration} problems={problems}
+                       onChange={(id, patch) => { patchItem(id, patch); setProblems([]); }}
+                       onRemove={removeItem} onCancel={(it) => setConfirm({ kind: 'item', item: it })}
+                       onUploadAll={runQueue} onPause={pauseQueue}
+                       onClearDone={() => setItems((prev) => prev.filter((i) => !['done', 'cancelled', 'error'].includes(i.status)))} />
           </div>
           <div>
             <MonthCard ov={ov} />
-            <UploadsCard ov={ov} activeUuid={job ? job.uploadUuid : null}
-                         onWithdraw={(u) => setConfirm({ kind: 'withdraw', upload: u })} />
+            <UploadsCard ov={ov} activeIds={activeIds} onWithdraw={(u) => setConfirm({ kind: 'withdraw', upload: u })} />
           </div>
         </div>
       </>
     );
   }
 
-  const showSignOut = phase !== 'signedOut' && phase !== 'loading' && !moving;
+  const showSignOut = phase !== 'signedOut' && phase !== 'loading' && !running;
+  const dialogTitle = confirm && confirm.kind === 'discard' ? t('discard.title') : t('cancel.title');
+  const dialogBody = confirm && confirm.kind === 'discard' ? t('discard.body') : t('cancel.body');
 
   return (
     <>
@@ -875,8 +1129,8 @@ function App() {
         <span className="up-version">{window.UPLOAD_VERSION}</span>
       </footer>
       <div className="sr-only" role="status" aria-live="polite">{announce}</div>
-      <Dialog open={!!confirm} titleId="confirm-title" title={t('cancel.title')} onClose={() => setConfirm(null)}>
-        <p>{t('cancel.body')}</p>
+      <Dialog open={!!confirm} titleId="confirm-title" title={dialogTitle} onClose={() => setConfirm(null)}>
+        <p>{dialogBody}</p>
         <div className="up-actions">
           <button type="button" className="up-btn danger" onClick={confirmYes}>{t('cancel.confirm')}</button>
           <button type="button" className="up-btn" data-autofocus onClick={() => setConfirm(null)}>{t('cancel.keep')}</button>

@@ -157,6 +157,11 @@ dialog h2 { font: 700 20px/1.25 var(--font-display); margin: 0 0 10px; }
 .up-footer { border-top: 1px solid var(--line); padding: 16px 24px; color: var(--tx-md); font-size: 13px; text-align: center; }
 .up-version { font-family: var(--font-mono); margin-left: 8px; }
 
+/* ── Upload queue ───────────────────────────────────────── */
+.up-mini { display: inline-flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--tx-md); }
+.up-mini input[type="number"] { width: 72px; padding: 8px 10px; text-align: center; }
+.up-mini input:disabled { opacity: 0.7; }
+
 /* ── Admin tool ─────────────────────────────────────────── */
 .up-tabs { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin: 18px 0 22px; }
 .up-tab {

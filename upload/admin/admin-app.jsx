@@ -26,7 +26,9 @@ const CONSENT_REQUIRED = 'v2.0';
 const UPLOAD_COLS = 'upload_uuid, program_uuid, team_uuid, athlete_uuid, uploaded_by, session_type, ' +
   'period_month, trial_starts, trial_turns, clip_count, calibration_confirmed, is_extra, ' +
   'extra_price_usd, file_type, file_size_bytes, status, recapture_reason, review_note, ' +
-  'created_at, received_at, reviewed_at, cancelled_at';
+  'created_at, received_at, reviewed_at, cancelled_at, trial_count, accepted_count';
+// Trials or clips an upload counts for once reviewed.
+const countedUnits = (u) => (u.accepted_count != null ? u.accepted_count : u.trial_count) || 0;
 
 const STATUS_LABEL = {
   uploading: 'Not finished', received: 'Awaiting review', accepted: 'Accepted',
@@ -47,6 +49,7 @@ const EVENT_LABEL = {
   upload_downloaded: 'File downloaded', upload_accepted: 'Accepted', upload_recapture: 'Sent back for re-capture',
   upload_delivered: 'Results delivered',
   roster_added: 'Added to roster', roster_removed: 'Removed from roster', program_saved: 'Program saved',
+  report_done: 'Monthly report marked done', report_reopened: 'Monthly report reopened',
 };
 const CODE_TEXT = {
   forbidden: 'This account is not an admin.',
@@ -62,6 +65,8 @@ const CODE_TEXT = {
   team_not_found: 'Team not found.',
   program_not_found: 'Create the program first.',
   invalid_value: 'One of the values is out of range.',
+  bad_count: 'The accepted count must be between 1 and the number the coach declared.',
+  bad_request: 'The request was not valid.',
   unauthorized: 'Your sign-in expired. Sign in again.',
   network: 'The connection failed. Try again.',
 };
@@ -117,11 +122,13 @@ function daysLeft(u) {
   return RETENTION_DAYS - Math.floor((Date.now() - base) / 86400000);
 }
 function sessionText(u) {
+  const accepted = u.accepted_count != null && u.accepted_count !== u.trial_count
+    ? ' · ' + u.accepted_count + ' accepted' : '';
   if (u.session_type === 'performance') {
-    return 'Performance · ' + (u.trial_starts || 0) + ' starts, ' + (u.trial_turns || 0) + ' turns' +
+    return 'Performance · ' + (u.trial_starts || 0) + ' starts, ' + (u.trial_turns || 0) + ' turns' + accepted +
       (u.calibration_confirmed ? '' : ' · calibration not confirmed');
   }
-  return 'Video · ' + (u.clip_count || 0) + ' clips';
+  return 'Video · ' + (u.clip_count || u.trial_count || 0) + ' clips' + accepted;
 }
 function csvCell(v) {
   const s = v === null || v === undefined ? '' : String(v);
@@ -137,10 +144,11 @@ async function loadAll() {
     sb.from('athletes').select('athlete_uuid, first_name, last_name, athlete_code, team_uuid, membership_status, consent_version, auth_user_id'),
     sb.from('upload_events').select('event_id, occurred_at, actor_role, event_type, program_uuid, upload_uuid, athlete_uuid, details')
       .order('event_id', { ascending: false }).limit(200),
+    sb.from('upload_monthly_reports').select('program_uuid, athlete_uuid, period_month, done_at'),
   ]);
   const failed = res.find((r) => r.error);
   if (failed) throw failed.error;
-  const [teams, programs, roster, uploads, athletes, events] = res.map((r) => r.data || []);
+  const [teams, programs, roster, uploads, athletes, events, reports] = res.map((r) => r.data || []);
   const athleteById = {};
   for (const a of athletes) {
     athleteById[a.athlete_uuid] = {
@@ -151,7 +159,7 @@ async function loadAll() {
   }
   const teamById = Object.fromEntries(teams.map((t) => [t.team_uuid, t]));
   const programById = Object.fromEntries(programs.map((p) => [p.program_uuid, p]));
-  return { teams, programs, roster, uploads, events, athleteById, teamById, programById };
+  return { teams, programs, roster, uploads, events, reports, athleteById, teamById, programById };
 }
 
 // ── Dialog ────────────────────────────────────────────────
@@ -197,6 +205,8 @@ function QueuePanel({ d, reload }) {
   const [note, setNote] = useState('');
   const [reasonErr, setReasonErr] = useState(false);
   const [cancelFor, setCancelFor] = useState(null);
+  const [acceptFor, setAcceptFor] = useState(null);
+  const [acceptCount, setAcceptCount] = useState(1);
 
   const teamsWithUploads = Array.from(new Set(d.uploads.map((u) => u.team_uuid)))
     .map((id) => d.teamById[id]).filter(Boolean);
@@ -301,7 +311,11 @@ function QueuePanel({ d, reload }) {
                           <>
                             <button type="button" className="up-btn small primary" aria-label={'Accept ' + describe(u)}
                                     aria-disabled={busy ? 'true' : undefined}
-                                    onClick={() => !busy && run(u, 'admin_review', { decision: 'accepted' }, () => 'Accepted: ' + describe(u) + '.')}>Accept</button>
+                                    onClick={() => {
+                                      if (busy) return;
+                                      if ((u.trial_count || 1) > 1) { setAcceptCount(u.trial_count); setAcceptFor(u); return; }
+                                      run(u, 'admin_review', { decision: 'accepted', count: 1 }, () => 'Accepted: ' + describe(u) + '.');
+                                    }}>Accept</button>
                             <button type="button" className="up-btn small" aria-label={'Send back for re-capture: ' + describe(u)}
                                     onClick={() => { setReason(''); setNote(''); setReasonErr(false); setReviewFor(u); }}>Re-capture</button>
                           </>
@@ -327,7 +341,7 @@ function QueuePanel({ d, reload }) {
       )}
 
       <Dialog open={!!reviewFor} titleId="recap-title" title="Send back for re-capture" onClose={() => setReviewFor(null)}>
-        <p className="up-muted">{reviewFor && describe(reviewFor)}. It will not count toward the athlete's allowance. The coach sees the reason and the note.</p>
+        <p className="up-muted">{reviewFor && describe(reviewFor)}. Its trials go back to the athlete's month. The coach sees the reason and the note.</p>
         <div className="up-field">
           <label className="up-label" htmlFor="recap-reason">Reason</label>
           <select id="recap-reason" value={reason} data-autofocus aria-invalid={reasonErr ? 'true' : undefined}
@@ -349,8 +363,34 @@ function QueuePanel({ d, reload }) {
         </div>
       </Dialog>
 
+      <Dialog open={!!acceptFor} titleId="accept-title" title="Accept this upload" onClose={() => setAcceptFor(null)}>
+        <p className="up-muted">
+          {acceptFor && describe(acceptFor)}. The coach declared {acceptFor ? acceptFor.trial_count : 0}{' '}
+          {acceptFor && acceptFor.session_type === 'video' ? 'clips' : 'trials'}. Lower the number if some are not usable;
+          the rest go back to the athlete's month.
+        </p>
+        <div className="up-field">
+          <label className="up-label" htmlFor="accept-count">
+            {acceptFor && acceptFor.session_type === 'video' ? 'Clips accepted' : 'Trials accepted'}
+          </label>
+          <input type="number" id="accept-count" data-autofocus min={1} max={acceptFor ? acceptFor.trial_count : 1}
+                 value={acceptCount} onChange={(e) => setAcceptCount(parseInt(e.target.value, 10) || 1)} />
+        </div>
+        <div className="up-actions">
+          <button type="button" className="up-btn primary"
+                  onClick={() => {
+                    const u = acceptFor;
+                    const n = Math.max(1, Math.min(u.trial_count, acceptCount));
+                    setAcceptFor(null);
+                    run(u, 'admin_review', { decision: 'accepted', count: n },
+                        () => 'Accepted ' + n + ' of ' + u.trial_count + ': ' + describe(u) + '.');
+                  }}>Accept</button>
+          <button type="button" className="up-btn" onClick={() => setAcceptFor(null)}>Go back</button>
+        </div>
+      </Dialog>
+
       <Dialog open={!!cancelFor} titleId="cancel-title" title="Cancel this upload?" onClose={() => setCancelFor(null)}>
-        <p>{cancelFor && describe(cancelFor)}. The file is deleted and the session does not count toward the allowance.</p>
+        <p>{cancelFor && describe(cancelFor)}. The file is deleted and its trials go back to the athlete's month.</p>
         <div className="up-actions">
           <button type="button" className="up-btn danger"
                   onClick={() => { const u = cancelFor; setCancelFor(null); run(u, 'cancel', null, () => 'Cancelled: ' + describe(u) + '.'); }}>Cancel upload</button>
@@ -366,16 +406,15 @@ const BLANK_PROGRAM = {
   active: false, tier_label: '', roster_cap: '',
   perf_sessions_per_month: 1, video_sessions_per_month: 1,
   perf_trials_per_session: 4, video_clips_per_session: 5,
-  extra_perf_price_usd: 75, extra_video_price_usd: 35, max_file_gb: 50,
+  // No default prices in this public file: entered per program (Eric, 2026-10-13).
+  extra_perf_price_usd: '', extra_video_price_usd: '', max_file_gb: 50,
 };
+// Monthly budgets (perf_trials_per_month, video_clips_per_month) are shown
+// read-only until upload_program_save accepts them; extras are on hold.
 const NUM_FIELDS = [
   ['roster_cap', 'Roster cap (athletes)', 'Leave empty for no cap. Over-cap adds show a warning.'],
-  ['perf_sessions_per_month', 'Performance sessions per athlete per month'],
-  ['video_sessions_per_month', 'Video sessions per athlete per month'],
-  ['perf_trials_per_session', 'Trials per performance session'],
-  ['video_clips_per_session', 'Clips per video session'],
-  ['extra_perf_price_usd', 'Extra performance session (USD)'],
-  ['extra_video_price_usd', 'Extra video session (USD)'],
+  ['extra_perf_price_usd', 'Extra block, 4 performance trials (USD)', 'Extra blocks are not sold yet; stored for later.'],
+  ['extra_video_price_usd', 'Extra block, 5 video clips (USD)'],
   ['max_file_gb', 'Largest file (GB)'],
 ];
 
@@ -410,6 +449,10 @@ function ProgramsPanel({ d, reload }) {
     e.preventDefault();
     if (!teamUuid) return;
     const num = (v) => (v === '' || v === null ? null : Number(v));
+    if (num(form.extra_perf_price_usd) === null || num(form.extra_video_price_usd) === null) {
+      setMsg({ kind: 'error', text: 'Enter both extra block prices.' });
+      return;
+    }
     setBusy(true);
     const r = await api('admin_program_save', {
       team_uuid: teamUuid, active: !!form.active, tier_label: form.tier_label,
@@ -478,6 +521,12 @@ function ProgramsPanel({ d, reload }) {
                 <input type="text" id="p-tier" maxLength={40} value={form.tier_label}
                        onChange={(e) => setForm(Object.assign({}, form, { tier_label: e.target.value }))} />
               </div>
+              {prog && (
+                <p className="up-muted">
+                  Monthly allowance per athlete: {prog.perf_trials_per_month} performance trials and{' '}
+                  {prog.video_clips_per_month} video clips, in any number of uploads. (Changed in the database for now.)
+                </p>
+              )}
               <div className="up-form-grid">
                 {NUM_FIELDS.map(([key, label, help]) => (
                   <div key={key}>
@@ -552,8 +601,10 @@ function ProgramsPanel({ d, reload }) {
   );
 }
 
-// ── Billing ───────────────────────────────────────────────
-function billingFor(d, month) {
+// ── Monthly: trials per athlete + reports checklist ───────
+// Counts accepted and delivered uploads at their accepted count. Extras
+// (blocks) are on hold until the upload procedure is proven (Eric 2026-10-13).
+function monthlyFor(d, month) {
   const out = [];
   for (const prog of d.programs) {
     const team = d.teamById[prog.team_uuid] || { team_name: 'Unknown team' };
@@ -562,17 +613,15 @@ function billingFor(d, month) {
     for (const u of ups) if (u.athlete_uuid) ids.add(u.athlete_uuid);
     const rows = [];
     for (const id of ids) {
-      const a = d.athleteById[id];
       const mine = ups.filter((u) => u.athlete_uuid === id);
-      const perf = mine.filter((u) => u.session_type === 'performance' && BILLED.includes(u.status)).length;
-      const video = mine.filter((u) => u.session_type === 'video' && BILLED.includes(u.status)).length;
-      const perfExtra = Math.max(0, perf - prog.perf_sessions_per_month);
-      const videoExtra = Math.max(0, video - prog.video_sessions_per_month);
-      rows.push({
-        athlete: a, perf, video, perfExtra, videoExtra,
-        pending: mine.filter((u) => u.status === 'received').length,
-        extraUsd: perfExtra * Number(prog.extra_perf_price_usd) + videoExtra * Number(prog.extra_video_price_usd),
-      });
+      const sum = (type, statuses) => mine
+        .filter((u) => u.session_type === type && statuses.includes(u.status))
+        .reduce((s, u) => s + (statuses === BILLED ? countedUnits(u) : (u.trial_count || 0)), 0);
+      const perf = sum('performance', BILLED);
+      const video = sum('video', BILLED);
+      const pending = sum('performance', ['received']) + sum('video', ['received']);
+      const report = d.reports.find((r) => r.program_uuid === prog.program_uuid && r.athlete_uuid === id && r.period_month === month);
+      rows.push({ athlete: d.athleteById[id], athleteUuid: id, perf, video, pending, reportDone: !!report });
     }
     rows.sort((x, y) => athleteName(x.athlete).localeCompare(athleteName(y.athlete)));
     out.push({ prog, team, rows });
@@ -580,26 +629,43 @@ function billingFor(d, month) {
   return out.sort((x, y) => x.team.team_name.localeCompare(y.team.team_name));
 }
 
-function BillingPanel({ d }) {
+function BillingPanel({ d, reload }) {
   const cur = currentMonthKey();
   const months = Array.from(new Set([cur, ...d.uploads.map((u) => u.period_month)])).sort().reverse();
   const [month, setMonth] = useState(cur);
-  const groups = billingFor(d, month);
+  const [msg, setMsg] = useState(null);
+  const [busy, setBusy] = useState('');
+  const groups = monthlyFor(d, month);
+  const due = groups.reduce((s, g) => s + g.rows.filter((r) => (r.perf || r.video) && !r.reportDone).length, 0);
+
+  async function setReport(g, r, done) {
+    setBusy(r.athleteUuid);
+    const res = await api('admin_report_set', {
+      program_uuid: g.prog.program_uuid, athlete_uuid: r.athleteUuid, month, done,
+    });
+    setBusy('');
+    if (res.ok) {
+      setMsg({ kind: 'ok', text: (done ? 'Report marked done: ' : 'Report reopened: ') + athleteName(r.athlete) + ', ' + fmtMonth(month) + '.' });
+      await reload();
+    } else {
+      setMsg({ kind: 'error', text: codeText(res.code) });
+    }
+  }
 
   function exportCsv() {
-    const lines = [['month', 'team', 'tier', 'athlete_code', 'athlete', 'performance_accepted', 'video_accepted',
-      'performance_extra', 'video_extra', 'extra_usd', 'awaiting_review'].join(',')];
+    const lines = [['month', 'team', 'tier', 'athlete_code', 'athlete', 'performance_trials', 'video_clips',
+      'awaiting_review', 'report_done'].join(',')];
     for (const g of groups) {
       for (const r of g.rows) {
         lines.push([month.slice(0, 7), g.team.team_name, g.prog.tier_label || '', r.athlete ? r.athlete.athlete_code : '',
-          athleteName(r.athlete), r.perf, r.video, r.perfExtra, r.videoExtra, r.extraUsd.toFixed(2), r.pending].map(csvCell).join(','));
+          athleteName(r.athlete), r.perf, r.video, r.pending, r.reportDone ? 'yes' : 'no'].map(csvCell).join(','));
       }
     }
     const blob = new Blob([lines.join('\n') + '\n'], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'upload-billing-' + month.slice(0, 7) + '.csv';
+    a.download = 'upload-monthly-' + month.slice(0, 7) + '.csv';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -608,58 +674,73 @@ function BillingPanel({ d }) {
 
   return (
     <>
+      <Message msg={msg} />
       <div className="up-toolbar">
         <div className="up-field">
           <label className="up-label" htmlFor="b-month">Month</label>
-          <select id="b-month" value={month} onChange={(e) => setMonth(e.target.value)}>
+          <select id="b-month" value={month} onChange={(e) => { setMonth(e.target.value); setMsg(null); }}>
             {months.map((m) => <option key={m} value={m}>{fmtMonth(m)}</option>)}
           </select>
         </div>
         <button type="button" className="up-btn small" onClick={exportCsv}>Export CSV</button>
       </div>
-      <p className="up-muted">Only accepted and delivered sessions count. Extras are sessions above each athlete's monthly allowance, priced at the program's current extra rates. The CSV contains athlete names: store it with the financial records, not in shared folders.</p>
+      <p className="up-muted">
+        Accepted and delivered uploads count at their accepted number of trials or clips. One report and coach debrief per
+        athlete per month, at month end. {due ? <strong className="up-warn">{due} report{due === 1 ? '' : 's'} due for {fmtMonth(month)}.</strong> : null}
+        {' '}The CSV contains athlete names: store it with the business records, not in shared folders.
+      </p>
       {groups.length === 0 ? <p>No programs yet.</p> : groups.map((g) => {
-        const tot = g.rows.reduce((s, r) => ({
-          perf: s.perf + r.perf, video: s.video + r.video, extraUsd: s.extraUsd + r.extraUsd, pending: s.pending + r.pending,
-        }), { perf: 0, video: 0, extraUsd: 0, pending: 0 });
+        const tot = g.rows.reduce((s, r) => ({ perf: s.perf + r.perf, video: s.video + r.video, pending: s.pending + r.pending }),
+          { perf: 0, video: 0, pending: 0 });
         return (
           <section className="up-card" key={g.prog.program_uuid} aria-labelledby={'bill-' + g.prog.program_uuid}>
             <h2 id={'bill-' + g.prog.program_uuid}>{g.team.team_name}</h2>
             <p className="up-muted">
-              {g.prog.tier_label || 'No tier label'} · {g.prog.active ? 'active' : 'off'} · allowance {g.prog.perf_sessions_per_month} performance + {g.prog.video_sessions_per_month} video per athlete
+              {g.prog.tier_label || 'No tier label'} · {g.prog.active ? 'active' : 'off'} · allowance {g.prog.perf_trials_per_month} trials
+              {' '}+ {g.prog.video_clips_per_month} clips per athlete per month
               {tot.pending ? <span className="up-warn"> · {tot.pending} awaiting review, not counted yet</span> : null}
             </p>
             <div className="up-table-wrap">
               <table>
-                <caption>{fmtMonth(month)}: accepted sessions and extras</caption>
+                <caption>{fmtMonth(month)}: accepted trials and clips, and monthly reports</caption>
                 <thead>
                   <tr>
                     <th scope="col">Athlete</th>
-                    <th scope="col">Performance</th>
-                    <th scope="col">Video</th>
-                    <th scope="col">Extra performance</th>
-                    <th scope="col">Extra video</th>
-                    <th scope="col">Extras (USD)</th>
+                    <th scope="col">Performance trials</th>
+                    <th scope="col">Video clips</th>
+                    <th scope="col">Awaiting review</th>
+                    <th scope="col">Monthly report</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {g.rows.map((r, i) => (
-                    <tr key={(r.athlete && r.athlete.athlete_uuid) || i}>
-                      <th scope="row">{athleteName(r.athlete)}</th>
-                      <td className="num">{r.perf}</td>
-                      <td className="num">{r.video}</td>
-                      <td className="num">{r.perfExtra}</td>
-                      <td className="num">{r.videoExtra}</td>
-                      <td className="num">{fmtMoney(r.extraUsd)}</td>
-                    </tr>
-                  ))}
+                  {g.rows.map((r, i) => {
+                    const hasWork = r.perf > 0 || r.video > 0;
+                    const boxId = 'rep-' + g.prog.program_uuid + '-' + r.athleteUuid;
+                    return (
+                      <tr key={r.athleteUuid || i}>
+                        <th scope="row">{athleteName(r.athlete)}</th>
+                        <td className="num">{r.perf} of {g.prog.perf_trials_per_month}</td>
+                        <td className="num">{r.video} of {g.prog.video_clips_per_month}</td>
+                        <td className="num">{r.pending || '—'}</td>
+                        <td>
+                          {hasWork || r.reportDone ? (
+                            <span className="up-check">
+                              <input type="checkbox" id={boxId} checked={r.reportDone}
+                                     aria-disabled={busy ? 'true' : undefined}
+                                     onChange={(e) => { if (!busy) setReport(g, r, e.target.checked); }} />
+                              <label htmlFor={boxId}>{r.reportDone ? 'Done' : 'Due'}<span className="sr-only"> for {athleteName(r.athlete)}</span></label>
+                            </span>
+                          ) : <span className="up-muted">No trials yet</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
                   <tr>
                     <th scope="row">Total</th>
                     <td className="num">{tot.perf}</td>
                     <td className="num">{tot.video}</td>
+                    <td className="num">{tot.pending || '—'}</td>
                     <td></td>
-                    <td></td>
-                    <td className="num">{fmtMoney(tot.extraUsd)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -723,7 +804,7 @@ function ActivityPanel({ d }) {
 }
 
 // ── Tabs ──────────────────────────────────────────────────
-const TABS = [['queue', 'Queue'], ['programs', 'Programs and rosters'], ['billing', 'Billing'], ['activity', 'Activity']];
+const TABS = [['queue', 'Queue'], ['programs', 'Programs and rosters'], ['billing', 'Monthly and reports'], ['activity', 'Activity']];
 
 function Tabs({ tab, setTab, waiting }) {
   const refs = useRef({});
@@ -843,7 +924,7 @@ function App() {
           <div key={id} role="tabpanel" id={'panel-' + id} aria-labelledby={'tab-' + id} hidden={tab !== id} tabIndex={0}>
             {tab === id && id === 'queue' && <QueuePanel d={d} reload={reload} />}
             {tab === id && id === 'programs' && <ProgramsPanel d={d} reload={reload} />}
-            {tab === id && id === 'billing' && <BillingPanel d={d} />}
+            {tab === id && id === 'billing' && <BillingPanel d={d} reload={reload} />}
             {tab === id && id === 'activity' && <ActivityPanel d={d} />}
           </div>
         ))}

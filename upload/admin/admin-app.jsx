@@ -26,7 +26,8 @@ const CONSENT_REQUIRED = 'v2.0';
 const UPLOAD_COLS = 'upload_uuid, program_uuid, team_uuid, athlete_uuid, uploaded_by, session_type, ' +
   'period_month, trial_starts, trial_turns, clip_count, calibration_confirmed, is_extra, ' +
   'extra_price_usd, file_type, file_size_bytes, status, recapture_reason, review_note, ' +
-  'created_at, received_at, reviewed_at, cancelled_at, trial_count, accepted_count';
+  'created_at, received_at, reviewed_at, cancelled_at, trial_count, accepted_count, ' +
+  'original_file_name, duplicate_of, replaces_upload';
 // Trials or clips an upload counts for once reviewed.
 const countedUnits = (u) => (u.accepted_count != null ? u.accepted_count : u.trial_count) || 0;
 
@@ -195,8 +196,46 @@ function Message({ msg }) {
 }
 
 // ── Queue ─────────────────────────────────────────────────
+// Every upload is sorted into one of four groups so good and failed
+// uploads are easy to tell apart (Eric, 2026-10-13).
+const STUCK_HOURS = 24;
+const VIEWS = [
+  ['needs', 'Needs you'],
+  ['progress', 'In progress'],
+  ['good', 'Good'],
+  ['problem', 'Failed or cancelled'],
+  ['all', 'All'],
+];
+function fmtAge(hours) {
+  if (hours < 48) return Math.max(1, Math.round(hours)) + ' hours';
+  return Math.round(hours / 24) + ' days';
+}
+function outcomeOf(u) {
+  const ageH = (Date.now() - new Date(u.created_at).getTime()) / 3600000;
+  switch (u.status) {
+    case 'received':
+      return { group: 'needs', label: 'Awaiting review', tone: 'received', rank: 0 };
+    case 'uploading':
+      return ageH > STUCK_HOURS
+        ? { group: 'needs', label: 'Stuck for ' + fmtAge(ageH), tone: 'stuck', rank: 1 }
+        : { group: 'progress', label: 'In progress', tone: 'uploading', rank: 2 };
+    case 'accepted':
+      return { group: 'good', label: 'Accepted', tone: 'accepted', rank: 3 };
+    case 'delivered':
+      return { group: 'good', label: 'Delivered', tone: 'delivered', rank: 4 };
+    case 'recapture':
+      return { group: 'problem', label: 'Sent back: ' + (REASON_LABEL[u.recapture_reason] || 'see note'), tone: 'recapture', rank: 5 };
+    case 'cancelled':
+      return u.received_at
+        ? { group: 'problem', label: 'Withdrawn after arrival', tone: 'cancelled', rank: 6 }
+        : { group: 'problem', label: 'Never finished', tone: 'cancelled', rank: 7 };
+    default:
+      return { group: 'problem', label: STATUS_LABEL[u.status] || u.status, tone: 'cancelled', rank: 8 };
+  }
+}
+
 function QueuePanel({ d, reload }) {
-  const [status, setStatus] = useState('received');
+  const [view, setView] = useState('needs');
   const [team, setTeam] = useState('');
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState('');
@@ -210,8 +249,26 @@ function QueuePanel({ d, reload }) {
 
   const teamsWithUploads = Array.from(new Set(d.uploads.map((u) => u.team_uuid)))
     .map((id) => d.teamById[id]).filter(Boolean);
-  const rows = d.uploads.filter((u) => (!status || u.status === status) && (!team || u.team_uuid === team));
+  const inTeam = d.uploads.filter((u) => !team || u.team_uuid === team).map((u) => Object.assign({}, u, { _o: outcomeOf(u) }));
+  const counts = { all: inTeam.length, needs: 0, progress: 0, good: 0, problem: 0 };
+  for (const u of inTeam) counts[u._o.group] += 1;
+  const rows = inTeam
+    .filter((u) => view === 'all' || u._o.group === view)
+    // In "All", problems sink to the bottom; otherwise newest first.
+    .sort((x, y) => (view === 'all' && (x._o.group === 'problem') !== (y._o.group === 'problem')
+      ? (x._o.group === 'problem' ? 1 : -1)
+      : new Date(y.created_at) - new Date(x.created_at)));
   const describe = (u) => athleteName(d.athleteById[u.athlete_uuid]) + ', ' + u.session_type + ', ' + fmtDate(u.created_at);
+  const byUuid = {};
+  for (const u of d.uploads) byUuid[u.upload_uuid] = u;
+  // Short pointer to another upload ("Lismar Lyon, 13 Oct, Accepted").
+  const pointTo = (id) => {
+    const o = byUuid[id];
+    if (!o) return 'an older upload';
+    return athleteName(d.athleteById[o.athlete_uuid]) + ', ' + fmtDate(o.created_at) + ', ' + outcomeOf(o).label;
+  };
+  const replacedBy = {};
+  for (const u of d.uploads) if (u.replaces_upload) replacedBy[u.replaces_upload] = u.upload_uuid;
 
   async function run(u, action, payload, okText) {
     setBusy(u.upload_uuid + action);
@@ -247,14 +304,15 @@ function QueuePanel({ d, reload }) {
   return (
     <>
       <Message msg={msg} />
+      <div className="up-chips" role="group" aria-label="Show uploads">
+        {VIEWS.map(([k, label]) => (
+          <button key={k} type="button" className={'up-chip ' + k} aria-pressed={view === k ? 'true' : 'false'}
+                  onClick={() => setView(k)}>
+            {label} <span className="up-chip-n">{counts[k]}</span>
+          </button>
+        ))}
+      </div>
       <div className="up-toolbar">
-        <div className="up-field">
-          <label className="up-label" htmlFor="q-status">Status</label>
-          <select id="q-status" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All</option>
-            {Object.keys(STATUS_LABEL).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-          </select>
-        </div>
         <div className="up-field">
           <label className="up-label" htmlFor="q-team">Team</label>
           <select id="q-team" value={team} onChange={(e) => setTeam(e.target.value)}>
@@ -265,7 +323,9 @@ function QueuePanel({ d, reload }) {
         <button type="button" className="up-btn small" onClick={reload}>Refresh</button>
       </div>
 
-      {rows.length === 0 ? <p className="up-muted">No uploads match these filters.</p> : (
+      {rows.length === 0 ? (
+        <p className="up-muted">{view === 'needs' ? 'Nothing needs you right now.' : 'No uploads in this group.'}</p>
+      ) : (
         <div className="up-table-wrap">
           <table>
             <caption>{rows.length} upload{rows.length === 1 ? '' : 's'}. Files are deleted {RETENTION_DAYS} days after upload.</caption>
@@ -295,9 +355,13 @@ function QueuePanel({ d, reload }) {
                       {sessionText(u)}
                       {u.is_extra ? <div className="up-warn">Extra, {fmtMoney(u.extra_price_usd)}</div> : null}
                       {u.recapture_reason ? <div className="up-muted">{REASON_LABEL[u.recapture_reason]}{u.review_note ? ': ' + u.review_note : ''}</div> : null}
+                      {u.original_file_name ? <div className="up-file-name">{u.original_file_name}</div> : null}
+                      {u.duplicate_of ? <div className="up-warn">Possible duplicate: coach uploaded anyway. Same file as {pointTo(u.duplicate_of)}.</div> : null}
+                      {u.replaces_upload ? <div className="up-muted">Replaces {pointTo(u.replaces_upload)}.</div> : null}
+                      {replacedBy[u.upload_uuid] ? <div className="up-muted">Replaced by {pointTo(replacedBy[u.upload_uuid])}.</div> : null}
                     </td>
                     <td className="num">{fmtBytes(u.file_size_bytes)}</td>
-                    <td><span className={'up-badge ' + u.status}>{STATUS_LABEL[u.status]}</span></td>
+                    <td><span className={'up-badge ' + u._o.tone}>{u._o.label}</span></td>
                     <td className={'num' + (hasFile && left <= 7 ? ' up-warn' : '')}>
                       {hasFile ? (left > 0 ? left + (left === 1 ? ' day' : ' days') : 'Deleted') : '—'}
                     </td>

@@ -98,6 +98,74 @@ function engineErrorCode(err) {
 const newId = () => 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const itemUnits = (it) => (it.type === 'performance' ? (it.starts || 0) + (it.turns || 0) : (it.clips || 0));
 
+// Fast file fingerprint for duplicate warnings and matching on resume:
+// SHA-256 over the size plus 1 MB from the start, middle and end of the
+// file (reads about 3 MB, even for a 13 GB box). Not personal data.
+async function fingerprintFile(file) {
+  const MB = 1024 * 1024;
+  const slices = [file.slice(0, MB)];
+  if (file.size > 3 * MB) {
+    const mid = Math.floor(file.size / 2);
+    slices.push(file.slice(mid - MB / 2, mid + MB / 2));
+  }
+  if (file.size > MB) slices.push(file.slice(Math.max(file.size - MB, MB)));
+  const bufs = await Promise.all(slices.map((s) => s.arrayBuffer()));
+  const head = new TextEncoder().encode('pa-fp-v1:' + file.size + ':');
+  const all = new Uint8Array(head.length + bufs.reduce((n, b) => n + b.byteLength, 0));
+  all.set(head, 0);
+  let o = head.length;
+  for (const b of bufs) { all.set(new Uint8Array(b), o); o += b.byteLength; }
+  const digest = await crypto.subtle.digest('SHA-256', all);
+  return Array.from(new Uint8Array(digest)).map((x) => x.toString(16).padStart(2, '0')).join('');
+}
+
+// File picker that keeps a reusable handle where the browser allows it
+// (Chrome / Edge); falls back to a plain file input everywhere else.
+async function pickFiles(multiple) {
+  if (SUPPORTS_HANDLES) {
+    try {
+      const handles = await window.showOpenFilePicker({ multiple: !!multiple });
+      const out = [];
+      for (const h of handles) out.push({ file: await h.getFile(), handle: h });
+      return out;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return [];
+    }
+  }
+  return new Promise((resolve) => {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.multiple = !!multiple;
+    inp.addEventListener('change', () => resolve(Array.from(inp.files || []).map((file) => ({ file, handle: null }))), { once: true });
+    inp.addEventListener('cancel', () => resolve([]), { once: true });
+    inp.click();
+  });
+}
+
+// Why a queued file looks like one uploaded before (a warning, never a block).
+function dupWarning(it, items, ov) {
+  if (!it.fingerprint || it.uploadUuid || ['done', 'cancelled'].includes(it.status)) return null;
+  // Only the later copy in the queue is flagged, so "Remove" keeps one.
+  const pos = items.findIndex((o) => o.id === it.id);
+  if (items.some((o, k) => k < pos && o.fingerprint === it.fingerprint && !['cancelled', 'error'].includes(o.status))) {
+    return { kind: 'queue', text: t('dup.queue') };
+  }
+  // The upload being replaced is not a duplicate, unless it was sent back
+  // for a new capture and this is the same file again.
+  const prev = ov.uploads.find((u) => u.file_fingerprint === it.fingerprint && u.status !== 'cancelled'
+    && (u.upload_uuid !== it.replaces || u.status === 'recapture'));
+  if (!prev) return null;
+  const a = ov.roster.find((x) => x.athlete_uuid === prev.athlete_uuid);
+  if (prev.status === 'recapture') {
+    return { kind: 'recapture', text: t('dup.recapture', { reason: t('reason.' + (prev.recapture_reason || 'other')) }) };
+  }
+  if (prev.athlete_uuid !== it.athleteUuid) {
+    return { kind: 'other', text: t('dup.other', { date: fmtDate(prev.created_at), name: athleteName(a) }) };
+  }
+  const st = prev.status === 'uploading' ? t('status.unfinished') : t('status.' + prev.status);
+  return { kind: 'same', text: t('dup.same', { date: fmtDate(prev.created_at), name: athleteName(a), status: st.toLowerCase() }) };
+}
+
 // ── Local storage (per-browser convenience only) ──────────
 function readJson(key) {
   try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (_) { return null; }
@@ -115,6 +183,7 @@ function persistQueue(items) {
     .map((i) => ({
       id: i.id, athleteUuid: i.athleteUuid, type: i.type, starts: i.starts, turns: i.turns, clips: i.clips,
       size: i.size, lastModified: i.lastModified, uploadUuid: i.uploadUuid || null, partSize: i.partSize || null,
+      fingerprint: i.fingerprint || null, replaces: i.replaces || null, allowDuplicate: !!i.allowDuplicate,
     }));
   writeJson(QUEUE_KEY, keep.length ? keep : null);
 }
@@ -194,7 +263,6 @@ function AddFiles({ ov, items, onAdd, disabled }) {
   const [type, setType] = useState('');
   const [msg, setMsg] = useState(null);
   const [dragOver, setDragOver] = useState(false);
-  const inputRef = useRef(null);
 
   const athlete = ov.roster.find((a) => a.athlete_uuid === athleteUuid) || null;
   const fileTypes = type === 'video' ? prog.video_file_types : prog.perf_file_types;
@@ -224,18 +292,8 @@ function AddFiles({ ov, items, onAdd, disabled }) {
 
   async function choose() {
     if (!athlete || !type) { setMsg({ kind: 'error', text: t('add.needAthlete') }); return; }
-    if (SUPPORTS_HANDLES) {
-      try {
-        const handles = await window.showOpenFilePicker({ multiple: true });
-        const entries = [];
-        for (const h of handles) entries.push({ file: await h.getFile(), handle: h });
-        accept(entries);
-        return;
-      } catch (e) {
-        if (e && e.name === 'AbortError') return;   // the coach closed the picker
-      }
-    }
-    if (inputRef.current) inputRef.current.click();
+    const entries = await pickFiles(true);
+    if (entries.length) accept(entries);
   }
 
   function onDrop(e) {
@@ -309,13 +367,6 @@ function AddFiles({ ov, items, onAdd, disabled }) {
            onDrop={onDrop}>
         <button type="button" className="up-btn" onClick={choose} aria-disabled={disabled ? 'true' : undefined}
                 aria-describedby="f-files-help">{t('add.choose')}</button>
-        <input ref={inputRef} type="file" multiple className="sr-only" tabIndex={-1} aria-hidden="true"
-               accept={(type ? fileTypes : allTypes).map((x) => '.' + x).join(',')}
-               onChange={(e) => {
-                 const files = Array.from(e.target.files || []);
-                 e.target.value = '';
-                 accept(files.map((file) => ({ file, handle: null })));
-               }} />
         <span aria-hidden="true">{t('add.drop')}</span>
       </div>
       <span id="f-files-help" className="up-help">{t('add.help', { types: typesText, max: prog.max_file_gb })}</span>
@@ -341,7 +392,7 @@ function itemStatusText(it) {
 }
 
 function QueueCard({ ov, items, running, calibration, setCalibration, onChange, onRemove, onCancel,
-                     onUploadAll, onPause, onClearDone, problems }) {
+                     onUploadAll, onPause, onClearDone, onAllowDuplicate, problems }) {
   const byId = {};
   for (const a of ov.roster) byId[a.athlete_uuid] = a;
   const waiting = items.filter((i) => ['ready', 'paused', 'needsFile'].includes(i.status));
@@ -404,6 +455,15 @@ function QueueCard({ ov, items, running, calibration, setCalibration, onChange, 
                         <span className={'up-badge ' + (it.status === 'done' ? 'received' : it.status === 'error' ? 'recapture' : 'uploading')}>
                           {itemStatusText(it)}
                         </span>
+                        {it.checking && <div className="up-muted">{t('q.checking')}</div>}
+                        {(() => {
+                          const w = dupWarning(it, items, ov);
+                          return w ? <div className="up-warn">{w.text}{it.allowDuplicate ? ' ' + t('dup.allowed') : ''}</div> : null;
+                        })()}
+                        {it.status === 'error' && it.error === 'possible_duplicate' && !running && (
+                          <button type="button" className="up-btn small" aria-label={t('q.uploadAnywayLabel', { file: fname })}
+                                  onClick={() => onAllowDuplicate(it)}>{t('q.uploadAnyway')}</button>
+                        )}
                       </td>
                       <td>
                         {editable(it) && (
@@ -578,60 +638,138 @@ function MonthCard({ ov }) {
   );
 }
 
-// ── Recent uploads ────────────────────────────────────────
-function UploadsCard({ ov, activeIds, onWithdraw }) {
+// ── Recent uploads, grouped by what the coach needs to do ─
+const EXPIRE_DAYS = 7;   // unfinished uploads can be resumed for 7 days (bucket lifecycle)
+function ageDays(iso) { return (Date.now() - new Date(iso).getTime()) / 86400000; }
+
+function coachSection(u, activeIds) {
+  if (activeIds.has(u.upload_uuid)) return 'progress';
+  switch (u.status) {
+    case 'uploading':
+      if (u.replaced_at) return 'closed';
+      if (!u.uploaded_by_me) return ageDays(u.created_at) > 1 ? 'action' : 'progress';
+      return 'action';
+    case 'received': return 'received';
+    case 'accepted':
+    case 'delivered': return 'done';
+    case 'recapture': return u.replaced_at ? 'closed' : 'action';
+    default: return 'closed';
+  }
+}
+
+function coachStatus(u, activeIds) {
+  if (u.status === 'uploading' && !activeIds.has(u.upload_uuid) && coachSection(u, activeIds) !== 'progress') {
+    return { text: t(ageDays(u.created_at) >= EXPIRE_DAYS ? 'status.expired' : 'status.unfinished'), tone: 'stuck' };
+  }
+  return { text: t('status.' + u.status), tone: u.status };
+}
+
+// What the coach can do about an upload (one button at most).
+function coachAction(u, activeIds) {
+  if (u.replaced_at || activeIds.has(u.upload_uuid) || !u.uploaded_by_me) return null;
+  if (u.status === 'uploading') return ageDays(u.created_at) < EXPIRE_DAYS ? 'resume' : 'again';
+  if (u.status === 'recapture') return 'newCapture';
+  if (u.status === 'cancelled' && !u.received_at) return 'again';
+  if (u.status === 'received') return 'withdraw';
+  return null;
+}
+
+function UploadTable({ rows, byId, activeIds, caption, onAction }) {
+  return (
+    <div className="up-table-wrap">
+      <table>
+        <caption className="sr-only">{caption}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{t('col.date')}</th>
+            <th scope="col">{t('col.athlete')}</th>
+            <th scope="col">{t('col.session')}</th>
+            <th scope="col">{t('col.status')}</th>
+            <th scope="col">{t('col.notes')}</th>
+            <th scope="col"><span className="sr-only">{t('col.actions')}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((u) => {
+            const name = u.athlete_uuid ? athleteName(byId[u.athlete_uuid]) : t('uploads.unknownAthlete');
+            const st = coachStatus(u, activeIds);
+            const act = coachAction(u, activeIds);
+            const typeWord = t('type.' + u.session_type);
+            const date = fmtDate(u.created_at);
+            const contents = u.session_type === 'performance'
+              ? t('uploads.perf', { s: u.trial_starts || 0, t: u.trial_turns || 0 })
+              : t('uploads.video', { n: u.clip_count || u.trial_count || 0 });
+            const notes = [];
+            if (u.replaced_at) notes.push(t('uploads.replaced', { date: fmtDate(u.replaced_at) }));
+            if (u.accepted_count && u.accepted_count !== u.trial_count) notes.push(t('uploads.accepted', { n: u.accepted_count }));
+            if (u.recapture_reason) notes.push(t('reason.' + u.recapture_reason));
+            if (u.review_note) notes.push(u.review_note);
+            if (u.duplicate_of) notes.push(t('uploads.flagged'));
+            if (!u.uploaded_by_me && u.status === 'uploading') notes.push(t('uploads.byOther'));
+            const labelVars = { type: typeWord, name, date };
+            return (
+              <tr key={u.upload_uuid}>
+                <td className="num">{date}</td>
+                <th scope="row">{name}</th>
+                <td>
+                  {t('type.' + u.session_type + '.title')}
+                  <div className="up-muted">{contents}</div>
+                  {u.original_file_name && <div className="up-file-name">{u.original_file_name}</div>}
+                </td>
+                <td><span className={'up-badge ' + st.tone}>{st.text}</span></td>
+                <td>{notes.join(' · ')}</td>
+                <td>
+                  {act === 'resume' && (
+                    <button type="button" className="up-btn small primary" aria-label={t('btn.resumeLabel', labelVars)}
+                            onClick={() => onAction('resume', u)}>{t('btn.resume')}</button>
+                  )}
+                  {act === 'again' && (
+                    <button type="button" className="up-btn small" aria-label={t('btn.againLabel', labelVars)}
+                            onClick={() => onAction('again', u)}>{t('btn.again')}</button>
+                  )}
+                  {act === 'newCapture' && (
+                    <button type="button" className="up-btn small primary" aria-label={t('btn.newCaptureLabel', labelVars)}
+                            onClick={() => onAction('again', u)}>{t('btn.newCapture')}</button>
+                  )}
+                  {act === 'withdraw' && (
+                    <button type="button" className="up-btn small" aria-label={t('uploads.withdrawLabel', labelVars)}
+                            onClick={() => onAction('withdraw', u)}>{t('uploads.withdraw')}</button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function UploadsCard({ ov, activeIds, onAction, msg }) {
   const byId = {};
   for (const a of ov.roster) byId[a.athlete_uuid] = a;
+  const groups = { action: [], progress: [], received: [], done: [], closed: [] };
+  for (const u of ov.uploads) groups[coachSection(u, activeIds)].push(u);
+  const shown = [['action', 'sec.action'], ['progress', 'sec.progress'], ['received', 'sec.received'], ['done', 'sec.done']];
   return (
     <section className="up-card" aria-labelledby="uploads-title">
       <h2 id="uploads-title">{t('uploads.title')}</h2>
+      {msg && <p className={'up-msg ' + msg.kind} role={msg.kind === 'error' ? 'alert' : 'status'}>{msg.text}</p>}
       {ov.uploads.length === 0 ? <p>{t('uploads.empty')}</p> : (
-        <div className="up-table-wrap">
-          <table>
-            <caption>{t('uploads.caption')}</caption>
-            <thead>
-              <tr>
-                <th scope="col">{t('col.date')}</th>
-                <th scope="col">{t('col.athlete')}</th>
-                <th scope="col">{t('col.session')}</th>
-                <th scope="col">{t('col.status')}</th>
-                <th scope="col">{t('col.notes')}</th>
-                <th scope="col"><span className="sr-only">{t('col.actions')}</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {ov.uploads.map((u) => {
-                const name = athleteName(byId[u.athlete_uuid]);
-                const canWithdraw = u.uploaded_by_me && ['uploading', 'received'].includes(u.status) && !activeIds.has(u.upload_uuid);
-                const contents = u.session_type === 'performance'
-                  ? t('uploads.perf', { s: u.trial_starts || 0, t: u.trial_turns || 0 })
-                  : t('uploads.video', { n: u.clip_count || u.trial_count || 0 });
-                const notes = [];
-                if (u.accepted_count && u.accepted_count !== u.trial_count) notes.push(t('uploads.accepted', { n: u.accepted_count }));
-                if (u.recapture_reason) notes.push(t('reason.' + u.recapture_reason));
-                if (u.review_note) notes.push(u.review_note);
-                return (
-                  <tr key={u.upload_uuid}>
-                    <td className="num">{fmtDate(u.created_at)}</td>
-                    <th scope="row">{name}</th>
-                    <td>{t('type.' + u.session_type + '.title')}<div className="up-muted">{contents}</div></td>
-                    <td><span className={'up-badge ' + u.status}>{t('status.' + u.status)}</span></td>
-                    <td>{notes.join(' · ')}</td>
-                    <td>
-                      {canWithdraw && (
-                        <button type="button" className="up-btn small"
-                                aria-label={t('uploads.withdrawLabel', { type: t('type.' + u.session_type), name, date: fmtDate(u.created_at) })}
-                                onClick={() => onWithdraw(u)}>
-                          {t('uploads.withdraw')}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {shown.map(([key, label]) => (groups[key].length ? (
+            <div key={key} className={'up-group ' + key}>
+              <h3>{t(label)} <span className="up-chip-n">{groups[key].length}</span></h3>
+              <UploadTable rows={groups[key]} byId={byId} activeIds={activeIds} caption={t(label)} onAction={onAction} />
+            </div>
+          ) : null))}
+          {groups.closed.length > 0 && (
+            <details className="up-group closed">
+              <summary>{t('sec.closed', { n: groups.closed.length })}</summary>
+              <UploadTable rows={groups.closed} byId={byId} activeIds={activeIds} caption={t('sec.closed', { n: groups.closed.length })} onAction={onAction} />
+            </details>
+          )}
+        </>
       )}
     </section>
   );
@@ -791,21 +929,72 @@ function App() {
   }, [running]);
 
   // ── Queue editing ──────────────────────────────────────
-  function addFiles(athleteUuid, type, entries) {
+  // `copy` (optional) carries counts and the failed upload being replaced
+  // when a file is added from a Retry button in Recent uploads.
+  function addFiles(athleteUuid, type, entries, copy) {
     const b = budgetFor(ov, athleteUuid, type, itemsRef.current);
     const single = entries.length === 1;
     const fresh = entries.map(({ file, handle }) => {
       const it = {
         id: newId(), athleteUuid, type, name: file.name, size: file.size, lastModified: file.lastModified,
-        file, starts: type === 'performance' ? 1 : null, turns: type === 'performance' ? 0 : null,
-        clips: type === 'video' ? (single ? Math.max(1, Math.min(b.leftAfterQueue, ov.program.video_clips_per_month)) : 1) : null,
-        status: 'ready', sent: 0, hasHandle: !!handle,
+        file,
+        starts: type === 'performance' ? (copy && copy.starts != null ? copy.starts : 1) : null,
+        turns: type === 'performance' ? (copy && copy.turns != null ? copy.turns : 0) : null,
+        clips: type === 'video'
+          ? (copy && copy.clips != null ? copy.clips
+            : single ? Math.max(1, Math.min(b.leftAfterQueue, ov.program.video_clips_per_month)) : 1)
+          : null,
+        replaces: copy ? copy.replaces : null,
+        status: 'ready', sent: 0, hasHandle: !!handle, checking: true, fingerprint: null,
       };
       if (handle) handleStore.put(it.id, handle);
       return it;
     });
     setItems((prev) => prev.concat(fresh));
     setProblems([]);
+    // Fingerprints are computed right after adding (about 3 MB read per file).
+    for (const it of fresh) {
+      fingerprintFile(it.file)
+        .then((fp) => patchItem(it.id, { fingerprint: fp, checking: false }))
+        .catch(() => patchItem(it.id, { checking: false }));
+    }
+  }
+
+  // Retry buttons in Recent uploads.
+  const [retryMsg, setRetryMsg] = useState(null);
+  async function retryFrom(kind, u) {
+    if (kind === 'withdraw') { setConfirm({ kind: 'withdraw', upload: u }); return; }
+    setRetryMsg(null);
+    const entries = await pickFiles(false);
+    if (!entries.length) return;
+    const { file, handle } = entries[0];
+    if (kind === 'resume') {
+      // Continue the same upload: it must be the same file.
+      let fp = null;
+      try { fp = await fingerprintFile(file); } catch (_) { /* compare by size below */ }
+      const same = u.file_fingerprint ? fp === u.file_fingerprint : file.size === u.file_size_bytes;
+      if (!same || file.size !== u.file_size_bytes) { setRetryMsg({ kind: 'error', text: t('retry.mismatch') }); return; }
+      const it = {
+        id: newId(), athleteUuid: u.athlete_uuid, type: u.session_type,
+        starts: u.trial_starts, turns: u.trial_turns, clips: u.clip_count,
+        name: file.name, size: file.size, lastModified: file.lastModified, file, fingerprint: fp,
+        uploadUuid: u.upload_uuid, partSize: u.part_size || LEGACY_PART_SIZE,
+        status: 'ready', sent: 0, hasHandle: !!handle,
+      };
+      if (handle) handleStore.put(it.id, handle);
+      setItems((prev) => prev.filter((i) => i.uploadUuid !== u.upload_uuid).concat([it]));
+    } else {
+      // A new upload that replaces the failed one. An expired unfinished
+      // upload is cancelled first so it stops showing as stuck.
+      if (u.status === 'uploading') {
+        try { await api('cancel', { upload_uuid: u.upload_uuid }); } catch (_) { /* shown on refresh */ }
+      }
+      addFiles(u.athlete_uuid, u.session_type, entries, {
+        starts: u.trial_starts, turns: u.trial_turns, clips: u.clip_count, replaces: u.upload_uuid,
+      });
+      load();
+    }
+    setRetryMsg({ kind: 'ok', text: t('retry.added') });
   }
 
   function removeItem(it) {
@@ -837,6 +1026,7 @@ function App() {
       }
     }
     if (calibrationNeeded() && !calibration) out.push(t('q.calibrationMissing'));
+    if (list.some((i) => i.checking)) out.push(t('q.checking'));
     return out;
   }
   function calibrationNeeded() {
@@ -874,12 +1064,18 @@ function App() {
           clips: item.type === 'video' ? item.clips : undefined,
           calibration: item.type === 'performance' ? calibration : false,
           file_type: fileExt(item.name || ''), file_size: item.size,
+          fingerprint: item.fingerprint || undefined,
+          file_name: item.name || undefined,
+          allow_duplicate: !!item.allowDuplicate,
+          replaces: item.replaces || undefined,
         });
       } catch (_) {
         res = { ok: false, code: 'network' };
       }
       if (!res || !res.ok) {
         if (res && res.code === 'network') { patchItem(item.id, { status: 'ready' }); return 'retry-later'; }
+        // A duplicate found only now (uploaded from elsewhere meanwhile) stops this
+        // file; the row offers "Upload anyway" and the queue moves on.
         patchItem(item.id, { status: 'error', error: (res && res.code) || 'default', errorExtra: res });
         return 'error';
       }
@@ -925,11 +1121,34 @@ function App() {
     });
   }
 
+  // Files that look like earlier uploads: ask once before the queue starts,
+  // so nothing interrupts an unattended run later.
+  const [dupAsk, setDupAsk] = useState(null);   // array of item ids
+  function flaggedDuplicates() {
+    return itemsRef.current
+      .filter((i) => i.status === 'ready' && !i.uploadUuid && !i.allowDuplicate && dupWarning(i, itemsRef.current, ov))
+      .map((i) => i.id);
+  }
+  function resolveDuplicates(choice) {
+    const ids = new Set(dupAsk || []);
+    setDupAsk(null);
+    if (choice === 'back') return;
+    if (choice === 'remove') {
+      for (const it of itemsRef.current.filter((i) => ids.has(i.id))) handleStore.del(it.id);
+      setItems((prev) => prev.filter((i) => !ids.has(i.id)));
+    } else {
+      setItems((prev) => prev.map((i) => (ids.has(i.id) ? Object.assign({}, i, { allowDuplicate: true }) : i)));
+    }
+    setTimeout(() => runQueue(), 0);
+  }
+
   async function runQueue() {
     if (runningRef.current) return;
     const found = validate();
     setProblems(found);
     if (found.length) return;
+    const flagged = flaggedDuplicates();
+    if (flagged.length) { setDupAsk(flagged); return; }
     runningRef.current = true;
     stopRef.current = false;
     samplesRef.current = [];
@@ -991,7 +1210,7 @@ function App() {
         if (perm !== 'granted' && h.requestPermission) perm = await h.requestPermission({ mode: 'read' });
         if (perm !== 'granted') continue;
         const f = await h.getFile();
-        if (f.size !== it.size || f.lastModified !== it.lastModified) continue;
+        if (f.size !== it.size || (it.lastModified && f.lastModified !== it.lastModified)) continue;
         patchItem(it.id, { file: f, name: f.name, status: 'ready' });
         matched += 1;
       } catch (_) { /* fall back to choosing the files again */ }
@@ -999,15 +1218,19 @@ function App() {
     setRestoreNote(matched ? { kind: 'ok', text: t('restore.matched', { n: matched }) } : null);
   }
 
-  function chooseAgain(files) {
+  async function chooseAgain(files) {
     let matched = 0;
     const used = new Set();
     for (const f of files) {
-      const it = itemsRef.current.find((i) => i.status === 'needsFile' && !used.has(i.id)
-                                              && i.size === f.size && i.lastModified === f.lastModified);
+      // Match by fingerprint where we have one (works after renames or moves),
+      // otherwise by size and date.
+      let fp = null;
+      try { fp = await fingerprintFile(f); } catch (_) { /* fall back to size and date */ }
+      const it = itemsRef.current.find((i) => i.status === 'needsFile' && !used.has(i.id) && i.size === f.size
+        && (i.fingerprint ? i.fingerprint === fp : i.lastModified === f.lastModified));
       if (!it) continue;
       used.add(it.id);
-      patchItem(it.id, { file: f, name: f.name, status: 'ready' });
+      patchItem(it.id, { file: f, name: f.name, status: 'ready', fingerprint: it.fingerprint || fp });
       matched += 1;
     }
     const unmatched = files.length - matched;
@@ -1092,11 +1315,12 @@ function App() {
                        onChange={(id, patch) => { patchItem(id, patch); setProblems([]); }}
                        onRemove={removeItem} onCancel={(it) => setConfirm({ kind: 'item', item: it })}
                        onUploadAll={runQueue} onPause={pauseQueue}
+                       onAllowDuplicate={(it) => patchItem(it.id, { allowDuplicate: true, status: 'ready', error: null })}
                        onClearDone={() => setItems((prev) => prev.filter((i) => !['done', 'cancelled', 'error'].includes(i.status)))} />
           </div>
           <div>
             <MonthCard ov={ov} />
-            <UploadsCard ov={ov} activeIds={activeIds} onWithdraw={(u) => setConfirm({ kind: 'withdraw', upload: u })} />
+            <UploadsCard ov={ov} activeIds={activeIds} onAction={retryFrom} msg={retryMsg} />
           </div>
         </div>
       </>
@@ -1134,6 +1358,27 @@ function App() {
         <div className="up-actions">
           <button type="button" className="up-btn danger" onClick={confirmYes}>{t('cancel.confirm')}</button>
           <button type="button" className="up-btn" data-autofocus onClick={() => setConfirm(null)}>{t('cancel.keep')}</button>
+        </div>
+      </Dialog>
+      <Dialog open={!!dupAsk} titleId="dup-title" title={t('dupdlg.title')} onClose={() => resolveDuplicates('back')}>
+        <p>{t('dupdlg.body')}</p>
+        <ul className="up-dup-list">
+          {(dupAsk || []).map((id) => {
+            const it = items.find((i) => i.id === id);
+            if (!it) return null;
+            const w = dupWarning(it, items, ov);
+            return (
+              <li key={id}>
+                <span className="up-file-name">{it.name}</span>
+                {w && <span className="up-muted"> {w.text}</span>}
+              </li>
+            );
+          })}
+        </ul>
+        <div className="up-actions">
+          <button type="button" className="up-btn primary" onClick={() => resolveDuplicates('remove')}>{t('dupdlg.remove')}</button>
+          <button type="button" className="up-btn" onClick={() => resolveDuplicates('anyway')}>{t('dupdlg.anyway')}</button>
+          <button type="button" className="up-btn" data-autofocus onClick={() => resolveDuplicates('back')}>{t('dupdlg.back')}</button>
         </div>
       </Dialog>
     </>

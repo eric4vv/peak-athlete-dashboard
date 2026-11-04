@@ -702,7 +702,16 @@
   "coachGate": {
     "title": "Las cuentas de entrenador requieren Pro",
     "body": "Los datos de tu equipo — análisis de carrera, sesiones de video e historial de atletas — son parte del plan Pro. Actualiza para desbloquear tu espacio de entrenador completo. Las cuentas nuevas comienzan con 7 días de prueba gratis.",
-    "cta": "Actualizar a Pro"
+    "cta": "Actualizar a Pro",
+    "demoBtn": "Vista previa con el equipo demo",
+    "demoHint": "Mira resultados reales: métricas, video, reportes Templo y una sesión de video con comentarios del entrenador."
+  },
+  "demo": {
+    "bannerEyebrow": "EQUIPO DEMO",
+    "bannerTitle":   "Estás viendo el equipo demo",
+    "bannerBody":    "Datos de muestra de las sesiones de un atleta real. Todo aquí es de solo lectura. Mejora a Pro para trabajar con tu propio equipo.",
+    "upgrade":       "Mejorar a Pro",
+    "exit":          "Salir del demo"
   },
   "pages": {
     "home":     { "athlete": "Mi Tablero",     "coach": "Vista del Equipo" },

@@ -145,7 +145,7 @@ const useVideoControls = (videoRef) => {
   };
 };
 
-const WebSessions = ({ session, authUserId, lang, adminAthleteUuid, isPro, onUpgrade }) => {
+const WebSessions = ({ session, authUserId, lang, adminAthleteUuid, isPro, onUpgrade, demoTeamUuid }) => {
   const t = (window.useT || (() => (k) => k))();
   const isMobile = (window.useIsMobile || (() => false))();
   const LS = window.LoadingState;
@@ -262,12 +262,13 @@ const WebSessions = ({ session, authUserId, lang, adminAthleteUuid, isPro, onUpg
       const { data, error } = await SA.listSessions({
         limit: 500,
         athleteUuid: adminAthleteUuid || null,
+        teamUuid: demoTeamUuid || null, // v04.03 — demo-team preview scopes the list
       });
       if (cancelled) return;
       setListState({ loading: false, rows: data || [], error });
     })();
     return () => { cancelled = true; };
-  }, [adminAthleteUuid]);
+  }, [adminAthleteUuid, demoTeamUuid]);
 
   // v03.44 — listen for cross-tab "open this promoted clip"
   // events fired by SaveToLibraryButton in the analysis tabs.
@@ -416,6 +417,7 @@ const WebSessions = ({ session, authUserId, lang, adminAthleteUuid, isPro, onUpg
           onOpenSession={(uuid) => setOpenSessionUuid(uuid)}
           onOpenClip={(clip) => setLibraryOpenClip(clip)}
           adminAthleteUuid={adminAthleteUuid}
+          demoTeamUuid={demoTeamUuid}
         />
       </div>
     );
@@ -453,6 +455,8 @@ const WebSessions = ({ session, authUserId, lang, adminAthleteUuid, isPro, onUpg
       justifyContent: 'space-between', flexWrap: 'wrap',
     }}>
       {modeToggle}
+      {/* v04.03 — no session creation inside the demo team (read-only). */}
+      {!demoTeamUuid && (
       <button type="button" onClick={() => setShowCreateModal(true)}
         style={{
           font: '700 11px var(--font-ui)', letterSpacing: 0.04,
@@ -462,6 +466,7 @@ const WebSessions = ({ session, authUserId, lang, adminAthleteUuid, isPro, onUpg
         }}>
         {t('sessions.newSession')}
       </button>
+      )}
     </div>
   );
 
@@ -1848,6 +1853,13 @@ const ClipWorkspace = ({
   const SA = window.PA_SESSIONS;
   const Icon = window.Icon;
   const t = (window.useT || (() => (k) => k))();
+  // v04.03 — demo accounts: watermark overlay, no native fullscreen / PiP
+  // (the workspace's own fullscreen button keeps the overlay in view).
+  const demoViewer = (window.PA_DEMO && window.PA_DEMO.useRestricted)
+    ? window.PA_DEMO.useRestricted() : false;
+  const demoContent = (window.PA_DEMO && window.PA_DEMO.useDemoContent)
+    ? window.PA_DEMO.useDemoContent(clip && clip.athlete_uuid) : false;
+  const demoRestricted = demoViewer || demoContent;
   // ── Primary video — URL + load phase
   const [phase, setPhase] = useSessionsState('loading'); // 'loading'|'ready'|'error'
   const [url, setUrl] = useSessionsState(null);
@@ -2355,6 +2367,8 @@ const ClipWorkspace = ({
             src={url}
             controls
             playsInline
+            controlsList={demoRestricted ? 'nofullscreen nodownload noremoteplayback' : undefined}
+            disablePictureInPicture={demoRestricted}
             onRateChange={primaryCtl.onRateChange}
             onTimeUpdate={(e) => {
               primaryCtl.onTimeUpdate(e);
@@ -2371,6 +2385,7 @@ const ClipWorkspace = ({
             })}
           />
         )}
+        {demoRestricted && phase === 'ready' && window.DemoWatermark && <window.DemoWatermark/>}
         {/* Phase 4 — annotation layers for primary video.
             v03.84 — hidden when showAnnotations is off, EXCEPT while
             actively drawing on this video (never draw blind). */}
@@ -2512,6 +2527,8 @@ const ClipWorkspace = ({
             src={compareUrl}
             controls
             playsInline
+            controlsList={demoRestricted ? 'nofullscreen nodownload noremoteplayback' : undefined}
+            disablePictureInPicture={demoRestricted}
             onRateChange={compareCtl.onRateChange}
             onTimeUpdate={(e) => {
               compareCtl.onTimeUpdate(e);
@@ -2521,6 +2538,7 @@ const ClipWorkspace = ({
             style={videoElStyleCompare}
           />
         )}
+        {demoRestricted && comparePhase === 'ready' && window.DemoWatermark && <window.DemoWatermark/>}
         {comparePhase === 'ready' && (showAnnotations || drawTarget === 'compare') && (
           <AnnotationCanvas
             annotations={annotsC}
@@ -3573,7 +3591,7 @@ const TagPicker = ({ myTags, appliedTagUuids, onToggle, onCreate, onDelete, onCl
 //
 // Pro-gated: free users see a locked empty state instead of
 // the clip list.
-const LibraryView = ({ isMobile, isPro, onUpgrade, onOpenSession, onOpenClip, adminAthleteUuid }) => {
+const LibraryView = ({ isMobile, isPro, onUpgrade, onOpenSession, onOpenClip, adminAthleteUuid, demoTeamUuid }) => {
   const SA = window.PA_SESSIONS;
   const ES = window.EmptyState;
   const t = (window.useT || (() => (k) => k))();
@@ -3607,12 +3625,13 @@ const LibraryView = ({ isMobile, isPro, onUpgrade, onOpenSession, onOpenClip, ad
         tagUuids: selectedTagIds.length ? selectedTagIds : null,
         source:   sourceFilter,
         viewerAthleteUuid: adminAthleteUuid,
+        teamUuid: demoTeamUuid || null, // v04.03
       });
       if (cancelled) return;
       setSessionsState({ loading: false, rows: data || [] });
     })();
     return () => { cancelled = true; };
-  }, [isPro, selectedTagIds.join(','), sourceFilter, adminAthleteUuid]);
+  }, [isPro, selectedTagIds.join(','), sourceFilter, adminAthleteUuid, demoTeamUuid]);
 
   // Pro upsell — free users see this instead of the library.
   if (!isPro) {

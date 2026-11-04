@@ -878,6 +878,86 @@ const PreviewBanner = ({ onUpgrade }) => {
   );
 };
 
+// ── DemoBanner (v04.03) ─────────────────────────────────────────────
+// Shown while a coach has the demo team switched on (PA_DEMO). Sibling
+// of PreviewBanner: same look, its own strings, Exit calls PA_DEMO.exit().
+// Web only by decision (2026-11-02).
+const DemoBanner = ({ onUpgrade }) => {
+  const t = (window.useT || (() => (k) => k))();
+  const demo = (window.PA_DEMO && window.PA_DEMO.useDemo) ? window.PA_DEMO.useDemo() : { on: false };
+  if (!demo.on) return null;
+  const exit = () => { if (window.PA_DEMO) window.PA_DEMO.exit(); };
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 14,
+      padding: '12px 18px', borderRadius: 12,
+      marginBottom: 16,
+      background: 'color-mix(in oklch, var(--signal-eff) 14%, transparent)',
+      border: '1px solid color-mix(in oklch, var(--signal-eff) 40%, transparent)',
+    }}>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{
+          font: '700 10px var(--font-ui)', color: 'var(--signal-eff)',
+          letterSpacing: 0.08, textTransform: 'uppercase',
+          marginBottom: 4,
+        }}>
+          {t('demo.bannerEyebrow')}
+        </div>
+        <div style={{
+          font: '700 14px var(--font-display)', color: 'var(--tx-hi)',
+          letterSpacing: '-0.01em',
+        }}>
+          {t('demo.bannerTitle')}
+        </div>
+        <div style={{
+          font: '500 12px var(--font-ui)', color: 'var(--tx-md)',
+          marginTop: 2, lineHeight: 1.4,
+        }}>
+          {t('demo.bannerBody')}
+        </div>
+      </div>
+      <button type="button" onClick={() => onUpgrade?.()}
+        style={{
+          padding: '9px 16px', borderRadius: 10,
+          border: 'none', background: 'var(--signal-eff)',
+          color: 'var(--ink)',
+          font: '700 12px var(--font-ui)', letterSpacing: 0.02,
+          cursor: 'pointer', whiteSpace: 'nowrap',
+        }}>
+        {t('demo.upgrade')}
+      </button>
+      <button type="button" onClick={exit}
+        style={{
+          padding: '9px 12px', borderRadius: 10,
+          border: '1px solid var(--line)', background: 'transparent',
+          color: 'var(--tx-md)',
+          font: '600 12px var(--font-ui)',
+          cursor: 'pointer', whiteSpace: 'nowrap',
+        }}>
+        {t('demo.exit')}
+      </button>
+    </div>
+  );
+};
+
+// ── DemoWatermark (v04.03) ──────────────────────────────────────────
+// Peak Athlete mark drawn over demo-account videos (top-right). It is
+// drawn in the page, so a screen recording of the page carries it; it is
+// not in the file itself. The parent must be position: relative.
+const DemoWatermark = () => (
+  <div aria-hidden="true" style={{
+    position: 'absolute', top: 10, right: 12, zIndex: 5, pointerEvents: 'none',
+    display: 'flex', alignItems: 'center', gap: 6,
+    padding: '4px 8px', borderRadius: 8,
+    background: 'rgba(0, 0, 0, 0.45)', color: '#fff', opacity: 0.9,
+  }}>
+    <PeakMark size={16} color="#fff"/>
+    <span style={{ font: '700 10px var(--font-ui)', letterSpacing: 0.08, textTransform: 'uppercase' }}>
+      Peak Athlete
+    </span>
+  </div>
+);
+
 // ── RequestAnalysisInline (v01.59) ────────────────────────────
 // Synced from mobile v02.12. Inline (non-overlay) variant of the
 // Deck hero's RequestAnalysisButton. Used by the sidebar (always-
@@ -1114,7 +1194,7 @@ Object.assign(window, {
   LoadingState, EmptyState, ErrorState,
   useIsMobile, useT,
   Toaster, ConfirmHost,
-  PreviewBanner,
+  PreviewBanner, DemoBanner, DemoWatermark,
   RequestAnalysisInline,
   ProUpgradeBanner,
   StuckBanner,

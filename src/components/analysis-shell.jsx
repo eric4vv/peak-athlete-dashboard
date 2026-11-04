@@ -2474,6 +2474,14 @@ const TrialReportButton = ({ kind, trial, athleteUuid, isPro, onUpgrade }) => {
   const [open, setOpen]           = React.useState(false);
   const [url, setUrl]             = React.useState(null);
   const [phase, setPhase]         = React.useState('idle'); // idle|loading|error
+  // v04.03 — demo accounts view reports in place only: no new-tab link,
+  // PDF viewer toolbar hidden (Chrome honours #toolbar=0).
+  const demoViewer = (window.PA_DEMO && window.PA_DEMO.useRestricted)
+    ? window.PA_DEMO.useRestricted() : false;
+  // ...and a report on demo CONTENT is restricted for every viewer.
+  const demoContent = (window.PA_DEMO && window.PA_DEMO.useDemoContent)
+    ? window.PA_DEMO.useDemoContent(athleteUuid) : false;
+  const demoRestricted = demoViewer || demoContent;
 
   React.useEffect(() => {
     let dead = false;
@@ -2543,7 +2551,7 @@ const TrialReportButton = ({ kind, trial, athleteUuid, isPro, onUpgrade }) => {
           <div style={{ font: '700 15px var(--font-display)', color: 'var(--tx-hi)', flex: 1 }}>
             {t('analysis.reportTitle')}
           </div>
-          {url && (
+          {url && !demoRestricted && (
             <a href={url} target="_blank" rel="noopener noreferrer"
                style={{ font: '600 12px var(--font-ui)', color: 'var(--signal-eff)',
                         textDecoration: 'underline', textUnderlineOffset: 3 }}>
@@ -2568,7 +2576,7 @@ const TrialReportButton = ({ kind, trial, athleteUuid, isPro, onUpgrade }) => {
           </div>
         )}
         {url && phase === 'idle' && (
-          <iframe src={url} title={t('analysis.reportTitle')}
+          <iframe src={demoRestricted ? url + '#toolbar=0&navpanes=0' : url} title={t('analysis.reportTitle')}
                   style={{ width: '100%', height: '72vh', border: '1px solid var(--line-soft)',
                            borderRadius: 10, background: 'var(--bg-3)' }}/>
         )}
@@ -2978,6 +2986,13 @@ const VideoCard = ({
   // clicks). Triggers a browser download via a hidden <a download>.
   // The signed URL is never logged.
   const [downloading, setDownloading] = Hooks.useState(false);
+  // v04.03 — demo accounts get no video download control.
+  const demoViewer = (window.PA_DEMO && window.PA_DEMO.useRestricted)
+    ? window.PA_DEMO.useRestricted() : false;
+  // ...and demo CONTENT is restricted for every viewer, admins included.
+  const demoContent = (window.PA_DEMO && window.PA_DEMO.useDemoContent)
+    ? window.PA_DEMO.useDemoContent(activeAthleteUuid) : false;
+  const demoRestricted = demoViewer || demoContent;
   const onDownload = async () => {
     if (!activeKey || downloading) return;
     setDownloading(true);
@@ -3082,6 +3097,10 @@ const VideoCard = ({
         controls
         playsInline
         preload="metadata"
+        // v04.03 — demo accounts: no native fullscreen (the watermark would
+        // be left behind), no download, no picture-in-picture.
+        controlsList={demoRestricted ? 'nofullscreen nodownload noremoteplayback' : undefined}
+        disablePictureInPicture={demoRestricted}
         src={url}
         style={{
           width: '100%', height: '100%',
@@ -3132,7 +3151,7 @@ const VideoCard = ({
   // Header right-side cluster: optional download (Pro + active key),
   // then the existing hint string. Keep them on one row so the card
   // header stays compact.
-  const showDownload = isPro === true && !!activeKey && !proGated;
+  const showDownload = isPro === true && !!activeKey && !proGated && !demoRestricted;
 
   return (
   <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -3239,6 +3258,7 @@ const VideoCard = ({
       overflow: 'hidden',
     }}>
       {body}
+      {demoRestricted && phase === 'ready' && window.DemoWatermark && <window.DemoWatermark/>}
     </div>
   </div>
   );

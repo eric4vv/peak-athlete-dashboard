@@ -29,6 +29,7 @@
     // to a super_admin/coach impersonation target, matching the
     // single-athlete behavior of Starts / Turns / Races.
     const athleteUuid = opts && opts.athleteUuid;
+    const teamUuid = opts && opts.teamUuid; // v04.03 — demo-team preview
     try {
       const exec = () => {
         let q = client
@@ -38,6 +39,7 @@
                   'athlete_shared_to_pool, created_at, notified_at, ' +
                   'coach_goal, coach_focus, coach_next_steps');
         if (athleteUuid) q = q.eq('athlete_uuid', athleteUuid);
+        if (teamUuid) q = q.eq('team_uuid', teamUuid);
         return q
           .order('session_date', { ascending: false })
           .order('created_at',   { ascending: false })
@@ -48,7 +50,12 @@
         ? await recover(exec, { label: 'video_sessions listSessions' })
         : await exec();
       if (error) return { data: [], error };
-      return { data: data || [], error: null };
+      // v04.03 — demo-team sessions are readable by every signed-in user
+      // (demo_read_* policies); keep them out of the list unless the demo
+      // team is switched on.
+      const rows = (window.PA_DEMO && window.PA_DEMO.hideDemoRows)
+        ? await window.PA_DEMO.hideDemoRows(data || []) : (data || []);
+      return { data: rows, error: null };
     } catch (e) {
       return { data: [], error: e };
     }
@@ -730,7 +737,7 @@
   // name + source role + team-share flag). Drives the Library
   // view's session grid — easier to scan when a coach has 50+
   // athletes worth of clips visible via RLS.
-  async function listAllSessionsForLibrary({ tagUuids, source, viewerAthleteUuid } = {}) {
+  async function listAllSessionsForLibrary({ tagUuids, source, viewerAthleteUuid, teamUuid } = {}) {
     try {
       const me = await getMyTeamMembership();
       const effectiveAthleteUuid = viewerAthleteUuid || me.athleteUuid;
@@ -768,8 +775,12 @@
       if (source === 'team') {
         q = q.eq('coach_shared_to_squad', true);
       }
-      const { data: sessions, error } = await q;
+      if (teamUuid) q = q.eq('team_uuid', teamUuid); // v04.03 — demo-team preview
+      const { data: sessionsRaw, error } = await q;
       if (error) return { data: [], error };
+      // v04.03 — see listSessions: drop demo-team rows unless demo mode is on.
+      const sessions = (window.PA_DEMO && window.PA_DEMO.hideDemoRows)
+        ? await window.PA_DEMO.hideDemoRows(sessionsRaw || []) : (sessionsRaw || []);
       if (!sessions || !sessions.length) return { data: [], error: null };
 
       // Step 2: if filtering by tag, intersect with sessions that

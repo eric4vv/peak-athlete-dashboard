@@ -665,6 +665,10 @@ const PageShell = ({
           {window.PreviewBanner && (
             <window.PreviewBanner onUpgrade={onOpenAccount}/>
           )}
+          {/* v04.03 — demo-team banner (coach demo preview, PA_DEMO). */}
+          {window.DemoBanner && (
+            <window.DemoBanner onUpgrade={onOpenAccount}/>
+          )}
           {children}
         </div>
       </div>
@@ -679,7 +683,7 @@ const PageShell = ({
 // and the Account modal stay open. Client-side product gate — RLS
 // unchanged, same trade-off as the athlete session-history gate.
 // Trialing subscriptions count as Pro (v_my_subscription is_active).
-const CoachProGate = ({ onUpgrade }) => {
+const CoachProGate = ({ onUpgrade, onDemo }) => {
   const t = (window.useT || (() => (k) => k))();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16,
@@ -698,6 +702,22 @@ const CoachProGate = ({ onUpgrade }) => {
                  font: '700 13px var(--font-ui)', cursor: 'pointer' }}>
         {t('coachGate.cta')}
       </button>
+      {/* v04.03 — demo-team preview (web only). Switches the coach's
+          workspace to the seeded demo team via PA_DEMO; read-only by RLS. */}
+      {onDemo && (
+        <>
+          <button type="button" onClick={() => onDemo()}
+            style={{ padding: '9px 16px', borderRadius: 10,
+                     border: '1px solid var(--line)', background: 'transparent',
+                     color: 'var(--tx-hi)', font: '700 13px var(--font-ui)', cursor: 'pointer' }}>
+            {t('coachGate.demoBtn')}
+          </button>
+          <div style={{ font: '500 12px var(--font-ui)', color: 'var(--tx-lo)',
+                        maxWidth: 420, lineHeight: 1.5 }}>
+            {t('coachGate.demoHint')}
+          </div>
+        </>
+      )}
     </div>
   );
 };

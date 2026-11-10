@@ -490,7 +490,7 @@ const WebStarts = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsP
             border: '1px solid var(--line-soft)',
             borderRadius: 12, padding: '6px 4px',
           }}>
-            <TrialList
+            <TrialList trialKind="start"
               trials={filtered}
               slotAKey={slotAKey}
               slotBKey={slotBKind ? null : slotBKey}
@@ -511,7 +511,7 @@ const WebStarts = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsP
                 {t('analysis.trials.filterCount', { filtered: filtered.length, total: effectiveTrials.length })}
               </span>
             }>
-            <TrialList
+            <TrialList trialKind="start"
               trials={filtered}
               slotAKey={slotAKey}
               slotBKey={slotBKind ? null : slotBKey}

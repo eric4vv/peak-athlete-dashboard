@@ -940,6 +940,49 @@ const DemoBanner = ({ onUpgrade }) => {
   );
 };
 
+// ── FreeWindowAnnouncement (v04.04) ────────────────────────────────
+// One-time pop-up announcing the 30-day Free window. PA_FREEWINDOW decides
+// when to show it (window on, viewer without full history, flag not set).
+const FreeWindowAnnouncement = ({ onUpgrade }) => {
+  const t = (window.useT || (() => (k) => k))();
+  const FW = window.PA_FREEWINDOW;
+  const a = (FW && FW.useAnnouncement) ? FW.useAnnouncement() : { show: false, dismiss: () => {} };
+  if (!a.show) return null;
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1450,
+                  background: 'color-mix(in oklch, var(--ink) 55%, transparent)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div role="dialog" aria-modal="true" style={{
+        width: '100%', maxWidth: 460, background: 'var(--bg-2)',
+        border: '1px solid var(--line)', borderRadius: 14, padding: 22,
+        boxShadow: 'var(--shadow)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <span className="eyebrow" style={{ color: 'var(--signal-eff)' }}>{t('freeWindow.announceEyebrow')}</span>
+        <div style={{ font: '700 18px var(--font-display)', color: 'var(--tx-hi)', letterSpacing: '-0.01em' }}>
+          {t('freeWindow.announceTitle')}
+        </div>
+        <div style={{ font: '500 13px var(--font-ui)', color: 'var(--tx-md)', lineHeight: 1.55 }}>
+          {t('freeWindow.announceBody1')}
+        </div>
+        <div style={{ font: '500 13px var(--font-ui)', color: 'var(--tx-md)', lineHeight: 1.55 }}>
+          {t('freeWindow.announceBody2')}
+        </div>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 6, flexWrap: 'wrap' }}>
+          <button type="button" onClick={a.dismiss}
+            style={{ padding: '9px 14px', borderRadius: 10, border: '1px solid var(--line)',
+                     background: 'transparent', color: 'var(--tx-md)', font: '600 12px var(--font-ui)', cursor: 'pointer' }}>
+            {t('freeWindow.announceCta')}
+          </button>
+          <button type="button" onClick={() => { a.dismiss(); onUpgrade?.(); }}
+            style={{ padding: '9px 16px', borderRadius: 10, border: 'none',
+                     background: 'var(--signal-eff)', color: 'var(--ink)', font: '700 12px var(--font-ui)', cursor: 'pointer' }}>
+            {t('freeWindow.announceUpgrade')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── DemoWatermark (v04.03) ──────────────────────────────────────────
 // Peak Athlete mark drawn over demo-account videos (top-right). It is
 // drawn in the page, so a screen recording of the page carries it; it is
@@ -1194,7 +1237,7 @@ Object.assign(window, {
   LoadingState, EmptyState, ErrorState,
   useIsMobile, useT,
   Toaster, ConfirmHost,
-  PreviewBanner, DemoBanner, DemoWatermark,
+  PreviewBanner, DemoBanner, DemoWatermark, FreeWindowAnnouncement,
   RequestAnalysisInline,
   ProUpgradeBanner,
   StuckBanner,

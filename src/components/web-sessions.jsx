@@ -179,6 +179,16 @@ const WebSessions = ({ session, authUserId, lang, adminAthleteUuid, isPro, onUpg
   // v03.49 — admin/coach context for the SessionCard share toggle.
   const [shellTeam, setShellTeam] = useSessionsState({ isCoach: false, teamUuids: [] });
   const [shellAdmin, setShellAdmin] = useSessionsState({ isSuperAdmin: false });
+  // v04.04 — 30-day Free window (server-enforced): replaces the 2-session
+  // gate while on; closed own sessions come back as locked placeholders.
+  const FW = window.PA_FREEWINDOW;
+  const fw = (FW && FW.useFreeWindow) ? FW.useFreeWindow() : null;
+  const fwOn = !isProForFeatures && !!(fw && fw.ready && fw.enabled && !fw.fullHistory);
+  const fwLockedSessions = (fwOn && Array.isArray(fw.locked)) ? fw.locked.filter(x => x && x.kind === 'session') : [];
+  const fwSessionBadge = (row) => {
+    if (!fwOn || !row || !row.created_at) return null;
+    return FW.badgeText(row.created_at, t);
+  };
   useSessionsEffect(() => {
     let cancelled = false;
     (async () => {
@@ -309,7 +319,8 @@ const WebSessions = ({ session, authUserId, lang, adminAthleteUuid, isPro, onUpg
   const FREE_SESSION_LIMIT = 2;
   const sessionGateExempt =
     isProForFeatures || shellTeam.isCoach ||
-    shellAdmin.isSuperAdmin || !!adminAthleteUuid;
+    shellAdmin.isSuperAdmin || !!adminAthleteUuid ||
+    fwOn; // v04.04 — the window replaces the count gate
   // v03.83 — ownership resolves via athleteUuidAny (membership-status
   // independent). The original athleteUuid is null for athletes whose
   // team membership is inactive/pending, which silently disabled the
@@ -516,12 +527,17 @@ const WebSessions = ({ session, authUserId, lang, adminAthleteUuid, isPro, onUpg
             <SessionCard key={s.session_uuid}
               session={s}
               locked={locked}
+              badge={fwSessionBadge(s)}
               onOpen={() => locked ? onUpgrade?.() : setOpenSessionUuid(s.session_uuid)}
               onDelete={() => onDeleteFromList(s)}
               canShare={canShareSession(s)}
               onToggleShare={() => onToggleSessionShareFromList(s)}/>
           );
         })}
+        {/* v04.04 — closed own sessions under the Free window */}
+        {fwLockedSessions.map(x => (
+          <LockedSessionCard key={'fw_' + x.record_uuid} item={x} onOpen={() => onUpgrade?.()}/>
+        ))}
       </div>
     </div>
   );
@@ -566,7 +582,34 @@ const ModeToggle = ({ mode, onChange }) => {
 // delete button without an invalid <button><button> structure.
 // v03.49 — added share-toggle (coach + super_admin only) and a
 // read-only chip indicating the session's team-share status.
-const SessionCard = ({ session, onOpen, onDelete, onToggleShare, canShare, locked }) => {
+// ── LockedSessionCard (v04.04) ───────────────────────────────────────
+// Placeholder for an own session closed under the 30-day Free window
+// (title + date only, from get_my_locked_items). Tap = upgrade flow.
+const LockedSessionCard = ({ item, onOpen }) => {
+  const t = (window.useT || (() => (k) => k))();
+  return (
+    <div role="button" tabIndex={0} onClick={onOpen}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.(); } }}
+      style={{ position: 'relative', textAlign: 'left', padding: 18, borderRadius: 14,
+               background: 'var(--bg-2)', border: '1px solid var(--line-soft)', color: 'var(--tx-hi)',
+               cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 8,
+               font: '500 14px var(--font-ui)', opacity: 0.55, minHeight: 96, justifyContent: 'flex-end' }}>
+      <span style={{ position: 'absolute', top: 10, left: 12, display: 'inline-flex', alignItems: 'center', gap: 5,
+                     padding: '2px 8px', borderRadius: 999,
+                     background: 'color-mix(in oklch, var(--amber-eff) 16%, transparent)',
+                     border: '1px solid color-mix(in oklch, var(--amber-eff) 45%, transparent)',
+                     color: 'var(--amber-eff)', font: '700 9px var(--font-ui)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        {t('freeWindow.sessionLocked')}
+      </span>
+      <div style={{ font: '600 14px var(--font-ui)', color: 'var(--tx-md)' }}>{(item && item.label) || t('freeWindow.lockedRowFallback')}</div>
+      <div style={{ font: '500 12px var(--font-ui)', color: 'var(--tx-lo)' }}>
+        {item && item.source_date ? String(item.source_date) + ' · ' : ''}{t('freeWindow.lockedRow')}
+      </div>
+    </div>
+  );
+};
+
+const SessionCard = ({ session, onOpen, onDelete, onToggleShare, canShare, locked, badge = null }) => {
   const SA = window.PA_SESSIONS;
   const Icon = window.Icon;
   const t = (window.useT || (() => (k) => k))();
@@ -612,6 +655,16 @@ const SessionCard = ({ session, onOpen, onDelete, onToggleShare, canShare, locke
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
           {t('sessions.lockedBadge')}
+        </span>
+      )}
+      {/* v04.04 — free-window countdown badge (rows closing within 7 days) */}
+      {badge && !locked && (
+        <span style={{ position: 'absolute', top: 10, left: 12, display: 'inline-flex', alignItems: 'center',
+                       padding: '2px 8px', borderRadius: 999,
+                       background: 'color-mix(in oklch, var(--amber-eff) 16%, transparent)',
+                       border: '1px solid color-mix(in oklch, var(--amber-eff) 45%, transparent)',
+                       color: 'var(--amber-eff)', font: '700 9px var(--font-ui)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          {badge}
         </span>
       )}
       {/* v03.46 — Delete × in the top-right corner. stopPropagation

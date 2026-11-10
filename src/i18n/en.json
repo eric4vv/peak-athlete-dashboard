@@ -429,7 +429,7 @@
     },
     "trialLock": {
       "title":   "More history is locked",
-      "body":    "Free accounts can open the 2 most recent sessions. Upgrade to Pro for full history access.",
+      "body":    "Free accounts include 30 days of access to each upload. Pro keeps your full history.",
       "cta":     "Upgrade",
       "tooltip": "Pro feature — upgrade to unlock"
     },
@@ -484,7 +484,7 @@
       "compareChip":    "Compare",
       "proEyebrow":     "PRO FEATURE",
       "proTitle":       "Watch your race videos",
-      "proBody":        "Upgrade to Pro to play the video alongside your splits and stroke mechanics. Your videos are stored forever once analyzed.",
+      "proBody":        "Upgrade to Pro to play the video alongside your splits and stroke mechanics. Your videos and data are never deleted.",
       "proCta":         "Upgrade to Pro"
     },
     "tabs": {
@@ -706,6 +706,23 @@
     "demoBtn": "Preview with the demo team",
     "demoHint": "See real analysis output: metrics, video, Templo reports and a coached video session."
   },
+  "freeWindow": {
+    "expiresIn":         "Expires in {n} days",
+    "expiresIn1":        "Expires in 1 day",
+    "expiresToday":      "Expires today",
+    "lockedRow":         "Locked · 30-day window ended",
+    "lockedRowFallback": "Upload",
+    "lockedTooltip":     "Free accounts include 30 days of access to each upload. Upgrade to restore.",
+    "sessionLocked":     "Locked",
+    "stripTitle":        "Older uploads are locked",
+    "stripBody":         "Free accounts include 30 days of access to each upload. Your videos and data are never deleted. Upgrade anytime to restore full access.",
+    "announceEyebrow":   "FREE ACCOUNTS",
+    "announceTitle":     "30 days of access to each upload",
+    "announceBody1":     "Free accounts include 30 days of access to each upload. Pro keeps your full history.",
+    "announceBody2":     "Your videos and data are never deleted. Upgrade anytime to restore full access.",
+    "announceCta":       "Got it",
+    "announceUpgrade":   "Upgrade to Pro"
+  },
   "demo": {
     "bannerEyebrow": "DEMO TEAM",
     "bannerTitle":   "You're viewing the demo team",
@@ -744,7 +761,7 @@
     "renameTitle":            "Rename session",
     "lockedBadge":            "Pro",
     "lockedTitle":            "This session is in your archive",
-    "lockedBody":             "Free accounts keep the 2 most recent sessions. Upgrade to Pro to unlock your full session history — every video, note, and annotation stays saved for you.",
+    "lockedBody":             "Free accounts include 30 days of access to each upload. Your videos and data are never deleted. Upgrade anytime to restore full access — every video, note, and annotation is still saved for you.",
     "lockedCta":              "Upgrade to Pro",
     "renamePlaceholder":      "Session name",
     "renameSave":             "Save",

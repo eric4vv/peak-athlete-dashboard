@@ -36,8 +36,9 @@ const REQ_I18N = {
     modal_buy_bundle_label:'4-Pack Bundle',
     modal_buy_bundle_desc: 'Save $5 - great for meets!',
     modal_best_value:      'Best Value',
-    modal_never_expire:    'Purchased analyses never expire',
-    modal_data_viewable:   'Data viewable for 2 weeks',
+    modal_never_expire:    'Purchased credits never expire',
+    // v04.04 — required pre-purchase disclosure (30-day Free window, Eric 2026-11-03)
+    modal_data_viewable:   'On a Free account, each analysis is available for 30 days from delivery. Pro keeps your full history.',
     modal_maybe_later:     'Maybe Later',
     // v00.16b: copy correction — Pro is 3 analyses/mo, not unlimited.
     // Value prop = 3 monthly analyses + Pulse AI + full dashboard access.
@@ -58,8 +59,8 @@ const REQ_I18N = {
     modal_buy_bundle_label:'Paquete de 4',
     modal_buy_bundle_desc: 'Ahorra $5 - ideal para competencias',
     modal_best_value:      'Mejor Valor',
-    modal_never_expire:    'Los análisis comprados nunca expiran',
-    modal_data_viewable:   'Datos visibles por 2 semanas',
+    modal_never_expire:    'Los créditos comprados nunca expiran',
+    modal_data_viewable:   'En una cuenta Gratis, cada análisis está disponible por 30 días desde su entrega. Pro conserva tu historial completo.',
     modal_maybe_later:     'Quizás Después',
     modal_want_unlimited:  '¿Quieres 3 análisis cada mes y acceso completo?',
     modal_subscribe_pro:   'Suscribirse a Pro — $19.99/mes',

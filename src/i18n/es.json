@@ -429,7 +429,7 @@
     },
     "trialLock": {
       "title":   "Más historial está bloqueado",
-      "body":    "Cuentas gratuitas pueden abrir las 2 sesiones más recientes. Mejora a Pro para acceso completo al historial.",
+      "body":    "Las cuentas Gratis incluyen 30 días de acceso a cada subida. Pro conserva tu historial completo.",
       "cta":     "Mejorar",
       "tooltip": "Función Pro — mejora para desbloquear"
     },
@@ -484,7 +484,7 @@
       "compareChip":    "Comparación",
       "proEyebrow":     "FUNCIÓN PRO",
       "proTitle":       "Mira tus videos de carrera",
-      "proBody":        "Actualiza a Pro para reproducir el video junto a tus parciales y mecánica de brazada. Tus videos se guardan para siempre una vez analizados.",
+      "proBody":        "Actualiza a Pro para reproducir el video junto a tus parciales y mecánica de brazada. Tus videos y datos nunca se eliminan.",
       "proCta":         "Actualizar a Pro"
     },
     "tabs": {
@@ -706,6 +706,23 @@
     "demoBtn": "Vista previa con el equipo demo",
     "demoHint": "Mira resultados reales: métricas, video, reportes Templo y una sesión de video con comentarios del entrenador."
   },
+  "freeWindow": {
+    "expiresIn":         "Vence en {n} días",
+    "expiresIn1":        "Vence en 1 día",
+    "expiresToday":      "Vence hoy",
+    "lockedRow":         "Bloqueado · terminó la ventana de 30 días",
+    "lockedRowFallback": "Subida",
+    "lockedTooltip":     "Las cuentas Gratis incluyen 30 días de acceso a cada subida. Mejora a Pro para recuperarla.",
+    "sessionLocked":     "Bloqueada",
+    "stripTitle":        "Las subidas más antiguas están bloqueadas",
+    "stripBody":         "Las cuentas Gratis incluyen 30 días de acceso a cada subida. Tus videos y datos nunca se eliminan. Mejora a Pro cuando quieras para recuperar el acceso completo.",
+    "announceEyebrow":   "CUENTAS GRATIS",
+    "announceTitle":     "30 días de acceso a cada subida",
+    "announceBody1":     "Las cuentas Gratis incluyen 30 días de acceso a cada subida. Pro conserva tu historial completo.",
+    "announceBody2":     "Tus videos y datos nunca se eliminan. Mejora a Pro cuando quieras para recuperar el acceso completo.",
+    "announceCta":       "Entendido",
+    "announceUpgrade":   "Mejorar a Pro"
+  },
   "demo": {
     "bannerEyebrow": "EQUIPO DEMO",
     "bannerTitle":   "Estás viendo el equipo demo",
@@ -744,7 +761,7 @@
     "renameTitle":            "Renombrar sesión",
     "lockedBadge":            "Pro",
     "lockedTitle":            "Esta sesión está en tu archivo",
-    "lockedBody":             "Las cuentas gratuitas mantienen las 2 sesiones más recientes. Actualiza a Pro para desbloquear tu historial completo — cada video, nota y anotación queda guardado para ti.",
+    "lockedBody":             "Las cuentas Gratis incluyen 30 días de acceso a cada subida. Tus videos y datos nunca se eliminan. Mejora a Pro cuando quieras para recuperar el acceso completo — cada video, nota y anotación sigue guardado para ti.",
     "lockedCta":              "Actualizar a Pro",
     "renamePlaceholder":      "Nombre de la sesión",
     "renameSave":             "Guardar",

@@ -450,7 +450,7 @@ const SlotTag = ({ which }) => (
   }}>{which}</span>
 );
 
-const TrialRow = ({ trial, state, onAssign, helpers = DEFAULT_HELPERS, locked = false, onLockedClick }) => {
+const TrialRow = ({ trial, state, onAssign, helpers = DEFAULT_HELPERS, locked = false, onLockedClick, badge = null }) => {
   const t = (window.useT || (() => (k) => k))();
   const isSlotA = state === 'slotA';
   const isSlotB = state === 'slotB';
@@ -502,6 +502,12 @@ const TrialRow = ({ trial, state, onAssign, helpers = DEFAULT_HELPERS, locked = 
         <div style={{ font: '500 11px var(--font-ui)', color: 'var(--tx-lo)', marginTop: 2 }}>
           {helpers.date(trial)}
         </div>
+        {/* v04.04 — free-window countdown (rows closing within 7 days) */}
+        {badge && (
+          <div style={{ font: '700 10px var(--font-ui)', color: 'var(--amber-eff)', marginTop: 3, letterSpacing: 0.02 }}>
+            {badge}
+          </div>
+        )}
       </div>
       <div style={{
         font: '600 13px var(--font-mono)',
@@ -530,9 +536,47 @@ const TrialRow = ({ trial, state, onAssign, helpers = DEFAULT_HELPERS, locked = 
   );
 };
 
+// ── LockedTrialRow (v04.04) ─────────────────────────────────────────
+// Placeholder for one of the viewer's own trials that closed under the
+// 30-day Free window (from get_my_locked_items: label + date only, no
+// metrics, no video key). Click routes to the upgrade flow.
+const LockedTrialRow = ({ item, onClick }) => {
+  const t = (window.useT || (() => (k) => k))();
+  const when = item && item.source_date ? String(item.source_date) : '';
+  return (
+    <div onClick={onClick} title={t('freeWindow.lockedTooltip')}
+      style={{
+        display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 12,
+        padding: '10px 12px', borderRadius: 10,
+        border: '1px solid color-mix(in oklch, var(--amber-eff) 30%, transparent)',
+        background: 'color-mix(in oklch, var(--amber-eff) 5%, transparent)',
+        cursor: 'pointer', opacity: 0.7,
+      }}>
+      <div style={{ minWidth: 36 }}/>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ font: '600 13px var(--font-ui)', color: 'var(--tx-md)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {(item && item.label) || t('freeWindow.lockedRowFallback')}
+        </div>
+        <div style={{ font: '500 11px var(--font-ui)', color: 'var(--tx-lo)', marginTop: 2 }}>
+          {when}{when ? ' · ' : ''}{t('freeWindow.lockedRow')}
+        </div>
+      </div>
+      <div style={{ width: 20, textAlign: 'right' }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="var(--amber-eff)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+    </div>
+  );
+};
+
 const TrialList = ({
   trials, slotAKey, slotBKey, onAssign, emptyMessage,
   helpers = DEFAULT_HELPERS, isPro = true, onUpgrade,
+  trialKind = null, // v04.04 — 'race' | 'start' | 'turn' (free-window placeholders)
   // v03.28 — optional collapse controls. When `onToggleCollapsed`
   // is provided, the list renders a chevron toggle and switches
   // to a thin rail view when `collapsed` is true. Each tab
@@ -543,6 +587,20 @@ const TrialList = ({
 }) => {
   const t = (window.useT || (() => (k) => k))();
   const Icon = window.Icon;
+  // v04.04 — 30-day Free window (server-enforced). While the switch is on
+  // and the viewer has no full history: the old "2 most recent" gate is
+  // off (the server already hides closed rows), rows closing within 7 days
+  // carry a countdown, and closed rows render as locked placeholders.
+  // Hook stays above every early return (Rules of Hooks).
+  const FW = window.PA_FREEWINDOW;
+  const fw = (FW && FW.useFreeWindow) ? FW.useFreeWindow() : null;
+  const fwOn = !isPro && !!(fw && fw.ready && fw.enabled && !fw.fullHistory);
+  const fwLocked = (fwOn && trialKind && Array.isArray(fw.locked))
+    ? fw.locked.filter(x => x && x.kind === trialKind) : [];
+  const fwBadge = (tr) => {
+    if (!fwOn || !tr || !tr.ingested_at) return null;
+    return FW.badgeText(tr.ingested_at, t);
+  };
 
   // Collapsed rail — just chevron + count. No rows. The user
   // expands first to switch trials. Slot indicators are visible
@@ -656,7 +714,7 @@ const TrialList = ({
   // here (in the chokepoint) so each consumer page (web-races,
   // web-starts, web-turns) inherits the gate without per-page logic.
   const unlockedKeys = (() => {
-    if (isPro) return null; // null = no gate
+    if (isPro || fwOn) return null; // null = no gate (v04.04: window replaces the count gate)
     const dated = trials.map(tr => ({
       tr, k: helpers.key(tr), d: helpers.rawDate ? helpers.rawDate(tr) : null,
     }));
@@ -755,6 +813,32 @@ const TrialList = ({
           </button>
         </div>
       )}
+      {/* v04.04 — free-window strip: shown when closed rows exist */}
+      {fwOn && fwLocked.length > 0 && (
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 12px', borderRadius: 10,
+            background: 'color-mix(in oklch, var(--amber-eff) 8%, transparent)',
+            border: '1px solid color-mix(in oklch, var(--amber-eff) 30%, transparent)',
+            flexWrap: 'wrap',
+          }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="var(--amber-eff)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <div style={{ flex: 1, minWidth: 180 }}>
+            <div style={{ font: '700 12px var(--font-ui)', color: 'var(--tx-hi)' }}>{t('freeWindow.stripTitle')}</div>
+            <div style={{ font: '500 11px var(--font-ui)', color: 'var(--tx-md)', marginTop: 2, lineHeight: 1.4 }}>{t('freeWindow.stripBody')}</div>
+          </div>
+          <button type="button" onClick={(e) => { e.stopPropagation(); onUpgrade?.(); }}
+            style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: 'var(--signal-eff)',
+                     color: 'var(--ink)', font: '700 11px var(--font-ui)', letterSpacing: 0.04, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {t('analysis.trialLock.cta')}
+          </button>
+        </div>
+      )}
       {trials.map((tr, i) => {
         const k = helpers.key(tr);
         const state = k === slotAKey ? 'slotA' : k === slotBKey ? 'slotB' : 'idle';
@@ -768,9 +852,13 @@ const TrialList = ({
             helpers={helpers}
             locked={locked}
             onLockedClick={() => onUpgrade?.()}
+            badge={fwBadge(tr)}
           />
         );
       })}
+      {fwLocked.map(x => (
+        <LockedTrialRow key={'fw_' + x.record_uuid} item={x} onClick={() => onUpgrade?.()}/>
+      ))}
     </div>
   );
 };
@@ -2947,7 +3035,13 @@ const VideoCard = ({
   const activeIsBenchmark = useCompare ? !!compareIsBenchmark    : !!isBenchmark;
   // Free users get the upsell card instead of fetching at all.
   // Saves an edge function call + avoids a brief player flash.
-  const proGated = isPro === false && !!activeKey;
+  // v04.04 — once the 30-day Free window is on for the viewer, Free accounts
+  // PLAY trial video for rows still inside the window (rows outside it never
+  // reach this card: the server hides them). Download stays Pro-only.
+  const fwVideo = (window.PA_FREEWINDOW && window.PA_FREEWINDOW.useFreeWindow)
+    ? window.PA_FREEWINDOW.useFreeWindow() : null;
+  const fwVideoOpen = !!(fwVideo && fwVideo.ready && fwVideo.enabled && fwVideo.freeVideo !== false);
+  const proGated = isPro === false && !!activeKey && !fwVideoOpen;
 
   const [url,   setUrl]   = Hooks.useState(null);
   const [phase, setPhase] = Hooks.useState('idle'); // 'idle' | 'loading' | 'ready' | 'error'

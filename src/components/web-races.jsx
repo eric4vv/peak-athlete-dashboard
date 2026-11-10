@@ -1890,7 +1890,7 @@ const WebRaces = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsPr
             border: '1px solid var(--line-soft)',
             borderRadius: 12, padding: '6px 4px',
           }}>
-            <TrialList
+            <TrialList trialKind="race"
               trials={filtered}
               slotAKey={slotAKey}
               slotBKey={slotBKind ? null : slotBKey}
@@ -1910,7 +1910,7 @@ const WebRaces = ({ session, authUserId, lang, adminAthleteUuid, isPro: realIsPr
                 {t('analysis.trials.filterCount', { filtered: filtered.length, total: effectiveTrials.length })}
               </span>
             }>
-            <TrialList
+            <TrialList trialKind="race"
               trials={filtered}
               slotAKey={slotAKey}
               slotBKey={slotBKind ? null : slotBKey}
